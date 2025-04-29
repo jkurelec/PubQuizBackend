@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using PubQuizBackend.Models.DbModels;
+using System.ComponentModel.DataAnnotations;
 
 namespace PubQuizBackend.Models.Dto
 {
@@ -31,5 +32,16 @@ namespace PubQuizBackend.Models.Dto
         [Required]
         [EmailAddress]
         public string Email { get; set; } = null!;
+
+        public User ToUser() =>
+            new()
+            {
+                Username = Username,
+                Password = Password,
+                Role = Role,
+                Firstname = Firstname,
+                Lastname = Lastname,
+                Email = Email
+            };
     }
 }
