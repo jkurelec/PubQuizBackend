@@ -1,0 +1,6 @@
+@PubQuizBackend_HostAddress = http://localhost:5164
+
+GET {{PubQuizBackend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
