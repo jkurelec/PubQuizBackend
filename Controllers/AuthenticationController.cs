@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using PubQuizBackend.Auth;
 using PubQuizBackend.Model;
+using PubQuizBackend.Model.Dto.UserDto;
 using PubQuizBackend.Models.Dto;
 using PubQuizBackend.Utils;
 

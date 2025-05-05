@@ -4,6 +4,8 @@ using PubQuizBackend.Auth;
 using PubQuizBackend.Model;
 using PubQuizBackend.Repository.Implementation;
 using PubQuizBackend.Repository.Interface;
+using PubQuizBackend.Service.Implementation;
+using PubQuizBackend.Service.Interface;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,7 +23,9 @@ builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<ILocationRepository, LocationRepository>();
 builder.Services.AddScoped<ICityRepository, CityRepository>();
 builder.Services.AddScoped<ICountryRepository, CountryRepository>();
+builder.Services.AddScoped<IUserRepository, IUserRepository>();
 builder.Services.AddScoped<IPostalCodeRepository, PostalCodeRepository>();
+builder.Services.AddScoped<ILocationService, LocationService>();
 
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>

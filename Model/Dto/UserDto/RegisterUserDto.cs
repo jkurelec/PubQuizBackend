@@ -1,7 +1,7 @@
 ﻿using PubQuizBackend.Model.DbModel;
 using System.ComponentModel.DataAnnotations;
 
-namespace PubQuizBackend.Models.Dto
+namespace PubQuizBackend.Model.Dto.UserDto
 {
     public class RegisterUserDto
     {
