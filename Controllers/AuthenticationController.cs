@@ -1,8 +1,7 @@
-﻿using Microsoft.AspNetCore.Authentication.BearerToken;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PubQuizBackend.Auth;
-using PubQuizBackend.Models;
+using PubQuizBackend.Model;
 using PubQuizBackend.Models.Dto;
 using PubQuizBackend.Utils;
 
@@ -23,27 +22,46 @@ namespace PubQuizBackend.Controllers
             _jwtService = jwtService;
         }
 
-        [HttpPost("Register")]
-        public async Task Register(RegisterUserDto user)
+        [HttpPost("register")]
+        public async Task<IActionResult> Register(RegisterUserDto registerUserDto)
         {
-            await _dbContext.Users.AddAsync(user.ToUser());
-            await _dbContext.SaveChangesAsync();
+            if (!await _dbContext.Users.AnyAsync(x => x.Username == registerUserDto.Username || x.Email == registerUserDto.Email))
+            {
+                await _dbContext.Users.AddAsync(registerUserDto.ToUser());
+                await _dbContext.SaveChangesAsync();
+            }
+            else
+                return BadRequest("Username or Email already taken!");
+
+            var user = await _dbContext.Users.Where(x => x.Username == registerUserDto.Username).FirstOrDefaultAsync();
+
+            if (user != null)
+            {
+                var accessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Username, CustomConverter.GetStringRole(user.Role));
+                var refreshToken = _jwtService.GenerateRefreshToken(user.Id, user.Role);
+
+                return Ok(new
+                {
+                    AccessToken = accessToken,
+                    RefreshToken = refreshToken
+                });
+            }
+
+            return BadRequest("Something went wrong!");
         }
 
-        [HttpPost("Login")]
-        public async Task<IActionResult> Login(LoginUserDto login)
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(LoginUserDto loginUserDto)
         {
-            var user = await _dbContext.Users
-                .FirstOrDefaultAsync(x => x.Email == login.Identifier || x.Username == login.Identifier);
+            var user = await _dbContext.Users.FirstOrDefaultAsync(
+                x => x.Email == loginUserDto.Identifier || x.Username == loginUserDto.Identifier
+            );
 
-            if (user == null)
-                return BadRequest("Invalid username or email.");
-
-            if (user.Password != login.Password)
-                return Unauthorized("Invalid password.");
+            if (user == null || user.Password != loginUserDto.Password)
+                return BadRequest("Invalid username, email or password.");
 
             var accessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Username, CustomConverter.GetStringRole(user.Role));
-            var refreshToken = _jwtService.GenerateRefreshToken();
+            var refreshToken = await _jwtService.GenerateRefreshToken(user.Id, user.Role);
 
             return Ok(new
             {
@@ -52,31 +70,18 @@ namespace PubQuizBackend.Controllers
             });
         }
 
-        [HttpGet]
-        public IEnumerable<string> Get()
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh(RefreshTokenDto refreshToken)
         {
-            return new string[] { "value1", "value2" };
-        }
+            var token = await _dbContext.RefreshTokens.Include(x => x.User).FirstOrDefaultAsync(x => x.Token == refreshToken.Value);
 
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
+            if (token != null)
+                return Ok(new
+                {
+                    AccessToken = _jwtService.GenerateAccessToken(token.User.Id.ToString(), token.User.Username, CustomConverter.GetStringRole(token.User.Role))
+                });
 
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
-
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
+            return Unauthorized("Nemože zločko");
         }
     }
 }

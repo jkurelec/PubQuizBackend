@@ -1,1 +1,2 @@
 # PubQuizBackend
+Scaffold-DbContext "Host=localhost;Port=5432;Username=backend;Password=Pasvord123;Database=pub_quiz" Npgsql.EntityFrameworkCore.PostgreSQL -OutputDir Model/DbModel -ContextDir Model -Context PubQuizContext -f

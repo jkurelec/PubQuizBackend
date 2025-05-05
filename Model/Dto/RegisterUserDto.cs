@@ -1,4 +1,4 @@
-﻿using PubQuizBackend.Models.DbModels;
+﻿using PubQuizBackend.Model.DbModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace PubQuizBackend.Models.Dto
@@ -11,21 +11,21 @@ namespace PubQuizBackend.Models.Dto
         public string Username { get; set; } = null!;
 
         [Required]
-        [RegularExpression("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*(),.?\":{}|<>]).{8,}$", 
+        [RegularExpression("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*(),.?\":{}|<>]).{8,}$",
         ErrorMessage = "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.")]
         public string Password { get; set; } = null!;
 
         [Required]
-        [Range(1,4, ErrorMessage = "Role mora biti izmedu 1-4")]
+        [Range(1, 3, ErrorMessage = "Role mora biti izmedu 1-3")]
         public int Role { get; set; }
 
         [Required]
-        [StringLength(15, ErrorMessage = "Username mora biti izmedu 4-15 znakova", MinimumLength = 4)]
+        [StringLength(15, ErrorMessage = "Firstname mora biti izmedu 3-15 znakova", MinimumLength = 3)]
         [RegularExpression(@"^[a-zA-Z]+$", ErrorMessage = "Username može sadržavati samo slova.")]
         public string Firstname { get; set; } = null!;
 
         [Required]
-        [StringLength(15, ErrorMessage = "Username mora biti izmedu 4-15 znakova", MinimumLength = 4)]
+        [StringLength(15, ErrorMessage = "Lastname mora biti izmedu 3-15 znakova", MinimumLength = 3)]
         [RegularExpression(@"^[a-zA-Z]+$", ErrorMessage = "Username može sadržavati samo slova.")]
         public string Lastname { get; set; } = null!;
 

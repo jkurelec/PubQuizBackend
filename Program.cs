@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using PubQuizBackend.Auth;
-using PubQuizBackend.Models;
+using PubQuizBackend.Model;
+using PubQuizBackend.Repository.Implementation;
+using PubQuizBackend.Repository.Interface;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,7 +17,11 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<PubQuizContext>(options =>
     options.UseNpgsql(builder.Configuration["ConnectionStrings:DBConnection"]));
 
-builder.Services.AddSingleton<JwtService>();
+builder.Services.AddScoped<JwtService>();
+builder.Services.AddScoped<ILocationRepository, LocationRepository>();
+builder.Services.AddScoped<ICityRepository, CityRepository>();
+builder.Services.AddScoped<ICountryRepository, CountryRepository>();
+builder.Services.AddScoped<IPostalCodeRepository, PostalCodeRepository>();
 
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>

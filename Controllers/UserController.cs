@@ -1,14 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using PubQuizBackend.Models;
-using PubQuizBackend.Models.DbModels;
-using PubQuizBackend.Models.Dto;
+using PubQuizBackend.Model;
+using PubQuizBackend.Model.DbModel;
 
 namespace PubQuizBackend.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("user")]
     [ApiController]
+    [Authorize]
     public class UserController : ControllerBase
     {
         private readonly PubQuizContext _dbContext;
@@ -24,10 +23,9 @@ namespace PubQuizBackend.Controllers
             return new string[] { "value1", "value2" };
         }
 
-        [Authorize]
         [HttpGet("{id}")]
-        public async Task<User> Get(int id) =>
-            await _dbContext.Users.FindAsync(1);
+        public async Task<User?> Get(int id) =>
+            await _dbContext.Users.FindAsync(id);
 
 
         [HttpPut("{id}")]
