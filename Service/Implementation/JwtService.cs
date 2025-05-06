@@ -1,12 +1,13 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 using PubQuizBackend.Model;
+using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Utils;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace PubQuizBackend.Auth
+namespace PubQuizBackend.Service.Implementation
 {
     public class JwtService
     {
@@ -19,7 +20,7 @@ namespace PubQuizBackend.Auth
             _dbContext = dbContext;
         }
 
-        public string GenerateAccessToken(string userId, string username, string role)
+        public string GenerateAccessToken(string userId, string username, string role/*, int port*/)
         {
             var claims = new[]
             {
@@ -36,55 +37,38 @@ namespace PubQuizBackend.Auth
             var token = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],
                 //isti ako samo na ovaj api puca
-                audience: _config["Jwt:Issuer"],
+                audience: GetAudienceString(role/*port*/),
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(AccessTokenLongevityMultiplyer(CustomConverter.GetIntRole(role))),
+                expires: DateTime.UtcNow.AddMinutes(LongevityMultiplyer(CustomConverter.GetIntRole(role))),
                 signingCredentials: creds
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public async Task<string> GenerateRefreshToken(int userId, int role)
-        {
-            var tokenValue = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-            var expiresAt = DateTime.Now.AddHours(RefreshTokenLongevityMultiplyer(role));
-            var token = await _dbContext.RefreshTokens.FindAsync(userId);
-
-            if (token == null)
-                await _dbContext.RefreshTokens.AddAsync(
-                    new()
-                    {
-                        UserId = userId,
-                        Token = tokenValue,
-                        ExpiresAt = DateTime.Now.AddHours(RefreshTokenLongevityMultiplyer(role))
-                    }
-                );
-            else
+        private string GetAudiencePort(int port) =>
+            port switch
             {
-                token.Token = tokenValue;
-                token.ExpiresAt = expiresAt;
-            }
+                1 => _config["Jwt:Audience:Attendee"]!,
+                2 => _config["Jwt:Audience:Organizer"]!,
+                3 => _config["Jwt:Audience:Admin"]!,
+                _ => throw new ArgumentException("Unkown role")
+            };
 
-            await _dbContext.SaveChangesAsync();
+        private string GetAudienceString(string role) =>
+            role switch
+            {
+                "Attendee" => _config["Jwt:Audience:Attendee"]!,
+                "Organizer" => _config["Jwt:Audience:Organizer"]!,
+                "Admin" => _config["Jwt:Audience:Admin"]!,
+                _ => throw new ArgumentException("Unkown role")
+            };
 
-            return tokenValue;
-        }
-
-        private static int AccessTokenLongevityMultiplyer(int role) =>
+        private static int LongevityMultiplyer(int role) =>
             role switch
             {
                 1 => 15,
                 2 => 5,
-                3 => 1,
-                _ => 0
-            };
-
-        private static int RefreshTokenLongevityMultiplyer(int role) =>
-            role switch
-            {
-                1 => 168,
-                2 => 24,
                 3 => 1,
                 _ => 0
             };

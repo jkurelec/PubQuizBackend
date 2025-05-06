@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using PubQuizBackend.Auth;
+using PubQuizBackend.Auth.RoleAndAudience;
+using PubQuizBackend.Enums;
 using PubQuizBackend.Model;
 using PubQuizBackend.Repository.Implementation;
 using PubQuizBackend.Repository.Interface;
@@ -19,13 +21,18 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<PubQuizContext>(options =>
     options.UseNpgsql(builder.Configuration["ConnectionStrings:DBConnection"]));
 
-builder.Services.AddScoped<JwtService>();
+builder.Services.AddSingleton<IAuthorizationHandler, MinimumRoleAndAudienceHandler>();
 builder.Services.AddScoped<ILocationRepository, LocationRepository>();
 builder.Services.AddScoped<ICityRepository, CityRepository>();
 builder.Services.AddScoped<ICountryRepository, CountryRepository>();
-builder.Services.AddScoped<IUserRepository, IUserRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPostalCodeRepository, PostalCodeRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+
+builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 builder.Services.AddScoped<ILocationService, LocationService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<JwtService>();
 
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
@@ -37,11 +44,35 @@ builder.Services.AddAuthentication("Bearer")
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Issuer"],
+            ValidAudiences = new[]
+            {
+                builder.Configuration["Jwt:Audience:Admin"],
+                builder.Configuration["Jwt:Audience:Organizer"],
+                builder.Configuration["Jwt:Audience:User"]
+            },
+
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]!))
         };
     });
+
+//builder.Services.AddAuthorization(options =>
+//{
+//    options.AddPolicy("User", policy =>
+//        policy.Requirements.Add(new MinimumRoleAndAudienceRequirement(
+//            Role.ATTENDEE,
+//            builder.Configuration["Jwt:Audience:User"]!)));
+
+//    options.AddPolicy("Moderator", policy =>
+//        policy.Requirements.Add(new MinimumRoleAndAudienceRequirement(
+//            Role.ORGANIZER,
+//            builder.Configuration["Jwt:Audience:Moderator"]!)));
+
+//    options.AddPolicy("Admin", policy =>
+//        policy.Requirements.Add(new MinimumRoleAndAudienceRequirement(
+//            Role.ADMIN,
+//            builder.Configuration["Jwt:Audience:Admin"]!)));
+//});
 
 var app = builder.Build();
 

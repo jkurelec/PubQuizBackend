@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using PubQuizBackend.Auth;
 using PubQuizBackend.Model;
 using PubQuizBackend.Model.Dto.UserDto;
 using PubQuizBackend.Models.Dto;
+using PubQuizBackend.Service.Implementation;
+using PubQuizBackend.Service.Interface;
 using PubQuizBackend.Utils;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -14,72 +15,61 @@ namespace PubQuizBackend.Controllers
     [ApiController]
     public class AuthenticationController : ControllerBase
     {
-        private readonly PubQuizContext _dbContext;
+        private readonly IUserService _userService;
+        private readonly IRefreshTokenService _refreshTokenService;
         private readonly JwtService _jwtService;
 
-        public AuthenticationController(PubQuizContext dbContext, JwtService jwtService)
+        public AuthenticationController(IUserService userService, IRefreshTokenService refreshTokenService, JwtService jwtService)
         {
-            _dbContext = dbContext;
+            _userService = userService;
+            _refreshTokenService = refreshTokenService;
             _jwtService = jwtService;
         }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterUserDto registerUserDto)
         {
-            if (!await _dbContext.Users.AnyAsync(x => x.Username == registerUserDto.Username || x.Email == registerUserDto.Email))
-            {
-                await _dbContext.Users.AddAsync(registerUserDto.ToUser());
-                await _dbContext.SaveChangesAsync();
-            }
-            else
+            var user = await _userService.Add(registerUserDto);
+
+            if(user == null)
                 return BadRequest("Username or Email already taken!");
 
-            var user = await _dbContext.Users.Where(x => x.Username == registerUserDto.Username).FirstOrDefaultAsync();
-
-            if (user != null)
+            //var port = HttpContext.Connection.RemotePort;
+            return Ok(new
             {
-                var accessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Username, CustomConverter.GetStringRole(user.Role));
-                var refreshToken = _jwtService.GenerateRefreshToken(user.Id, user.Role);
-
-                return Ok(new
-                {
-                    AccessToken = accessToken,
-                    RefreshToken = refreshToken
-                });
-            }
-
-            return BadRequest("Something went wrong!");
+                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Username, CustomConverter.GetStringRole(user.Role)/*, port*/),
+                RefreshToken = await _refreshTokenService.Create(user.Id, user.Role)
+            });
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginUserDto loginUserDto)
         {
-            var user = await _dbContext.Users.FirstOrDefaultAsync(
-                x => x.Email == loginUserDto.Identifier || x.Username == loginUserDto.Identifier
-            );
+            var user = await _userService.GetByIdentifier(loginUserDto.Identifier);
 
             if (user == null || user.Password != loginUserDto.Password)
                 return BadRequest("Invalid username, email or password.");
 
-            var accessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Username, CustomConverter.GetStringRole(user.Role));
-            var refreshToken = await _jwtService.GenerateRefreshToken(user.Id, user.Role);
+            //var port = HttpContext.Connection.RemotePort;
 
             return Ok(new
             {
-                AccessToken = accessToken,
-                RefreshToken = refreshToken
+                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Username, CustomConverter.GetStringRole(user.Role)/*, port*/),
+                RefreshToken = await _refreshTokenService.Create(user.Id, user.Role)
             });
         }
 
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh(RefreshTokenDto refreshToken)
         {
-            var token = await _dbContext.RefreshTokens.Include(x => x.User).FirstOrDefaultAsync(x => x.Token == refreshToken.Value);
+            var token = await _refreshTokenService.GetByToken(refreshToken.Value);
+
+            //var port = HttpContext.Connection.RemotePort;
 
             if (token != null)
                 return Ok(new
                 {
-                    AccessToken = _jwtService.GenerateAccessToken(token.User.Id.ToString(), token.User.Username, CustomConverter.GetStringRole(token.User.Role))
+                    AccessToken = _jwtService.GenerateAccessToken(token.User.Id.ToString(), token.User.Username, CustomConverter.GetStringRole(token.User.Role)/*, port*/)
                 });
 
             return Unauthorized("Nemože zločko");

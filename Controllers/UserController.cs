@@ -1,41 +1,47 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using PubQuizBackend.Model;
-using PubQuizBackend.Model.DbModel;
+﻿using Microsoft.AspNetCore.Mvc;
+using PubQuizBackend.Model.Dto.UserDto;
+using PubQuizBackend.Repository.Interface;
+using PubQuizBackend.Service.Interface;
 
 namespace PubQuizBackend.Controllers
 {
     [Route("user")]
     [ApiController]
-    [Authorize]
     public class UserController : ControllerBase
     {
-        private readonly PubQuizContext _dbContext;
+        private readonly IUserService _service;
 
-        public UserController(PubQuizContext dbContext)
+        public UserController(IUserService userService)
         {
-            _dbContext = dbContext;
+            _service = userService;
         }
 
         [HttpGet]
-        public IEnumerable<string> Get()
+        public async Task<IEnumerable<string>> Get()
         {
-            return new string[] { "value1", "value2" };
+            return ["", ""];
         }
 
         [HttpGet("{id}")]
-        public async Task<User?> Get(int id) =>
-            await _dbContext.Users.FindAsync(id);
+        public async Task<UserBriefDto?> Get(int id) =>
+            new(await _service.GetById(id));
 
+        [HttpPost]
+        public async Task<UserDto?> Add(RegisterUserDto userDto)
+        {
+            return new(await _service.Add(userDto));
+        }
 
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        public async Task<UserDto?> Update(int id, UserDto userDto)
         {
+            return new(await _service.Update(id, userDto));
         }
 
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public async Task<bool> Delete(int id)
         {
+            return await _service.Remove(id);
         }
     }
 }

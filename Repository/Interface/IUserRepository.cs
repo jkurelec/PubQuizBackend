@@ -1,14 +1,19 @@
-﻿using PubQuizBackend.Model.Dto.UserDto;
+﻿using PubQuizBackend.Model.DbModel;
+using PubQuizBackend.Model.Dto.UserDto;
 
 namespace PubQuizBackend.Repository.Interface
 {
     public interface IUserRepository
     {
-        public Task<UserBriefDto?> GetById(int id);
-        public Task<UserBriefDto?> GetByUsername(string username);
-        public Task<UserBriefDto?> GetByEmail(string email);
+        public Task<User?> GetById(int id);
+        public Task<User?> GetByUsername(string username);
+        public Task<User?> GetByEmail(string email);
+        public Task<User?> ChangePassword(int id, string password);
         public Task<bool> Delete(int id);
-        public Task<UserBriefDto> Add(RegisterUserDto user);
-        public Task<UserBriefDto> Update(UserDto user);
+        public Task<User?> Add(RegisterUserDto user);
+        public Task<User?> Update(int id, UserDto user);
+        public Task<List<User>> GetAll();
+        public Task<User?> GetByIdentifier(string identifier);
+        //protected Task<bool> UsernameOrEmailExists(string username, string email);
     }
 }

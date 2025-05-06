@@ -4,7 +4,7 @@ namespace PubQuizBackend.Util
 {
     public static class PropertyUpdater
     {
-        public static void UpdateEntityFromDto<TDto, TEntity>(TDto dto, TEntity entity, params string[] excludedProperties)
+        public static void UpdateEntityFromDto<TDto, TEntity>(TEntity entity, TDto dto, params string[] excludedProperties)
         {
             var dtoProps = typeof(TDto).GetProperties(BindingFlags.Public | BindingFlags.Instance);
             var entityProps = typeof(TEntity).GetProperties(BindingFlags.Public | BindingFlags.Instance);
