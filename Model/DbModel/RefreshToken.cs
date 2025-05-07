@@ -1,4 +1,7 @@
-﻿namespace PubQuizBackend.Model.DbModel;
+﻿using System;
+using System.Collections.Generic;
+
+namespace PubQuizBackend.Model.DbModel;
 
 public partial class RefreshToken
 {

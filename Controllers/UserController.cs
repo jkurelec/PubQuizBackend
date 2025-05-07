@@ -33,9 +33,9 @@ namespace PubQuizBackend.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<UserDto?> Update(int id, UserDto userDto)
+        public async Task<UserDto?> Update(UserDto userDto)
         {
-            return new(await _service.Update(id, userDto));
+            return new(await _service.Update(userDto));
         }
 
         [HttpDelete("{id}")]

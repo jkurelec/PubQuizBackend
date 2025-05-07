@@ -3,8 +3,9 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PubQuizBackend.Model;
 using PubQuizBackend.Model.DbModel;
-using PubQuizBackend.Model.Dto;
+using PubQuizBackend.Model.Dto.LocationDto;
 using PubQuizBackend.Repository.Interface;
+using PubQuizBackend.Util;
 using System.Globalization;
 
 namespace PubQuizBackend.Repository.Implementation
@@ -20,14 +21,14 @@ namespace PubQuizBackend.Repository.Implementation
             _postalCodeRepository = postalCodeRepository;
         }
 
-        public async Task<LocationDetailsDto> Add(string? locationName = null, string? address = null, string? city = null, string? country = null, int limit = 1)
+        public async Task<Location> Add(string? locationName = null, string? address = null, string? city = null, string? country = null, int limit = 1, int selection = 0)
         {
-            var locationDto = await CheckIfExists(locationName, address, city, country, limit);
+            var location = await CheckIfExists(locationName, address, city, country);
 
-            if (locationDto != null)
-                return locationDto;
+            if (location != null)
+                return location;
 
-            locationDto = await FindNew(locationName, address, city, country, limit).ContinueWith(x => x.Result[0]);
+            var locationDto = await FindNew(locationName, address, city, country, limit).ContinueWith(x => x.Result[selection]);
 
             PostalCode? postalCode = await _postalCodeRepository.GetPostalCodeByCode(locationDto.PostalCode);
 
@@ -52,14 +53,14 @@ namespace PubQuizBackend.Repository.Implementation
             locationDto.PostalCodeId = postalCode.Id;
             locationDto.CityId = postalCode.CityId;
 
-            var location = locationDto.ToLocation(postalCode);
+            location = locationDto.ToLocation(postalCode);
 
 
 
             await _dbContext.Locations.AddAsync(location);
             await _dbContext.SaveChangesAsync();
 
-            return locationDto;
+            return location!;
         }
 
         public async Task<bool> Delete(int id)
@@ -93,27 +94,26 @@ namespace PubQuizBackend.Repository.Implementation
             return await _dbContext.Locations.Where(x => x.Name == name).FirstOrDefaultAsync();
         }
 
-        public async Task<List<Location>> GetLocationsByCityId(int id)
+        public async Task<List<Location>?> GetLocationsByCityId(int id)
         {
             return await _dbContext.Locations.Where(x => x.CityId == id).ToListAsync();
         }
 
-        public async Task<bool> Update(Location location)
+        public async Task<Location?> Update(LocationUpdateDto updatedLocation)
         {
-            _dbContext.Entry(location).State = EntityState.Modified;
+            var location = await _dbContext.Locations.FindAsync(updatedLocation.Id);
 
-            try
+            if (location != null)
             {
+                PropertyUpdater.UpdateEntityFromDto(location, updatedLocation);
+
+                _dbContext.Entry(location).State = EntityState.Modified;
                 await _dbContext.SaveChangesAsync();
 
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
+                return location;
             }
 
-            return false; ;
+            return null;
         }
 
         public async Task<List<LocationDetailsDto>?> FindNew(string? locationName = null, string? address = null, string? city = null, string? country = null, int limit = 1)
@@ -180,7 +180,7 @@ namespace PubQuizBackend.Repository.Implementation
             return null!;
         }
 
-        public async Task<LocationDetailsDto?> CheckIfExists(string? locationName = null, string? address = null, string? city = null, string? country = null, int limit = 1)
+        public async Task<Location?> CheckIfExists(string? locationName = null, string? address = null, string? city = null, string? country = null)
         {
             var query = _dbContext.Locations
                 .Include(l => l.City)
@@ -191,7 +191,11 @@ namespace PubQuizBackend.Repository.Implementation
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(locationName))
-                query = query.Where(l => EF.Functions.Like(l.Name.ToLower(), $"%{locationName.ToLower()}%"));
+            {
+                var locationNameTokens = locationName.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                foreach (var token in locationNameTokens)
+                    query = query.Where(l => EF.Functions.Like(l.Address.ToLower(), $"%{token}%"));
+            }
 
             if (!string.IsNullOrWhiteSpace(address))
             {
@@ -206,11 +210,9 @@ namespace PubQuizBackend.Repository.Implementation
             if (!string.IsNullOrWhiteSpace(country))
                 query = query.Where(l => EF.Functions.Like(l.PostalCode!.City!.Country.Name.ToLower(), $"%{country.ToLower()}%"));
 
-            var location = await query.Take(limit).FirstOrDefaultAsync();
+            var location = await query.FirstOrDefaultAsync();
 
-            return location != null
-                ? new(location)
-                : null;
+            return location;
         }
     }
 }

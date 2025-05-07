@@ -1,23 +1,20 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 using PubQuizBackend.Model;
-using PubQuizBackend.Model.DbModel;
+using PubQuizBackend.Service.Interface;
 using PubQuizBackend.Utils;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace PubQuizBackend.Service.Implementation
 {
-    public class JwtService
+    public class JwtService : IJwtService
     {
         private readonly IConfiguration _config;
-        private readonly PubQuizContext _dbContext;
 
-        public JwtService(IConfiguration config, PubQuizContext dbContext)
+        public JwtService(IConfiguration config)
         {
             _config = config;
-            _dbContext = dbContext;
         }
 
         public string GenerateAccessToken(string userId, string username, string role/*, int port*/)

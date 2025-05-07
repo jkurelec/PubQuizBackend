@@ -13,17 +13,17 @@ public partial class Location
 
     public string? GmapsLink { get; set; }
 
-    public int? PostalCodeId { get; set; }
+    public int PostalCodeId { get; set; }
 
-    public string? Address { get; set; }
+    public string Address { get; set; } = null!;
 
-    public double? Lat { get; set; }
+    public double Lat { get; set; }
 
-    public double? Lon { get; set; }
+    public double Lon { get; set; }
 
     public virtual City City { get; set; } = null!;
 
-    public virtual PostalCode? PostalCode { get; set; }
+    public virtual PostalCode PostalCode { get; set; } = null!;
 
     public virtual ICollection<QuizEdition> QuizEditions { get; set; } = new List<QuizEdition>();
 

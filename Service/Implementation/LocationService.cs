@@ -1,5 +1,5 @@
 ﻿using PubQuizBackend.Model.DbModel;
-using PubQuizBackend.Model.Dto;
+using PubQuizBackend.Model.Dto.LocationDto;
 using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Service.Interface;
 
@@ -14,21 +14,27 @@ namespace PubQuizBackend.Service.Implementation
             _locationRepository = locationRepository;
         }
 
-        public async Task<LocationDetailsDto> Add(string? locationName = null, string? address = null, string? city = null, string? country = null, int limit = 1)
+        public async Task<LocationDetailsDto> Add(string? locationName = null, string? address = null, string? city = null, string? country = null, int limit = 1, int selection = 0)
         {
-            return await _locationRepository.Add(locationName, address, city, country, limit);
+            return new(await _locationRepository.Add(locationName, address, city, country, limit, selection));
         }
 
-        public async Task<LocationDetailsDto?> CheckIfExists(string? locationName = null, string? address = null, string? city = null, string? country = null, int limit = 1)
+        public async Task<LocationDetailsDto?> CheckIfExists(string? locationName = null, string? address = null, string? city = null, string? country = null)
         {
-            return await _locationRepository.CheckIfExists(locationName, address, city, country, limit);
+            var location = await _locationRepository.CheckIfExists(locationName, address, city, country);
+            
+            if (location == null)
+                return null;
+
+            return new(location);
         }
+
         public async Task<bool> Delete(int id)
         {
             return await _locationRepository.Delete(id);
         }
 
-        public async Task<List<LocationDetailsDto>?> FindNew(string locationName, string address, string city, string country, int limit = 1)
+        public async Task<List<LocationDetailsDto>?> FindNew(string? locationName = null, string? address = null, string? city = null, string? country = null, int limit = 1)
         {
             return await _locationRepository.FindNew(locationName, address, city, country, limit);
         }
@@ -48,14 +54,14 @@ namespace PubQuizBackend.Service.Implementation
             return await _locationRepository.GetLocationByName(name);
         }
 
-        public async Task<List<Location>> GetLocationsByCityId(int id)
+        public async Task<List<Location>?> GetLocationsByCityId(int id)
         {
             return await _locationRepository.GetLocationsByCityId(id);
         }
 
-        public async Task<bool> Update(Location Location)
+        public async Task<Location?> Update(LocationUpdateDto location)
         {
-            return await _locationRepository.Update(Location);
+            return await _locationRepository.Update(location);
         }
     }
 }

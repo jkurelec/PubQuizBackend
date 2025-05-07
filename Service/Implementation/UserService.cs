@@ -44,9 +44,9 @@ namespace PubQuizBackend.Service.Implementation
             return await _repository.Delete(id);
         }
 
-        public async Task<User?> Update(int id, UserDto user)
+        public async Task<User?> Update(UserDto user)
         {
-            return await _repository.Update(id, user);
+            return await _repository.Update(user);
         }
     }
 }

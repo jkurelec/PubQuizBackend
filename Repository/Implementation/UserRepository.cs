@@ -93,9 +93,9 @@ namespace PubQuizBackend.Repository.Implementation
             return null;
         }
 
-        public async Task<User?> Update(int id, UserDto updatedUser)
+        public async Task<User?> Update(UserDto updatedUser)
         {
-            var user = await _dbContext.Users.FindAsync(id);
+            var user = await _dbContext.Users.FindAsync(updatedUser.Id);
 
             if(user != null)
             {

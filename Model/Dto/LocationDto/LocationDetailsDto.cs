@@ -1,6 +1,6 @@
 ﻿using PubQuizBackend.Model.DbModel;
 
-namespace PubQuizBackend.Model.Dto
+namespace PubQuizBackend.Model.Dto.LocationDto
 {
     public class LocationDetailsDto
     {
@@ -17,8 +17,8 @@ namespace PubQuizBackend.Model.Dto
             City = location.City.Name;
             Country = location.City.Country.Name;
             CountryCode = location.City.Country.CountryCode;
-            Lat = location.Lat ?? 0;
-            Lon = location.Lon ?? 0;
+            Lat = location.Lat;
+            Lon = location.Lon;
         }
 
         public int? Id { get; set; }

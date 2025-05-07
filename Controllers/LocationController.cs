@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PubQuizBackend.Model.DbModel;
-using PubQuizBackend.Model.Dto;
+using PubQuizBackend.Model.Dto.LocationDto;
 using PubQuizBackend.Service.Interface;
+using System.Threading.Tasks;
 
 namespace PubQuizBackend.Controllers
 {
@@ -11,9 +12,9 @@ namespace PubQuizBackend.Controllers
     {
         private readonly ILocationService _locationService;
 
-        public LocationController(ILocationService _locationService)
+        public LocationController(ILocationService locationService)
         {
-            _locationService = _locationService;
+            _locationService = locationService;
         }
 
         [HttpGet]
@@ -41,8 +42,9 @@ namespace PubQuizBackend.Controllers
         }
 
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        public async Task<LocationDetailsDto> Update(LocationUpdateDto updatedLocation)
         {
+            return new(await _locationService.Update(updatedLocation));
         }
 
         [HttpDelete("{id}")]

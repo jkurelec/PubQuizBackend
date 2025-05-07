@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using PubQuizBackend.Model.DbModel;
 
 namespace PubQuizBackend.Model;
@@ -157,7 +155,6 @@ public partial class PubQuizContext : DbContext
 
             entity.HasOne(d => d.PostalCode).WithMany(p => p.Locations)
                 .HasForeignKey(d => d.PostalCodeId)
-                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("fk_postal_code");
         });
 
@@ -168,7 +165,7 @@ public partial class PubQuizContext : DbContext
             entity.ToTable("organizer");
 
             entity.Property(e => e.Id)
-                .ValueGeneratedNever()
+                .UseIdentityAlwaysColumn()
                 .HasColumnName("id");
             entity.Property(e => e.EditionsHosted)
                 .HasDefaultValue(0)
@@ -479,7 +476,9 @@ public partial class PubQuizContext : DbContext
             entity.Property(e => e.Password)
                 .HasMaxLength(255)
                 .HasColumnName("password");
-            entity.Property(e => e.Rating).HasColumnName("rating");
+            entity.Property(e => e.Rating)
+                .HasDefaultValue(1000)
+                .HasColumnName("rating");
             entity.Property(e => e.Role).HasColumnName("role");
             entity.Property(e => e.Username)
                 .HasMaxLength(255)

@@ -45,7 +45,7 @@ namespace PubQuizBackend.Repository.Implementation
             return await _dbContext.Cities.ToListAsync();
         }
 
-        public async Task<List<City>> GetCitiesByCountryId(int id)
+        public async Task<List<City>?> GetCitiesByCountryId(int id)
         {
             return await _dbContext.Cities.Where(x => x.CountryId == id).ToListAsync();
         }
