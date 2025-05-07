@@ -31,7 +31,7 @@ CREATE TABLE public."user" (
 	lastname varchar(255) NOT NULL,
 	email varchar(255) NOT NULL,
 	"password" varchar(255) NOT NULL,
-	rating int4 NOT NULL,
+	rating int4 DEFAULT 1000 NOT NULL,
 	"role" int4 NOT NULL,
 	CONSTRAINT host_pkey PRIMARY KEY (id),
 	CONSTRAINT user_role_check CHECK ((role = ANY (ARRAY[1, 2, 3])))
