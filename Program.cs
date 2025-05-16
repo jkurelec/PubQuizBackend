@@ -1,19 +1,23 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using PubQuizBackend.Auth.RoleAndAudience;
-using PubQuizBackend.Enums;
 using PubQuizBackend.Model;
+using PubQuizBackend.Other;
 using PubQuizBackend.Repository.Implementation;
 using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Service.Implementation;
 using PubQuizBackend.Service.Interface;
+using PubQuizBackend.Util;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers(
+//options =>
+//{
+//    options.Conventions.Add(new RoleAndAudienceConvention());
+//}
+);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -21,7 +25,6 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<PubQuizContext>(options =>
     options.UseNpgsql(builder.Configuration["ConnectionStrings:DBConnection"]));
 
-builder.Services.AddSingleton<IAuthorizationHandler, MinimumRoleAndAudienceHandler>();
 builder.Services.AddScoped<ILocationRepository, LocationRepository>();
 builder.Services.AddScoped<ICityRepository, CityRepository>();
 builder.Services.AddScoped<ICountryRepository, CountryRepository>();
@@ -29,12 +32,21 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPostalCodeRepository, PostalCodeRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IOrganizerRepository, OrganizerRepository>();
+builder.Services.AddScoped<IQuizCategoryRepository, QuizCategoryRepository>();
+builder.Services.AddScoped<IQuizRepository, QuizRepository>();
+builder.Services.AddScoped<IQuizEditionRepository, QuizEditionRepository>();
+builder.Services.AddScoped<IPrizeRepository, PrizeRepository>();
+builder.Services.AddScoped<IQuizLeagueRepository, QuizLeagueRepository>();
 
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+builder.Services.AddScoped<IQuizCategoryService, QuizCategoryService>();
 builder.Services.AddScoped<ILocationService, LocationService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IOrganizerService, OrganizerService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IQuizService, QuizService>();
+builder.Services.AddScoped<IQuizEditionService, QuizEditionService>();
+builder.Services.AddScoped<IQuizLeagueService, QuizLeagueService>();
 
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
@@ -50,7 +62,7 @@ builder.Services.AddAuthentication("Bearer")
             [
                 builder.Configuration["Jwt:Audience:Admin"],
                 builder.Configuration["Jwt:Audience:Organizer"],
-                builder.Configuration["Jwt:Audience:User"]
+                builder.Configuration["Jwt:Audience:Attendee"]
             ],
 
             IssuerSigningKey = new SymmetricSecurityKey(
@@ -58,25 +70,16 @@ builder.Services.AddAuthentication("Bearer")
         };
     });
 
-//builder.Services.AddAuthorization(options =>
-//{
-//    options.AddPolicy("User", policy =>
-//        policy.Requirements.Add(new MinimumRoleAndAudienceRequirement(
-//            Role.ATTENDEE,
-//            builder.Configuration["Jwt:Audience:User"]!)));
-
-//    options.AddPolicy("Moderator", policy =>
-//        policy.Requirements.Add(new MinimumRoleAndAudienceRequirement(
-//            Role.ORGANIZER,
-//            builder.Configuration["Jwt:Audience:Moderator"]!)));
-
-//    options.AddPolicy("Admin", policy =>
-//        policy.Requirements.Add(new MinimumRoleAndAudienceRequirement(
-//            Role.ADMIN,
-//            builder.Configuration["Jwt:Audience:Admin"]!)));
-//});
-
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var quizCategoryRepo = scope.ServiceProvider.GetRequiredService<IQuizCategoryRepository>();
+    var categories = await quizCategoryRepo.GetAll();
+    QuizCategoryProvider.Initialize(categories);
+}
+
+app.UseGlobalExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {

@@ -13,5 +13,7 @@ public partial class RefreshToken
 
     public DateTime ExpiresAt { get; set; }
 
+    public int App { get; set; }
+
     public virtual User User { get; set; } = null!;
 }

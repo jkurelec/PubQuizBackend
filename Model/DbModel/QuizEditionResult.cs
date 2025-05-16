@@ -13,7 +13,7 @@ public partial class QuizEditionResult
 
     public int Rank { get; set; }
 
-    public int TotalPoints { get; set; }
+    public decimal TotalPoints { get; set; }
 
     public virtual QuizEdition Edition { get; set; } = null!;
 

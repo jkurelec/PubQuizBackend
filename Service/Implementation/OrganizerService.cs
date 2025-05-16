@@ -1,5 +1,4 @@
-﻿using PubQuizBackend.Model.DbModel;
-using PubQuizBackend.Model.Dto.OrganizerDto;
+﻿using PubQuizBackend.Model.Dto.OrganizationDto;
 using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Service.Interface;
 
@@ -16,21 +15,18 @@ namespace PubQuizBackend.Service.Implementation
             _userRepository = userRepository;
         }
 
-        public async Task<OrganizerDto?> Add(string name, int ownerId)
+        public async Task<OrganizationBriefDto> Add(string name, int ownerId)
         {
-            var organizer = await _organizerRepository.Add(name, ownerId);
-
-            if (organizer != null)
-                return new(organizer);
-
-            return null;
+            return new(
+                await _organizerRepository.Add(name, ownerId)
+            );
         }
 
-        public async Task<HostDto?> AddHost(int organizerId, int hostId, HostPermissionsDto permissions)
+        public async Task<HostDto> AddHost(int organizerId, int hostId, int quizId, HostPermissionsDto permissions)
         {
-            var host = await _organizerRepository.AddHost(organizerId, hostId, permissions);
-
-            return await FillHostInfo(host);
+            return await FillHostInfo(
+                await _organizerRepository.AddHost(organizerId, hostId, quizId, permissions)
+                );
         }
 
         public async Task<bool> Delete(int id)
@@ -43,73 +39,62 @@ namespace PubQuizBackend.Service.Implementation
             return await _organizerRepository.DeleteHost(organizerId, hostId);
         }
 
-        public async Task<OrganizerDto?> GetById(int id)
+        public async Task<bool> RemoveHostFromQuiz(int organizerId, int hostId, int quizId)
         {
-            var organizer = await _organizerRepository.GetById(id);
-
-            if (organizer != null)
-                return new(organizer);
-
-            return null;
+            return await _organizerRepository.RemoveHostFromQuiz(organizerId, hostId, quizId);
         }
 
-        public async Task<HostDto?> GetHost(int organizerId, int hostId)
+        public async Task<OrganizationBriefDto> GetById(int id)
         {
-            var host = await _organizerRepository.GetHost(organizerId, hostId);
-
-            return await FillHostInfo(host);
+            return new(await _organizerRepository.GetById(id));
         }
 
-        public async Task<List<HostDto>?> GetHostsFromOrganization(int organizerId)
+        public async Task<IEnumerable<OrganizationBriefDto>> GetAll()
+        {
+            var organizers = await _organizerRepository.GetAll();
+            return organizers.Select(x => new OrganizationBriefDto(x));
+        }
+
+        public async Task<HostDto> GetHost(int organizerId, int hostId, int quizId)
+        {
+            return await FillHostInfo(
+                await _organizerRepository.GetHost(organizerId, hostId, quizId)
+            );
+        }
+
+        public async Task<IEnumerable<HostDto>> GetHostsFromOrganization(int organizerId)
         {
             var hosts = await _organizerRepository.GetHostsFromOrganization(organizerId);
 
-            if (hosts != null)
-            {
-                foreach (var host in hosts)
-                {
-                    await FillHostInfo(host);
-                }
-            }
+            foreach (var host in hosts)
+                await FillHostInfo(host);
 
             return hosts;
         }
 
-        public async Task<OrganizerDto?> Update(OrganizerUpdateDto updatedOrganizer)
+        public async Task<OrganizationBriefDto> Update(OrganizationUpdateDto updatedOrganizer)
         {
-            var organizer = await _organizerRepository.Update(updatedOrganizer);
-
-            if (organizer != null)
-                return new(organizer);
-
-            return null;
+            return new(
+                await _organizerRepository.Update(updatedOrganizer)
+            );
         }
 
-        public async Task<HostDto?> UpdateHost(int organizerId, int hostId, HostPermissionsDto permissions)
+        public async Task<HostDto> UpdateHost(int organizerId, int hostId, int quizId, HostPermissionsDto permissions)
         {
-            var host = await _organizerRepository.UpdateHost(organizerId, hostId, permissions);
-
-            return await FillHostInfo(host);
+            return await FillHostInfo(
+                await _organizerRepository.UpdateHost(organizerId, hostId, quizId, permissions)
+            );
         }
 
-        private async Task<HostDto?> FillHostInfo(HostDto? hostDto)
+        private async Task<HostDto> FillHostInfo(HostDto hostDto)
         {
+            var hostInfo = await _userRepository.GetById(hostDto.UserBrief.Id);
 
-            if (hostDto != null)
-            {
-                var hostInfo = await _userRepository.GetById(hostDto.UserBrief.Id);
+            hostDto.UserBrief.Username = hostInfo.Username;
+            hostDto.UserBrief.Email = hostInfo.Email;
+            hostDto.UserBrief.Rating = hostInfo.Rating;
 
-                if (hostInfo != null)
-                {
-                    hostDto.UserBrief.Username = hostInfo.Username;
-                    hostDto.UserBrief.Email = hostInfo.Email;
-                    hostDto.UserBrief.Rating = hostInfo.Rating;
-
-                    return hostDto;
-                }
-            }
-
-            return null;
+            return hostDto;
         }
     }
 }

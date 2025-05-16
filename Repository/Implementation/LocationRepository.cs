@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model;
 using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.LocationDto;
@@ -30,12 +31,12 @@ namespace PubQuizBackend.Repository.Implementation
 
             var locationDto = await FindNew(locationName, address, city, country, limit).ContinueWith(x => x.Result[selection]);
 
-            PostalCode? postalCode = await _postalCodeRepository.GetPostalCodeByCode(locationDto.PostalCode);
+            var postalCode = await _postalCodeRepository.GetPostalCodeByCode(locationDto.PostalCode);
 
 
             if (postalCode == null)
                 postalCode = await _postalCodeRepository.AddPostalCode(
-                    new ()
+                    new()
                     {
                         Code = locationDto.PostalCode,
                         City = new()
@@ -55,107 +56,106 @@ namespace PubQuizBackend.Repository.Implementation
 
             location = locationDto.ToLocation(postalCode);
 
-
+            location.City = await _dbContext.Cities.Include(x => x.Country).FirstOrDefaultAsync(x => x.Id == location.CityId)
+                ?? throw new NotFoundException("City not found!");
 
             await _dbContext.Locations.AddAsync(location);
             await _dbContext.SaveChangesAsync();
 
-            return location!;
+            return location;
         }
 
         public async Task<bool> Delete(int id)
         {
-            try
-            {
-                var location = await _dbContext.Locations.FindAsync(id);
-                _dbContext.Locations.Remove(location);
-                await _dbContext.SaveChangesAsync();
+            var location = await _dbContext.Locations.FindAsync(id)
+                ?? throw new NotFoundException($"Location with id: {id} not found!");
 
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            _dbContext.Locations.Remove(location);
+            await _dbContext.SaveChangesAsync();
+
+            return true;
         }
 
-        public async Task<List<Location>> GetAllLocations()
+        public async Task<List<Location>> GetAll()
         {
-            return await _dbContext.Locations.ToListAsync();
+            return await _dbContext.Locations.Include(l => l.PostalCode).Include(l => l.City).ThenInclude(c => c.Country).ToListAsync();
         }
 
-        public async Task<Location?> GetLocationById(int id)
+        public async Task<Location> GetById(int id)
         {
-            return await _dbContext.Locations.FindAsync(id);
+            return await _dbContext.Locations.Include(l => l.PostalCode).Include(l => l.City).ThenInclude(c => c.Country).FirstOrDefaultAsync(l => l.Id == id)
+                ?? throw new NotFoundException($"Location with id: {id} not found!");
         }
 
-        public async Task<Location?> GetLocationByName(string name)
+        public async Task<Location> GetByName(string name)
         {
-            return await _dbContext.Locations.Where(x => x.Name == name).FirstOrDefaultAsync();
+            return await _dbContext.Locations.Include(l => l.PostalCode).Include(l => l.City).ThenInclude(c => c.Country).Where(x => x.Name == name).FirstOrDefaultAsync()
+                ?? throw new NotFoundException($"Location with name: {name} not found!");
         }
 
-        public async Task<List<Location>?> GetLocationsByCityId(int id)
+        public async Task<List<Location>> GetByCityId(int id)
         {
-            return await _dbContext.Locations.Where(x => x.CityId == id).ToListAsync();
+            return await _dbContext.Locations.Include(l => l.PostalCode).Include(l => l.City).ThenInclude(c => c.Country).Where(x => x.CityId == id).ToListAsync()
+                ?? throw new NotFoundException($"No locations found for the given city!");
         }
 
-        public async Task<Location?> Update(LocationUpdateDto updatedLocation)
+        public async Task<Location> Update(LocationUpdateDto updatedLocation)
         {
-            var location = await _dbContext.Locations.FindAsync(updatedLocation.Id);
+            var location = await _dbContext.Locations.FindAsync(updatedLocation.Id)
+                ?? throw new NotFoundException($"Location with id: {updatedLocation.Id} not found!");
 
-            if (location != null)
-            {
-                PropertyUpdater.UpdateEntityFromDto(location, updatedLocation);
+            PropertyUpdater.UpdateEntityFromDto(location, updatedLocation);
 
-                _dbContext.Entry(location).State = EntityState.Modified;
-                await _dbContext.SaveChangesAsync();
+            _dbContext.Entry(location).State = EntityState.Modified;
+            await _dbContext.SaveChangesAsync();
 
-                return location;
-            }
-
-            return null;
+            return location;
         }
 
-        public async Task<List<LocationDetailsDto>?> FindNew(string? locationName = null, string? address = null, string? city = null, string? country = null, int limit = 1)
+        public async Task<List<LocationDetailedDto>> FindNew(string? locationName = null, string? address = null, string? city = null, string? country = null, int limit = 1)
         {
             var client = new HttpClient();
+
             client.DefaultRequestHeaders.UserAgent.ParseAdd("PubQuiz/v1.0 (kurelec81@gmail.com)");
 
-            var url = $"https://nominatim.openstreetmap.org/search?amenity={Uri.EscapeDataString(locationName ?? "")}&street={Uri.EscapeDataString(address ?? "")}&city={Uri.EscapeDataString(city ?? "")}&country={Uri.EscapeDataString(country ?? "")}&format=jsonv2&addressdetails=1&limit={limit}";
-            try {
+            var url = $"" +
+                $"https://nominatim.openstreetmap.org/search?" +
+                $"amenity={Uri.EscapeDataString(locationName ?? "")}&" +
+                $"street={Uri.EscapeDataString(address ?? "")}&" +
+                $"city={Uri.EscapeDataString(city ?? "")}&" +
+                $"country={Uri.EscapeDataString(country ?? "")}&" +
+                $"format=jsonv2&addressdetails=1&" +
+                $"limit={limit}";
+
+            try
+            {
                 var response = await client.GetAsync(url);
 
                 if (!response.IsSuccessStatusCode)
-                {
-                    Console.WriteLine($"Error: Status code {(int)response.StatusCode}");
-                    return null!;
-                }
+                    throw new InsufficientDataException();
 
                 var responseBody = await response.Content.ReadAsStringAsync();
 
-                dynamic results = JsonConvert.DeserializeObject(responseBody);
+                dynamic results = JsonConvert.DeserializeObject(responseBody)!;
 
                 if (results.Count == 0)
-                {
-                    Console.WriteLine("No results found.");
-                    return null!;
-                }
+                    throw new InsufficientDataException();
 
-                var list = new List<LocationDetailsDto>();
+                var list = new List<LocationDetailedDto>();
 
-                for(int i = 0; i< results.Count; i++)
+                for (int i = 0; i < results.Count; i++)
                 {
                     JObject osmAddressObj = results[i].address;
 
                     list.Add(
-                        new ()
+                        new()
                         {
-                            Name = osmAddressObj.Value<string>("amenity"),
+                            Name = osmAddressObj.Value<string>("amenity")!,
                             Address = $"{osmAddressObj.Value<string>("road")} {osmAddressObj.Value<string>("house_number")}",
-                            PostalCode = osmAddressObj.Value<string>("postcode"),
-                            City = osmAddressObj.Value<string>("city"),
-                            Country = osmAddressObj.Value<string>("country"),
-                            CountryCode = osmAddressObj.Value<string>("country_code"),
+                            PostalCode = osmAddressObj.Value<string>("postcode")!,
+                            City = osmAddressObj.Value<string>("city") ?? osmAddressObj.Value<string>("village")!,
+                            Country = osmAddressObj.Value<string>("country")!,
+                            CountryCode = osmAddressObj.Value<string>("country_code")!,
                             Lat = double.Parse((string)results[i]["lat"], CultureInfo.InvariantCulture),
                             Lon = double.Parse((string)results[i]["lon"], CultureInfo.InvariantCulture),
                         }
@@ -164,20 +164,14 @@ namespace PubQuizBackend.Repository.Implementation
 
                 return list;
             }
-            catch (HttpRequestException ex)
+            catch (JsonException)
             {
-                Console.WriteLine($"HTTP request failed: {ex.Message}");
+                throw new MyBadException();
             }
-            catch (JsonException ex)
+            catch
             {
-                Console.WriteLine($"Failed to parse JSON: {ex.Message}");
+                throw;
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Unexpected error: {ex.Message}");
-            }
-
-            return null!;
         }
 
         public async Task<Location?> CheckIfExists(string? locationName = null, string? address = null, string? city = null, string? country = null)
@@ -194,7 +188,7 @@ namespace PubQuizBackend.Repository.Implementation
             {
                 var locationNameTokens = locationName.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 foreach (var token in locationNameTokens)
-                    query = query.Where(l => EF.Functions.Like(l.Address.ToLower(), $"%{token}%"));
+                    query = query.Where(l => EF.Functions.Like(l.Name.ToLower(), $"%{token}%"));
             }
 
             if (!string.IsNullOrWhiteSpace(address))
@@ -210,9 +204,7 @@ namespace PubQuizBackend.Repository.Implementation
             if (!string.IsNullOrWhiteSpace(country))
                 query = query.Where(l => EF.Functions.Like(l.PostalCode!.City!.Country.Name.ToLower(), $"%{country.ToLower()}%"));
 
-            var location = await query.FirstOrDefaultAsync();
-
-            return location;
+            return await query.FirstOrDefaultAsync();
         }
     }
 }

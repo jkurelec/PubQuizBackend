@@ -1,13 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using PubQuizBackend.Model;
 using PubQuizBackend.Model.Dto.UserDto;
 using PubQuizBackend.Models.Dto;
-using PubQuizBackend.Service.Implementation;
 using PubQuizBackend.Service.Interface;
 using PubQuizBackend.Utils;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace PubQuizBackend.Controllers
 {
@@ -17,9 +12,9 @@ namespace PubQuizBackend.Controllers
     {
         private readonly IUserService _userService;
         private readonly IRefreshTokenService _refreshTokenService;
-        private readonly JwtService _jwtService;
+        private readonly IJwtService _jwtService;
 
-        public AuthenticationController(IUserService userService, IRefreshTokenService refreshTokenService, JwtService jwtService)
+        public AuthenticationController(IUserService userService, IRefreshTokenService refreshTokenService, IJwtService jwtService)
         {
             _userService = userService;
             _refreshTokenService = refreshTokenService;
@@ -29,33 +24,41 @@ namespace PubQuizBackend.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterUserDto registerUserDto)
         {
+            if (!Request.Headers.TryGetValue("AppName", out var appName) && appName.FirstOrDefault() != "Attendee")
+                return BadRequest("Invalid request");
+
+            var intApp = CustomConverter.GetIntRole(appName.First()!);
+
             var user = await _userService.Add(registerUserDto);
 
             if(user == null)
                 return BadRequest("Username or Email already taken!");
 
-            //var port = HttpContext.Connection.RemotePort;
             return Ok(new
             {
-                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Username, CustomConverter.GetStringRole(user.Role)/*, port*/),
-                RefreshToken = await _refreshTokenService.Create(user.Id, user.Role)
+                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Username, user.Role, intApp),
+                RefreshToken = await _refreshTokenService.Create(user.Id, user.Role, intApp)
             });
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginUserDto loginUserDto)
         {
+
             var user = await _userService.GetByIdentifier(loginUserDto.Identifier);
 
             if (user == null || user.Password != loginUserDto.Password)
                 return BadRequest("Invalid username, email or password.");
 
-            //var port = HttpContext.Connection.RemotePort;
+            if (!Request.Headers.TryGetValue("AppName", out var appName) && appName.FirstOrDefault() != "")
+                return BadRequest("Invalid request");
+
+            var intApp = CustomConverter.GetIntRole(appName.First()!);
 
             return Ok(new
             {
-                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Username, CustomConverter.GetStringRole(user.Role)/*, port*/),
-                RefreshToken = await _refreshTokenService.Create(user.Id, user.Role)
+                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Username, user.Role, intApp),
+                RefreshToken = await _refreshTokenService.Create(user.Id, user.Role, intApp)
             });
         }
 
@@ -64,12 +67,13 @@ namespace PubQuizBackend.Controllers
         {
             var token = await _refreshTokenService.GetByToken(refreshToken.Value);
 
-            //var port = HttpContext.Connection.RemotePort;
+            if (!Request.Headers.TryGetValue("AppName", out var appName) && appName.FirstOrDefault() != "")
+                return BadRequest("Invalid request");
 
             if (token != null)
                 return Ok(new
                 {
-                    AccessToken = _jwtService.GenerateAccessToken(token.User.Id.ToString(), token.User.Username, CustomConverter.GetStringRole(token.User.Role)/*, port*/)
+                    AccessToken = _jwtService.GenerateAccessToken(token.User.Id.ToString(), token.User.Username, token.User.Role, CustomConverter.GetIntRole(appName.First()!))
                 });
 
             return Unauthorized("Nemože zločko");

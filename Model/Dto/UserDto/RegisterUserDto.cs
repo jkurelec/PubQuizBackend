@@ -16,8 +16,7 @@ namespace PubQuizBackend.Model.Dto.UserDto
         public string Password { get; set; } = null!;
 
         [Required]
-        [Range(1, 3, ErrorMessage = "Role mora biti izmedu 1-3")]
-        public int Role { get; set; }
+        public int Role { get; } = 1;
 
         [Required]
         [StringLength(15, ErrorMessage = "Firstname mora biti izmedu 3-15 znakova", MinimumLength = 3)]

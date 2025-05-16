@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using PubQuizBackend.Enums;
+using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model.Dto.UserDto;
-using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Service.Interface;
+using PubQuizBackend.Util.Extension;
 
 namespace PubQuizBackend.Controllers
 {
@@ -16,32 +18,47 @@ namespace PubQuizBackend.Controllers
             _service = userService;
         }
 
-        [HttpGet]
-        public async Task<IEnumerable<string>> Get()
+        [HttpGet()]
+        public async Task<IActionResult> GetAll()
         {
-            return ["", ""];
+            var users = await _service.GetAll();
+
+            return Ok(users.Select(x => new UserBriefDto(x)));
         }
 
         [HttpGet("{id}")]
-        public async Task<UserBriefDto?> Get(int id) =>
-            new(await _service.GetById(id));
+        public async Task<IActionResult> Get(int id) =>
+            Ok(
+                new UserBriefDto(await _service.GetById(id))
+            );
 
         [HttpPost]
-        public async Task<UserDto?> Add(RegisterUserDto userDto)
+        public async Task<IActionResult> Add(RegisterUserDto userDto)
         {
-            return new(await _service.Add(userDto));
+            var user = await _service.Add(userDto);
+
+            return CreatedAtAction(
+                nameof(Get),
+                new { id = user.Id },
+                user
+            );
         }
 
-        [HttpPut("{id}")]
-        public async Task<UserDto?> Update(UserDto userDto)
+        [HttpPut]
+        public async Task<IActionResult> Update(UserDto userDto)
         {
-            return new(await _service.Update(userDto));
+            return (User.GetUserId() == userDto.Id || User.GetUserRole() == Role.ADMIN)
+                ? Ok(await _service.Update(userDto))
+                : throw new UnauthorizedException();
+
         }
 
         [HttpDelete("{id}")]
-        public async Task<bool> Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            return await _service.Remove(id);
+            await _service.Remove(id);
+
+            return Ok();
         }
     }
 }

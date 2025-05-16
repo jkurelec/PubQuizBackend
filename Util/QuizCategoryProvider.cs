@@ -1,17 +1,19 @@
-﻿using PubQuizBackend.Model.Dto.QuizCategoryDto;
+﻿using PubQuizBackend.Exceptions;
+using PubQuizBackend.Model.Dto.QuizCategoryDto;
 
 namespace PubQuizBackend.Util
 {
     public static class QuizCategoryProvider
     {
-        private static List<QuizCategoryDto> _categories = new();
+        private static List<QCategoryDto> _categories = new();
 
-        private static Dictionary<int, QuizCategoryDto> _byId;
-        private static Dictionary<string, QuizCategoryDto> _byName;
-        private static ILookup<int?, QuizCategoryDto> _bySuperCategoryId;
+        private static Dictionary<int, QCategoryDto> _byId = new();
+        private static Dictionary<string, QCategoryDto> _byName = new();
+        private static ILookup<int?, QCategoryDto> _bySuperCategoryId = Enumerable.Empty<QCategoryDto>().ToLookup(c => c.SuperCategoryId);
 
-        static QuizCategoryProvider()
+        public static void Initialize(List<QCategoryDto> categories)
         {
+            _categories = categories;
             RefreshLookups();
         }
 
@@ -22,18 +24,26 @@ namespace PubQuizBackend.Util
             _bySuperCategoryId = _categories.ToLookup(c => c.SuperCategoryId);
         }
 
-        public static QuizCategoryDto? GetById(int id) => _byId.TryGetValue(id, out var category) ? category : null;
+        public static QCategoryDto GetById(int id) =>
+            _byId.TryGetValue(id, out var category)
+                ? category
+                : throw new NotFoundException("Category not found!");
 
-        public static QuizCategoryDto? GetByName(string name) => _byName.TryGetValue(name, out var category) ? category : null;
+        public static IEnumerable<QCategoryDto> GetBySimilarName(string name)
+        {
+            return _byName.Values
+                .Where(c => c.Name.Contains(name, StringComparison.OrdinalIgnoreCase));
+        }
 
-        public static IEnumerable<QuizCategoryDto> GetBySuperCategoryId(int? superCategoryId) => _bySuperCategoryId[superCategoryId];
+        public static IEnumerable<QCategoryDto> GetBySuperCategoryId(int? superCategoryId) => _bySuperCategoryId[superCategoryId];
 
-        public static void AddCategory(QuizCategoryDto newCategory)
+        public static void AddCategory(QCategoryDto newCategory)
         {
             _categories.Add(newCategory);
             RefreshLookups();
         }
 
-        public static IEnumerable<QuizCategoryDto> GetAll() => _categories;
+        public static IEnumerable<QCategoryDto> GetAll() => _categories;
     }
+
 }

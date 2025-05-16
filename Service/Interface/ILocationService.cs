@@ -5,14 +5,14 @@ namespace PubQuizBackend.Service.Interface
 {
     public interface ILocationService
     {
-        public Task<List<Location>> GetAllLocations();
-        public Task<List<Location>?> GetLocationsByCityId(int id);
-        public Task<Location?> GetLocationById(int id);
-        public Task<Location?> GetLocationByName(string name);
-        public Task<LocationDetailsDto> Add(string? locationName = null, string? address = null, string? city = null, string? country = null, int limit = 1, int selection = 0);
-        public Task<Location?> Update(LocationUpdateDto updatedLocation);
+        public Task<List<LocationDetailedDto>> GetAll();
+        public Task<List<LocationDetailedDto>> GetByCityId(int id);
+        public Task<LocationDetailedDto> GetById(int id);
+        public Task<LocationDetailedDto> GetByName(string name);
+        public Task<LocationDetailedDto> Add(string? locationName = null, string? address = null, string? city = null, string? country = null, int limit = 1, int selection = 0);
+        public Task<Location> Update(LocationUpdateDto updatedLocation);
         public Task<bool> Delete(int id);
-        public Task<List<LocationDetailsDto>?> FindNew(string locationName, string address, string city, string country, int limit = 1);
-        public Task<LocationDetailsDto?> CheckIfExists(string? locationName = null, string? address = null, string? city = null, string? country = null);
+        public Task<List<LocationDetailedDto>> FindNew(string? locationName = null, string? address = null, string? city = null, string? country = null, int limit = 1);
+        public Task<LocationDetailedDto> CheckIfExists(string? locationName = null, string? address = null, string? city = null, string? country = null);
     }
 }

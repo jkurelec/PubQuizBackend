@@ -11,7 +11,7 @@ public partial class QuizAnswer
 
     public string? Answer { get; set; }
 
-    public int Points { get; set; }
+    public decimal Points { get; set; }
 
     public int QuestionId { get; set; }
 

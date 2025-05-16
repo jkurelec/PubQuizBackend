@@ -1,6 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PubQuizBackend.Model.Dto.OrganizerDto;
+using PubQuizBackend.Auth.RoleAndAudienceFilter;
+using PubQuizBackend.Enums;
+using PubQuizBackend.Exceptions;
+using PubQuizBackend.Model.Dto.OrganizationDto;
 using PubQuizBackend.Service.Interface;
+using PubQuizBackend.Util.Extension;
 
 namespace PubQuizBackend.Controllers
 {
@@ -16,57 +20,113 @@ namespace PubQuizBackend.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<OrganizerDto?> Get(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            return await _service.GetById(id);
+            return Ok(await _service.GetById(id));
         }
 
-        [HttpGet("{organizerId}/host/{hostId}")]
-        public async Task<HostDto?> GetHost(int organizerId, int hostId)
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
         {
-            return await _service.GetHost(organizerId, hostId);
+            return Ok(await _service.GetAll());
+        }
+
+        [HttpGet("{organizerId}/host/{hostId}/quiz/{quizId}")]
+        public async Task<IActionResult> GetHost(int organizerId, int hostId, int quizId)
+        {
+            return Ok(await _service.GetHost(organizerId, hostId, quizId));
         }
 
         [HttpGet("hosts/{organizerId}")]
-        public async Task<List<HostDto>?> GetHostsFromOrganization(int organizerId)
+        public async Task<IActionResult> GetHostsFromOrganization(int organizerId)
         {
-            return await _service.GetHostsFromOrganization(organizerId);
+            return Ok(await _service.GetHostsFromOrganization(organizerId));
         }
 
-        [HttpPost("add")]
-        public async Task<OrganizerDto?> Add(NewOrganizerDto newOraganizer)
+        [RoleAndAudience(Role.ORGANIZER, Audience.ORGANIZER)]
+        [HttpPost]
+        public async Task<IActionResult> Add(NewOrganizationDto newOraganizer)
         {
-            return await _service.Add(newOraganizer.Name, newOraganizer.OwnerId);
+            if (User.GetUserId() != newOraganizer.OwnerId)
+                throw new UnauthorizedException();
+
+            var organizer = await _service.Add(newOraganizer.Name, newOraganizer.OwnerId);
+
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = organizer.Id },
+                organizer
+            );
         }
 
-        [HttpPost("host/add")]
-        public async Task<HostDto?> AddHost(NewHostDto newHost)
+        [RoleAndAudience(Role.ORGANIZER, Audience.ORGANIZER)]
+        [HttpPost("host")]
+        public async Task<IActionResult> AddHost(NewHostDto newHost)
         {
-            return await _service.AddHost(newHost.OrganizerId, newHost.HostId, newHost.HostPermissions);
+            await OwnerCheck(newHost.OrganizerId);
+
+            var host = await _service.AddHost(newHost.OrganizerId, newHost.HostId, newHost.QuizId, newHost.HostPermissions);
+
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = host.UserBrief.Id },
+                host
+            );
         }
 
+        [RoleAndAudience(Role.ORGANIZER, Audience.ORGANIZER)]
         [HttpPut]
-        public async Task<OrganizerDto?> Update(OrganizerUpdateDto updatedOrganizer)
+        public async Task<IActionResult> Update(OrganizationUpdateDto updatedOrganizer)
         {
-            return await _service.Update(updatedOrganizer);
+            await OwnerCheck(updatedOrganizer.Id);
+
+            return Ok(await _service.Update(updatedOrganizer));
         }
 
+        [RoleAndAudience(Role.ORGANIZER, Audience.ORGANIZER)]
         [HttpPut("host")]
-        public async Task<HostDto?> UpdateHost(NewHostDto updatedHost)
+        public async Task<IActionResult> UpdateHost(NewHostDto updatedHost)
         {
-            return await _service.UpdateHost(updatedHost.OrganizerId, updatedHost.HostId, updatedHost.HostPermissions);
+            await OwnerCheck(updatedHost.OrganizerId);
+
+            return Ok(
+                await _service.UpdateHost(updatedHost.OrganizerId, updatedHost.HostId, updatedHost.QuizId, updatedHost.HostPermissions)
+            );
         }
 
+        [RoleAndAudience(Role.ORGANIZER, Audience.ORGANIZER)]
         [HttpDelete("{id}")]
-        public async Task<bool> Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            return await _service.Delete(id);
+            await OwnerCheck(id);
+
+            return Ok(await _service.Delete(id));
         }
 
+        [RoleAndAudience(Role.ORGANIZER, Audience.ORGANIZER)]
         [HttpDelete("{organizerId}/host/{hostId}")]
-        public async Task<bool> DeleteHost(int organizerId, int hostId)
+        public async Task<IActionResult> DeleteHost(int organizerId, int hostId)
         {
-            return await _service.DeleteHost(organizerId, hostId);
+            await OwnerCheck(organizerId);
+
+            return Ok(await _service.DeleteHost(organizerId, hostId));
+        }
+
+        [RoleAndAudience(Role.ORGANIZER, Audience.ORGANIZER)]
+        [HttpDelete("{organizerId}/host/{hostId}/quiz/{quizId}")]
+        public async Task<IActionResult> RemoveHostFromQuiz(int organizerId, int hostId, int quizId)
+        {
+            await OwnerCheck(organizerId);
+
+            return Ok(await _service.RemoveHostFromQuiz(organizerId, hostId, quizId));
+        }
+
+        private async Task OwnerCheck(int organizerId)
+        {
+            var host = await _service.GetById(organizerId);
+
+            if (User.GetUserId() != host.Owner.Id)
+                throw new UnauthorizedException();
         }
     }
 }

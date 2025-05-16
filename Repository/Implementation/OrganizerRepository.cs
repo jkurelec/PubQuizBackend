@@ -1,9 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
+using PubQuizBackend.Enums;
+using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model;
 using PubQuizBackend.Model.DbModel;
-using PubQuizBackend.Model.Dto.LocationDto;
-using PubQuizBackend.Model.Dto.OrganizerDto;
+using PubQuizBackend.Model.Dto.OrganizationDto;
 using PubQuizBackend.Model.Dto.UserDto;
 using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Util;
@@ -19,259 +19,219 @@ namespace PubQuizBackend.Repository.Implementation
             _dbContext = dbContext;
         }
 
-        public async Task<Organizer?> Add(string name, int ownerId)
+        public async Task<Organization> Add(string name, int ownerId)
         {
-            using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            if (await _dbContext.Organizations.AnyAsync(x => x.Name == name))
+                throw new ConflictException("Name already in use!");
 
-            try
+            if (await _dbContext.Organizations.AnyAsync(x => x.OwnerId == ownerId))
+                throw new YourBadException();
+
+            var organizer = new Organization
             {
-                var organizer = new Organizer {
-                    Name = name,
-                    OwnerId = ownerId
-                };
-
-                await _dbContext.Organizers.AddAsync(organizer);
-                await _dbContext.SaveChangesAsync();
-
-                var permissions = new HostPermissionsDto
-                {
-                    CreateEdition = true,
-                    EditEdition = true,
-                    DeleteEdition = true,
-                    CreateQuiz = true,
-                    EditQuiz = true,
-                    DeleteQuiz = true
-                };
-
-                await AddHost(organizer.Id, ownerId, permissions);
-
-                await transaction.CommitAsync();
-
-                return await GetById(organizer.Id);
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-
-                return null;
-            }
-        }
-
-        public async Task<HostDto?> AddHost(int organizerId, int userId, HostPermissionsDto permissions)
-        {
-            var hostOrganizer = new HostOrganizer
-            {
-                HostId = userId,
-                OrganizerId = organizerId,
-                CreateEdition = permissions.CreateEdition,
-                EditEdition = permissions.EditEdition,
-                DeleteEdition = permissions.DeleteEdition,
-                CreateQuiz = permissions.CreateQuiz,
-                EditQuiz = permissions.EditQuiz,
-                DeleteQuiz = permissions.DeleteQuiz
+                Name = name,
+                OwnerId = ownerId
             };
 
-            try
-            {
-                await _dbContext.HostOrganizers.AddAsync(hostOrganizer);
-                await _dbContext.SaveChangesAsync();
+            await _dbContext.Organizations.AddAsync(organizer);
+            await _dbContext.SaveChangesAsync();
 
-                return new()
-                {
-                    IsOwner = await IsOwner(organizerId, userId),
-                    //UserBrief nadopnit kasnije
-                    UserBrief = new()
-                    {
-                        Id = userId,
-                    },
-                    HostPermissions = permissions
-                };
-            }
-            catch
+            return await _dbContext.Organizations.Include(x => x.Owner).FirstOrDefaultAsync(x => x.Name == name)
+                ?? throw new DivineException();
+        }
+
+        public async Task<HostDto> AddHost(int organizerId, int hostId, int quizId, HostPermissionsDto permissions)
+        {
+            var targetUser = await _dbContext.Users.FindAsync(hostId)
+                ?? throw new NotFoundException("User not found!");
+
+            if (!Enum.TryParse<Role>(targetUser.Role.ToString(), ignoreCase: true, out var role) || role < Role.ORGANIZER)
+                throw new ConflictException("User not authorized to be in an organizer!");
+
+            if (await _dbContext.HostOrganizationQuizzes.AnyAsync(x => x.OrganizationId == organizerId && x.HostId == hostId && x.QuizId == quizId))
+                throw new NotFoundException("Host already in organizer!");
+
+            var host = new HostOrganizationQuiz
             {
-                return null;
-            }
+                HostId = hostId,
+                OrganizationId = organizerId,
+                QuizId = quizId,
+                CreateEdition = permissions.CreateEdition,
+                EditEdition = permissions.EditEdition,
+                DeleteEdition = permissions.DeleteEdition
+            };
+
+            await _dbContext.HostOrganizationQuizzes.AddAsync(host);
+            await _dbContext.SaveChangesAsync();
+
+            return new()
+            {
+                IsOwner = await IsOwner(organizerId, hostId),
+                UserBrief = new()
+                {
+                    Id = hostId,
+                },
+                HostPermissions = permissions
+            };
         }
 
         public async Task<bool> Delete(int id)
         {
-            try
-            {
-                var organizer = await _dbContext.Organizers.FindAsync(id);
+            var organizer = await _dbContext.Organizations.FindAsync(id)
+                ?? throw new TotalnoSiToPromislioException();
 
-                if (organizer != null)
-                {
-                    _dbContext.Organizers.Remove(organizer);
-                    await _dbContext.SaveChangesAsync();
+            _dbContext.Organizations.Remove(organizer);
+            await _dbContext.SaveChangesAsync();
 
-                    return true;
-                }
-
-                return false;
-            }
-            catch
-            {
-                return false;
-            }
+            return true;
         }
 
         public async Task<bool> DeleteHost(int organizerId, int hostId)
         {
-            try
-            {
-                var host = await _dbContext.HostOrganizers.Where(x => x.OrganizerId == organizerId && x.HostId == hostId).FirstOrDefaultAsync();
+            var host = await _dbContext.HostOrganizationQuizzes
+                .Where(x => x.OrganizationId == organizerId && x.HostId == hostId).ToListAsync()
+                    ?? throw new ConflictException("Who are you deleting?!?");
 
-                if (host != null)
-                {
-                    _dbContext.HostOrganizers.Remove(host);
-                    await _dbContext.SaveChangesAsync();
+            _ = host.Select(_dbContext.HostOrganizationQuizzes.Remove);
+            await _dbContext.SaveChangesAsync();
 
-                    return true;
-                }
-
-                return false;
-            }
-            catch
-            {
-                return false;
-            }
+            return true;
         }
 
-        public async Task<Organizer?> GetById(int id)
+        public async Task<bool> RemoveHostFromQuiz(int organizerId, int hostId, int quizId)
         {
-            return await _dbContext.Organizers
+            var host = await _dbContext.HostOrganizationQuizzes
+                .Where(x => x.OrganizationId == organizerId && x.HostId == hostId && x.QuizId == quizId).FirstOrDefaultAsync()
+                    ?? throw new ConflictException("Who are you deleting?!?");
+
+            _dbContext.HostOrganizationQuizzes.Remove(host);
+            await _dbContext.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<Organization> GetById(int id)
+        {
+            return await _dbContext.Organizations
                 .Include(o => o.Owner)
-                .Include(o => o.HostOrganizers)
-                    .ThenInclude(h =>  h.Host)
+                .Include(o => o.HostOrganizationQuizzes)
+                    .ThenInclude(h => h.Host)
                 .Include(o => o.Quizzes)
-                .FirstOrDefaultAsync(x => x.Id == id);
+                .FirstOrDefaultAsync(x => x.Id == id)
+                    ?? throw new NotFoundException("Organizer not found!");
         }
 
-        public async Task<HostDto?> GetHost(int organizerId, int hostId)
+        public async Task<IEnumerable<Organization>> GetAll()
         {
-            var host = await _dbContext.HostOrganizers.Where(x => x.OrganizerId == organizerId && x.HostId == hostId).FirstOrDefaultAsync();
-
-            if (host != null)
-            {
-                return new()
-                {
-                    IsOwner = await IsOwner(organizerId, hostId),
-                    //UserBrief nadopnit kasnije
-                    UserBrief = new()
-                    {
-                        Id = host.HostId,
-                    },
-                    HostPermissions = new()
-                    {
-                        CreateEdition = host.CreateEdition,
-                        EditEdition = host.EditEdition,
-                        DeleteEdition = host.DeleteEdition,
-                        CreateQuiz = host.CreateQuiz,
-                        EditQuiz = host.EditQuiz,
-                        DeleteQuiz = host.DeleteQuiz
-                    }
-                };
-            }
-
-            return null;
+            return await _dbContext.Organizations
+                .Include(o => o.Owner)
+                .Include(o => o.HostOrganizationQuizzes)
+                    .ThenInclude(h => h.Host)
+                .Include(o => o.Quizzes)
+                .ToListAsync()
+                    ?? throw new NotFoundException("Organizer not found!");
         }
 
-        public async Task<List<HostDto>?> GetHostsFromOrganization(int organizerId)
+        public async Task<HostDto> GetHost(int organizerId, int hostId, int quizId)
         {
-            var hostOrganizers = await _dbContext.HostOrganizers.Where(x => x.OrganizerId == organizerId).ToListAsync();
+            var host = await _dbContext.HostOrganizationQuizzes
+                .Where(x => x.OrganizationId == organizerId && x.HostId == hostId && x.QuizId == quizId).FirstOrDefaultAsync()
+                    ?? throw new NotFoundException("Host not found!");
 
-            if (hostOrganizers != null)
+            return new()
             {
-                var hosts = new List<HostDto>();
-
-                foreach (var hostOrganizer in hostOrganizers)
+                IsOwner = await IsOwner(organizerId, hostId),
+                UserBrief = new()
                 {
-                    var isOwner = await IsOwner(organizerId, hostOrganizer.HostId);
-
-                    var host = new HostDto
-                    {
-                        IsOwner = isOwner,
-                        UserBrief = new UserBriefDto
-                        {
-                            Id = hostOrganizer.HostId,
-                        },
-                        HostPermissions = new HostPermissionsDto
-                        {
-                            CreateEdition = hostOrganizer.CreateEdition,
-                            EditEdition = hostOrganizer.EditEdition,
-                            DeleteEdition = hostOrganizer.DeleteEdition,
-                            CreateQuiz = hostOrganizer.CreateQuiz,
-                            EditQuiz = hostOrganizer.EditQuiz,
-                            DeleteQuiz = hostOrganizer.DeleteQuiz
-                        }
-                    };
-
-                    hosts.Add(host);
+                    Id = host.HostId,
+                },
+                HostPermissions = new()
+                {
+                    CreateEdition = host.CreateEdition,
+                    EditEdition = host.EditEdition,
+                    DeleteEdition = host.DeleteEdition
                 }
-
-                return hosts;
-            }
-
-            return null;
+            };
         }
 
-        public async Task<Organizer?> Update(OrganizerUpdateDto updatedOrganizer)
+        public async Task<IEnumerable<HostDto>> GetHostsFromOrganization(int organizerId)
         {
-            var organizer = await _dbContext.Organizers.FindAsync(updatedOrganizer.Id);
+            var hostOrganizers = await _dbContext.HostOrganizationQuizzes
+                .Where(x => x.OrganizationId == organizerId)
+                .Distinct()
+                .ToListAsync()
+                    // jel moze biti org bez hostova? => ako su odustali pa je "arhiva" ali zas nebi ostavili nekoga???
+                    ?? throw new TotalnoSiToPromislioException();
 
-            if (organizer != null)
+            var hosts = new List<HostDto>();
+
+            foreach (var hostOrganizer in hostOrganizers)
             {
-                PropertyUpdater.UpdateEntityFromDto(organizer, updatedOrganizer);
+                var isOwner = await IsOwner(organizerId, hostOrganizer.HostId);
 
-                _dbContext.Entry(organizer).State = EntityState.Modified;
-                await _dbContext.SaveChangesAsync();
-
-                return await GetById(organizer.Id);
-            }
-
-            return null;
-        }
-
-        public async Task<HostDto?> UpdateHost(int organizerId, int hostId, HostPermissionsDto permissions)
-        {
-            var host = await _dbContext.HostOrganizers.Where(x => x.OrganizerId == organizerId && x.HostId == hostId).FirstOrDefaultAsync();
-
-            if (host != null)
-            {
-                host.CreateEdition = permissions.CreateEdition;
-                host.EditEdition = permissions.EditEdition;
-                host.DeleteEdition = permissions.DeleteEdition;
-                host.CreateQuiz = permissions.CreateQuiz;
-                host.EditQuiz = permissions.EditQuiz;
-                host.DeleteQuiz = permissions.DeleteQuiz;
-
-                _dbContext.Entry(host).State = EntityState.Modified;
-                await _dbContext.SaveChangesAsync();
-
-                return new()
+                var host = new HostDto
                 {
-                    IsOwner = await IsOwner(organizerId, hostId),
-                    //UserBrief nadopnit kasnije
-                    UserBrief = new()
+                    IsOwner = isOwner,
+                    UserBrief = new UserBriefDto
                     {
-                        Id = host.HostId,
+                        Id = hostOrganizer.HostId,
                     },
-                    HostPermissions = new()
+                    HostPermissions = new HostPermissionsDto
                     {
-                        CreateEdition = host.CreateEdition,
-                        EditEdition = host.EditEdition,
-                        DeleteEdition = host.DeleteEdition,
-                        CreateQuiz = host.CreateQuiz,
-                        EditQuiz = host.EditQuiz,
-                        DeleteQuiz = host.DeleteQuiz
+                        CreateEdition = hostOrganizer.CreateEdition,
+                        EditEdition = hostOrganizer.EditEdition,
+                        DeleteEdition = hostOrganizer.DeleteEdition
                     }
                 };
+
+                hosts.Add(host);
             }
 
-            return null;
+            return hosts;
         }
 
-        private async Task<bool> IsOwner(int organizerId, int hostId) =>
-            await _dbContext.Organizers.AnyAsync(x => x.Id == organizerId && x.OwnerId == hostId);
+        public async Task<Organization> Update(OrganizationUpdateDto updatedOrganizer)
+        {
+            var organizer = await _dbContext.Organizations.FindAsync(updatedOrganizer.Id)
+                ?? throw new NotFoundException("Organizer not found!");
+
+            PropertyUpdater.UpdateEntityFromDto(organizer, updatedOrganizer);
+
+            _dbContext.Entry(organizer).State = EntityState.Modified;
+            await _dbContext.SaveChangesAsync();
+
+            return await GetById(organizer.Id);
+        }
+
+        public async Task<HostDto> UpdateHost(int organizerId, int hostId, int quizId, HostPermissionsDto permissions)
+        {
+            var host = await _dbContext.HostOrganizationQuizzes.Where(x => x.OrganizationId == organizerId && x.HostId == hostId && x.QuizId == quizId).FirstOrDefaultAsync()
+                ?? throw new NotFoundException("Host not found!");
+
+            host.CreateEdition = permissions.CreateEdition;
+            host.EditEdition = permissions.EditEdition;
+            host.DeleteEdition = permissions.DeleteEdition;
+
+            _dbContext.Entry(host).State = EntityState.Modified;
+            await _dbContext.SaveChangesAsync();
+
+            return new()
+            {
+                IsOwner = await IsOwner(organizerId, hostId),
+                UserBrief = new()
+                {
+                    Id = host.HostId,
+                },
+                HostPermissions = new()
+                {
+                    CreateEdition = host.CreateEdition,
+                    EditEdition = host.EditEdition,
+                    DeleteEdition = host.DeleteEdition
+                }
+            };
+        }
+
+        private async Task<bool> IsOwner(int organizerId, int userId) =>
+            await _dbContext.Organizations.AnyAsync(x => x.Id == organizerId && x.OwnerId == userId);
     }
 }

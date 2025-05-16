@@ -1,4 +1,7 @@
-﻿namespace PubQuizBackend.Model.DbModel;
+﻿using System;
+using System.Collections.Generic;
+
+namespace PubQuizBackend.Model.DbModel;
 
 public partial class QuizCategory
 {
@@ -12,9 +15,9 @@ public partial class QuizCategory
 
     public virtual ICollection<QuizEdition> QuizEditions { get; set; } = new List<QuizEdition>();
 
-    public virtual ICollection<Quiz> Quizzes { get; set; } = new List<Quiz>();
-
     public virtual QuizCategory? SuperCategory { get; set; }
 
     public virtual ICollection<Team> Teams { get; set; } = new List<Team>();
+
+    public virtual ICollection<Quiz> Quizzes { get; set; } = new List<Quiz>();
 }

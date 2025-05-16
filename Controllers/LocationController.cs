@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.LocationDto;
 using PubQuizBackend.Service.Interface;
-using System.Threading.Tasks;
 
 namespace PubQuizBackend.Controllers
 {
@@ -18,39 +16,55 @@ namespace PubQuizBackend.Controllers
         }
 
         [HttpGet]
-        public async Task<LocationDetailsDto?> Get(string? locationName = null, string? address = null, string? city = null, string? country = null)
+        public async Task<IActionResult> Get(string? locationName = null, string? address = null, string? city = null, string? country = null)
         {
-            return await _locationService.CheckIfExists(locationName, address, city, country);
+            return Ok(
+                await _locationService.CheckIfExists(locationName, address, city, country)
+            );
         }
 
         [HttpGet("new")]
-        public async Task<List<LocationDetailsDto>?> FindNew(string? locationName = null, string? address = null, string? city = null, string? country = null, int limit = 1)
+        public async Task<IActionResult> FindNew(string? locationName = null, string? address = null, string? city = null, string? country = null, int limit = 1)
         {
-            return await _locationService.FindNew(locationName, address, city, country, limit);
+            return Ok(
+                await _locationService.FindNew(locationName, address, city, country, limit)
+            );
         }
 
         [HttpGet("{id}")]
-        public async Task<Location?> Get(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            return await _locationService.GetLocationById(id);
+            return Ok(
+                await _locationService.GetById(id)
+            );
         }
 
         [HttpPost]
-        public async Task<LocationDetailsDto> Post(LocationDetailsDto location)
+        public async Task<IActionResult> Add(LocationDetailedDto location)
         {
-            return await _locationService.Add(location.Name, location.Address, location.City, location.Country, 1);
+            var newlocation = await _locationService.Add(location.Name, location.Address, location.City, location.Country);
+
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = newlocation.Id },
+                newlocation
+            );
         }
 
         [HttpPut("{id}")]
-        public async Task<LocationDetailsDto> Update(LocationUpdateDto updatedLocation)
+        public async Task<IActionResult> Update(LocationUpdateDto updatedLocation)
         {
-            return new(await _locationService.Update(updatedLocation));
+            return Ok(
+                await _locationService.Update(updatedLocation)
+            );
         }
 
         [HttpDelete("{id}")]
-        public async Task<bool> Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            return await _locationService.Delete(id);
+            var deleted = await _locationService.Delete(id);
+
+            return Ok();
         }
     }
 }

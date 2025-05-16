@@ -1,0 +1,62 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using PubQuizBackend.Model.Dto.QuizEditionDto;
+using PubQuizBackend.Service.Interface;
+using PubQuizBackend.Util.Extension;
+using System.Threading.Tasks;
+
+namespace PubQuizBackend.Controllers
+{
+    [Route("edition")]
+    [ApiController]
+    public class QuizEditionController : ControllerBase
+    {
+        private readonly IQuizEditionService _service;
+
+        public QuizEditionController(IQuizEditionService service)
+        {
+            _service = service;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            return Ok(await _service.GetAll());
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            return Ok(await _service.GetById(id));
+        }
+
+        [HttpGet("quiz/{id}")]
+        public async Task<IActionResult> GetByQuizId(int id)
+        {
+            return Ok(await _service.GetByQuizId(id));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Add(NewQuizEditionDto editionDto)
+        {
+            var newEdition = await _service.Add(editionDto, User.GetUserId());
+
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = newEdition.Id },
+                newEdition
+            );
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] string value)
+        {
+            throw new NotImplementedException();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            return Ok(await _service.Delete(id, User.GetUserId()));
+        }
+    }
+}

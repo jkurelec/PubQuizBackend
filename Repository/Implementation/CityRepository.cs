@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model;
 using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Repository.Interface;
@@ -18,14 +19,11 @@ namespace PubQuizBackend.Repository.Implementation
 
         public async Task<City> AddCity(City city)
         {
-            Country country;
-
-            if (await _countryRepository.GetCountryByName(city.Country.Name) == null)
-                country = await _countryRepository.AddCountry(city.Country);
-            else
-                country = await _countryRepository.GetCountryByName(city.Country.Name);
+            var country = await _countryRepository.GetCountryByName(city.Country.Name)
+                ?? await _countryRepository.AddCountry(city.Country);
 
             city.CountryId = country.Id;
+
             await _dbContext.Cities.AddAsync(city);
             await _dbContext.SaveChangesAsync();
 
@@ -45,39 +43,33 @@ namespace PubQuizBackend.Repository.Implementation
             return await _dbContext.Cities.ToListAsync();
         }
 
-        public async Task<List<City>?> GetCitiesByCountryId(int id)
+        public async Task<List<City>> GetCitiesByCountryId(int id)
         {
-            return await _dbContext.Cities.Where(x => x.CountryId == id).ToListAsync();
+            var list = await _dbContext.Cities.Where(x => x.CountryId == id).ToListAsync();
+
+            return list.Count != 0
+                ? list
+                : throw new NotFoundException("No cities found for the given country!");
         }
 
-        public async Task<City?> GetCityById(int id)
+        public async Task<City> GetCityById(int id)
         {
-            return await _dbContext.Cities.FindAsync(id);
+            return await _dbContext.Cities.FindAsync(id)
+                ?? throw new NotFoundException($"City with id: {id} not found!");
         }
 
         public async Task<City?> GetCityByName(string name)
         {
-            return await _dbContext.Cities
-                .Where(x => x.Name == name)
-                .FirstOrDefaultAsync();
+            return await _dbContext.Cities.Where(x => x.Name == name).Include(x => x.Country).FirstOrDefaultAsync();
         }
 
         public async Task<bool> UpdateCity(City city)
         {
             _dbContext.Entry(city).State = EntityState.Modified;
 
-            try
-            {
-                await _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync();
 
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
-
-            return false;
+            return true;
         }
     }
 }

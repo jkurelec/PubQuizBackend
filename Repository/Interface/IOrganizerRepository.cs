@@ -1,18 +1,20 @@
 ﻿using PubQuizBackend.Model.DbModel;
-using PubQuizBackend.Model.Dto.OrganizerDto;
+using PubQuizBackend.Model.Dto.OrganizationDto;
 
 namespace PubQuizBackend.Repository.Interface
 {
     public interface IOrganizerRepository
     {
-        public Task<Organizer?> Add(string name, int ownerId);
-        public Task<HostDto?> AddHost(int organizerId, int hostId, HostPermissionsDto permissions);
-        public Task<Organizer?> Update(OrganizerUpdateDto updatedOrganizer);
-        public Task<HostDto?> UpdateHost(int organizerId, int hostId, HostPermissionsDto permissions);
-        public Task<Organizer?> GetById(int id);
-        public Task<HostDto?> GetHost(int organizerId, int hostId);
-        public Task<List<HostDto>?> GetHostsFromOrganization(int organizerId);
+        public Task<Organization> Add(string name, int ownerId);
+        public Task<HostDto> AddHost(int organizerId, int hostId, int quizId, HostPermissionsDto permissions);
+        public Task<Organization> Update(OrganizationUpdateDto updatedOrganizer);
+        public Task<HostDto> UpdateHost(int organizerId, int hostId, int quizId, HostPermissionsDto permissions);
+        public Task<Organization> GetById(int id);
+        public Task<IEnumerable<Organization>> GetAll();
+        public Task<HostDto> GetHost(int organizerId, int hostId, int quizId);
+        public Task<IEnumerable<HostDto>> GetHostsFromOrganization(int organizerId);
         public Task<bool> Delete(int id);
+        public Task<bool> RemoveHostFromQuiz(int organizerId, int hostId, int quizId);
         public Task<bool> DeleteHost(int organizerId, int hostId);
     }
 }

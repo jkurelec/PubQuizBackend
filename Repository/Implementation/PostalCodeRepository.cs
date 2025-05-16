@@ -2,7 +2,7 @@
 using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Repository.Interface;
 using Microsoft.EntityFrameworkCore;
-using System.Diagnostics.Metrics;
+using PubQuizBackend.Exceptions;
 
 namespace PubQuizBackend.Repository.Implementation
 {
@@ -34,7 +34,7 @@ namespace PubQuizBackend.Repository.Implementation
             return postalCode;
         }
 
-        public async Task<bool> DeletePostalCode(PostalCode postalCode)
+        public Task<bool> DeletePostalCode(PostalCode postalCode)
         {
             throw new NotImplementedException();
         }
@@ -44,9 +44,10 @@ namespace PubQuizBackend.Repository.Implementation
             return await _dbContext.PostalCodes.ToListAsync();
         }
 
-        public async Task<PostalCode?> GetPostalCodeById(int id)
+        public async Task<PostalCode> GetPostalCodeById(int id)
         {
-            return await _dbContext.PostalCodes.FindAsync(id);
+            return await _dbContext.PostalCodes.FindAsync(id)
+                ?? throw new NotFoundException($"Postal code with id: {id} not found!");
         }
 
         public async Task<PostalCode?> GetPostalCodeByCode(string postalCode)
@@ -54,7 +55,7 @@ namespace PubQuizBackend.Repository.Implementation
             return await _dbContext.PostalCodes.Where(x => x.Code == postalCode).FirstOrDefaultAsync();
         }
 
-        public async Task<bool> UpdatePostalCode(PostalCode postalCode)
+        public Task<bool> UpdatePostalCode(PostalCode postalCode)
         {
             throw new NotImplementedException();
         }
