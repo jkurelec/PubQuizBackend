@@ -1,4 +1,4 @@
-﻿namespace PubQuizBackend.Models.Dto
+﻿namespace PubQuizBackend.Model.Dto
 {
     public class RefreshTokenDto
     {

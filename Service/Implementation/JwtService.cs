@@ -1,6 +1,6 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 using PubQuizBackend.Service.Interface;
-using PubQuizBackend.Utils;
+using PubQuizBackend.Util;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;

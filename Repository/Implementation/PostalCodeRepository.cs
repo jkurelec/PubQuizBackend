@@ -21,18 +21,30 @@ namespace PubQuizBackend.Repository.Implementation
         {
             City city;
 
-            if (await _cityRepository.GetCityByName(postalCode.City.Name) == null)
-                city = await _cityRepository.AddCity(postalCode.City);
-            else
-                city = await _cityRepository.GetCityByName(postalCode.City.Name);
+            city = await _cityRepository.GetCityByName(postalCode.City.Name)
+                ?? await _cityRepository.AddCity(postalCode.City);
 
-            postalCode.CityId = city.Id;
+            postalCode.City = city;
 
             await _dbContext.PostalCodes.AddAsync(postalCode);
             await _dbContext.SaveChangesAsync();
 
             return postalCode;
         }
+
+  //        {
+  //  "id": null,
+  //  "name": "Caffe bar Gala",
+  //  "address": "Ulica Viktora Cara Emina ",
+  //  "postalCodeId": null,
+  //  "postalCode": "51104",
+  //  "cityId": null,
+  //  "city": "Grad Rijeka",
+  //  "country": "Hrvatska",
+  //  "countryCode": "hr",
+  //  "lat": 45.331433,
+  //  "lon": 14.4328043
+  //}
 
         public Task<bool> DeletePostalCode(PostalCode postalCode)
         {

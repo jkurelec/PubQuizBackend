@@ -22,7 +22,7 @@ namespace PubQuizBackend.Repository.Implementation
             var country = await _countryRepository.GetCountryByName(city.Country.Name)
                 ?? await _countryRepository.AddCountry(city.Country);
 
-            city.CountryId = country.Id;
+            city.Country = country;
 
             await _dbContext.Cities.AddAsync(city);
             await _dbContext.SaveChangesAsync();

@@ -14,7 +14,7 @@ namespace PubQuizBackend.Model.Dto.QuizLeagueDto
             Id = league.Id;
             Name = league.Name;
             QuizId = league.QuizId;
-            Points = league.Points;
+            Points = league.Points!;
             Prizes = league.LeaguePrizes.Select(x => new PrizeDto(x));
         }
 

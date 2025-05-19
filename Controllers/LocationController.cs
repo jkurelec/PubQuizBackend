@@ -62,7 +62,7 @@ namespace PubQuizBackend.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var deleted = await _locationService.Delete(id);
+            await _locationService.Delete(id);
 
             return Ok();
         }

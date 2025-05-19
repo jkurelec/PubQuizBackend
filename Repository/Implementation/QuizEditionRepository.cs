@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model;
 using PubQuizBackend.Model.DbModel;
@@ -222,7 +221,7 @@ namespace PubQuizBackend.Repository.Implementation
             return await GetById(edition.Id);
         }
 
-        private void DateAndFeeCheck(NewQuizEditionDto editionDto)
+        private static void DateAndFeeCheck(NewQuizEditionDto editionDto)
         {
             //ako unose stare kvizove?
             if (editionDto.Time < DateTime.Now)
@@ -239,8 +238,7 @@ namespace PubQuizBackend.Repository.Implementation
         {
             bool changed = false;
 
-            if (editionDto.Prizes == null)
-                editionDto.Prizes = new List<PrizeDto>();
+            editionDto.Prizes ??= new List<PrizeDto>();
 
             var prizeIds = editionDto.Prizes.Select(p => p.Id).ToList();
 

@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using PubQuizBackend.Model.Dto;
 using PubQuizBackend.Model.Dto.UserDto;
-using PubQuizBackend.Models.Dto;
 using PubQuizBackend.Service.Interface;
-using PubQuizBackend.Utils;
+using PubQuizBackend.Util;
 
 namespace PubQuizBackend.Controllers
 {

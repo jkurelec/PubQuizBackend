@@ -88,8 +88,7 @@ namespace PubQuizBackend.Repository.Implementation
 
             PropertyUpdater.UpdateEntityFromDto(league, leagueDto, ["Id", "QuizId"]);
 
-            if (leagueDto.Prizes == null)
-                leagueDto.Prizes = new List<PrizeDto>();
+            leagueDto.Prizes ??= new List<PrizeDto>();
 
             var prizeIds = leagueDto.Prizes.Select(p => p.Id).ToList();
 

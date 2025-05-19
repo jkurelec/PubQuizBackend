@@ -15,8 +15,8 @@ namespace PubQuizBackend.Model.Dto.UserDto
         }
 
         public int Id { get; set; }
-        public string Username { get; set; }
-        public string Email { get; set; }
+        public string Username { get; set; } = null!;
+        public string Email { get; set; } = null!;
         public int Rating { get; set; }
     }
 }

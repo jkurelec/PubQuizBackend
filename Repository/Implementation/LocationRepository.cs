@@ -16,7 +16,7 @@ namespace PubQuizBackend.Repository.Implementation
         private readonly PubQuizContext _dbContext;
         private readonly IPostalCodeRepository _postalCodeRepository;
 
-        public LocationRepository(PubQuizContext dbContext, ICityRepository cityRepository, IPostalCodeRepository postalCodeRepository)
+        public LocationRepository(PubQuizContext dbContext, IPostalCodeRepository postalCodeRepository)
         {
             _dbContext = dbContext;
             _postalCodeRepository = postalCodeRepository;
@@ -31,11 +31,8 @@ namespace PubQuizBackend.Repository.Implementation
 
             var locationDto = await FindNew(locationName, address, city, country, limit).ContinueWith(x => x.Result[selection]);
 
-            var postalCode = await _postalCodeRepository.GetPostalCodeByCode(locationDto.PostalCode);
-
-
-            if (postalCode == null)
-                postalCode = await _postalCodeRepository.AddPostalCode(
+            var postalCode = await _postalCodeRepository.GetPostalCodeByCode(locationDto.PostalCode)
+                ?? await _postalCodeRepository.AddPostalCode(
                     new()
                     {
                         Code = locationDto.PostalCode,
@@ -153,7 +150,7 @@ namespace PubQuizBackend.Repository.Implementation
                             Name = osmAddressObj.Value<string>("amenity")!,
                             Address = $"{osmAddressObj.Value<string>("road")} {osmAddressObj.Value<string>("house_number")}",
                             PostalCode = osmAddressObj.Value<string>("postcode")!,
-                            City = osmAddressObj.Value<string>("city") ?? osmAddressObj.Value<string>("village")!,
+                            City = osmAddressObj.Value<string>("city") ?? osmAddressObj.Value<string>("town") ?? osmAddressObj.Value<string>("village")!,
                             Country = osmAddressObj.Value<string>("country")!,
                             CountryCode = osmAddressObj.Value<string>("country_code")!,
                             Lat = double.Parse((string)results[i]["lat"], CultureInfo.InvariantCulture),
