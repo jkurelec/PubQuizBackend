@@ -1,4 +1,5 @@
 ﻿using PubQuizBackend.Model.DbModel;
+using PubQuizBackend.Model.Dto.PrizesDto;
 using System.ComponentModel.DataAnnotations;
 
 namespace PubQuizBackend.Model.Dto.QuizEditionDto
@@ -41,6 +42,7 @@ namespace PubQuizBackend.Model.Dto.QuizEditionDto
         public int? MaxTeamSize { get; set; }
         public string? Description { get; set; }
         public int? LeagueId { get; set; }
+        public IEnumerable<PrizeDto> Prizes { get; set; } = new List<PrizeDto>();
         public DateTime Time { get; set; }
         public DateTime RegistrationStart { get; set; }
         public DateTime RegistrationEnd { get; set; }

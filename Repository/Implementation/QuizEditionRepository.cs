@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model;
 using PubQuizBackend.Model.DbModel;
+using PubQuizBackend.Model.Dto.PrizesDto;
 using PubQuizBackend.Model.Dto.QuizEditionDto;
 using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Util;
@@ -12,10 +13,12 @@ namespace PubQuizBackend.Repository.Implementation
     public class QuizEditionRepository : IQuizEditionRepository
     {
         private readonly PubQuizContext _context;
+        private readonly IPrizeRepository _prizeRepository;
 
-        public QuizEditionRepository(PubQuizContext context)
+        public QuizEditionRepository(PubQuizContext context, IPrizeRepository prizeRepository)
         {
             _context = context;
+            _prizeRepository = prizeRepository;
         }
 
         public async Task<QuizEdition> Add(NewQuizEditionDto editionDto, int userId)
@@ -67,8 +70,13 @@ namespace PubQuizBackend.Repository.Implementation
 
             editionDto.Id = 0;
 
+            var prizes = new List<EditionPrize>();
+
             var entity = await _context.QuizEditions.AddAsync(editionDto.ToObject());
             await _context.SaveChangesAsync();
+
+            foreach (var prizeDto in editionDto.Prizes)
+                prizes.Add(await _prizeRepository.AddEdition(prizeDto, entity.Entity.Id));
 
             return await GetById(entity.Entity.Id);
         }
@@ -111,6 +119,7 @@ namespace PubQuizBackend.Repository.Implementation
                 .ThenInclude(c => c.Country)
                 .Include(x => x.Quiz)
                 .Include(x => x.League)
+                .Include(x => x.EditionPrizes)
                 .FirstOrDefaultAsync(x => x.Id == id)
                     ?? throw new NotFoundException("Edition not found!");
         }
@@ -136,7 +145,7 @@ namespace PubQuizBackend.Repository.Implementation
             if (!organizer.EditEdition)
                 throw new UnauthorizedException();
 
-            var edition = await _context.QuizEditions.FirstOrDefaultAsync(x => x.Id == editionDto.Id && x.QuizId == editionDto.QuizId)
+            var edition = await _context.QuizEditions.Include(x => x.EditionPrizes).FirstOrDefaultAsync(x => x.Id == editionDto.Id && x.QuizId == editionDto.QuizId)
                 ?? throw new BadRequestException();
 
             if (edition.Name != editionDto.Name)
@@ -203,7 +212,9 @@ namespace PubQuizBackend.Repository.Implementation
                 ]
             );
 
-            if (_context.Entry(edition).State == EntityState.Unchanged)
+            var prizesChanged = await UpdatePrizes(edition, editionDto);
+
+            if (_context.Entry(edition).State == EntityState.Unchanged && !prizesChanged)
                 throw new BadRequestException("Super update!");
 
             await _context.SaveChangesAsync();
@@ -222,6 +233,47 @@ namespace PubQuizBackend.Repository.Implementation
 
             if (editionDto.FeeType == 3 && editionDto.Fee != 0)
                 throw new BadRequestException("Free quiz but there is a fee?");
+        }
+
+        private async Task<bool> UpdatePrizes(QuizEdition edition, NewQuizEditionDto editionDto)
+        {
+            bool changed = false;
+
+            if (editionDto.Prizes == null)
+                editionDto.Prizes = new List<PrizeDto>();
+
+            var prizeIds = editionDto.Prizes.Select(p => p.Id).ToList();
+
+            var toRemove = edition.EditionPrizes
+                .Where(p => !prizeIds.Contains(p.Id))
+                .ToList();
+            
+            if (toRemove.Count != 0)
+                changed = true;
+
+            foreach (var prize in toRemove)
+                _context.EditionPrizes.Remove(prize);
+
+            foreach (var prize in editionDto.Prizes)
+            {
+                var editionPrize = edition.EditionPrizes.FirstOrDefault(x => x.Id == prize.Id);
+
+                if (editionPrize != null)
+                {
+                    if (editionPrize.Name != prize.Name || editionPrize.Position != prize.Position)
+                    {
+                        await _prizeRepository.UpdateEdition(prize);
+                        changed = true;
+                    }
+                }
+                else
+                {
+                    await _prizeRepository.AddEdition(prize, editionDto.Id);
+                    changed = true;
+                }
+            }
+
+            return changed;
         }
     }
 }

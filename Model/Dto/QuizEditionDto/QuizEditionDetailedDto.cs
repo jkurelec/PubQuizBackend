@@ -1,5 +1,6 @@
 ﻿using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.LocationDto;
+using PubQuizBackend.Model.Dto.PrizesDto;
 using PubQuizBackend.Model.Dto.QuizCategoryDto;
 using PubQuizBackend.Model.Dto.QuizDto;
 using PubQuizBackend.Model.Dto.QuizLeagueDto;
@@ -34,6 +35,7 @@ namespace PubQuizBackend.Model.Dto.QuizEditionDto
             RegistrationEnd = edition.RegistrationEnd;
             if (edition.League != null)
                 League = new(edition.League);
+            Prizes = edition.EditionPrizes.Select(x => new PrizeDto(x)).ToList();
         }
 
         public int Id { get; set; }
@@ -54,5 +56,6 @@ namespace PubQuizBackend.Model.Dto.QuizEditionDto
         public DateTime RegistrationStart { get; set; }
         public DateTime RegistrationEnd { get; set; }
         public QuizLeagueBriefDto? League { get; set; }
+        public IEnumerable<PrizeDto> Prizes { get; set; } = new List<PrizeDto>();
     }
 }
