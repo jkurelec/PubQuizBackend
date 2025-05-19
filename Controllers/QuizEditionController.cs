@@ -48,9 +48,9 @@ namespace PubQuizBackend.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] string value)
+        public async Task<IActionResult> Update(NewQuizEditionDto editionDto)
         {
-            throw new NotImplementedException();
+            return Ok(await _service.Update(editionDto, User.GetUserId()));
         }
 
         [HttpDelete("{id}")]

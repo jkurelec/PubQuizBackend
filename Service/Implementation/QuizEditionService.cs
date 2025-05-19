@@ -44,7 +44,7 @@ namespace PubQuizBackend.Service.Implementation
 
         public async Task<QuizEditionDetailedDto> Update(NewQuizEditionDto editionDto, int userId)
         {
-            throw new NotImplementedException();
+            return new(await _repository.Update(editionDto,userId));
         }
     }
 }

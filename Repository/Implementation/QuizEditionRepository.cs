@@ -1,9 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.EntityFrameworkCore;
 using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model;
 using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.QuizEditionDto;
 using PubQuizBackend.Repository.Interface;
+using PubQuizBackend.Util;
 
 namespace PubQuizBackend.Repository.Implementation
 {
@@ -18,10 +20,10 @@ namespace PubQuizBackend.Repository.Implementation
 
         public async Task<QuizEdition> Add(NewQuizEditionDto editionDto, int userId)
         {
-            var host = await _context.HostOrganizationQuizzes.Where(x => x.HostId == userId && x.QuizId == editionDto.QuizId).FirstOrDefaultAsync()
+            var organizer = await _context.HostOrganizationQuizzes.Where(x => x.HostId == userId && x.QuizId == editionDto.QuizId).FirstOrDefaultAsync()
                 ?? throw new UnauthorizedException();
 
-            if (!host.CreateEdition)
+            if (!organizer.CreateEdition)
                 throw new UnauthorizedException();
 
             if (editionDto.LeagueId != null)
@@ -56,20 +58,14 @@ namespace PubQuizBackend.Repository.Implementation
             if (!await _context.Locations.AnyAsync(x => x.Id == editionDto.LocationId))
                 throw new BadRequestException("Location?");
 
-            //ako unose stare kvizove?
-            if (editionDto.Time < DateTime.Now)
-                throw new BadRequestException("Quiz already happened?");
+            DateAndFeeCheck(editionDto);
 
-            if (editionDto.RegistrationEnd > editionDto.Time || editionDto.RegistrationStart > editionDto.Time || editionDto.RegistrationStart > editionDto.RegistrationEnd)
-                throw new BadRequestException("Dates dont make sense!");
-
-            if (editionDto.FeeType == 3 && editionDto.Fee != 0)
-                throw new BadRequestException("Free quiz but there is a fee?");
-            
             var quiz = await _context.Quizzes.FindAsync(editionDto.QuizId)
                 ?? throw new TotalnoSiToPromislioException();
 
             editionDto.Rating = quiz.Rating;
+
+            editionDto.Id = 0;
 
             var entity = await _context.QuizEditions.AddAsync(editionDto.ToObject());
             await _context.SaveChangesAsync();
@@ -134,7 +130,98 @@ namespace PubQuizBackend.Repository.Implementation
 
         public async Task<QuizEdition> Update(NewQuizEditionDto editionDto, int userId)
         {
-            throw new NotImplementedException();
+            var organizer = await _context.HostOrganizationQuizzes.Where(x => x.HostId == userId && x.QuizId == editionDto.QuizId).FirstOrDefaultAsync()
+                ?? throw new UnauthorizedException();
+
+            if (!organizer.EditEdition)
+                throw new UnauthorizedException();
+
+            var edition = await _context.QuizEditions.FirstOrDefaultAsync(x => x.Id == editionDto.Id && x.QuizId == editionDto.QuizId)
+                ?? throw new BadRequestException();
+
+            if (edition.Name != editionDto.Name)
+            {
+                var nameTaken = await _context.QuizEditions.AnyAsync(x => x.Name == editionDto.Name && x.QuizId == editionDto.QuizId);
+
+                if (!nameTaken)
+                    edition.Name = editionDto.Name;
+                else
+                    throw new BadRequestException("Name already taken!");
+            }
+
+            if (edition.QuizId != editionDto.QuizId)
+                throw new BadRequestException();
+
+            if (edition.HostId != editionDto.HostId)
+            {
+                var validHost = await _context.HostOrganizationQuizzes.AnyAsync(x => x.HostId == editionDto.HostId && x.QuizId == editionDto.QuizId);
+
+                    if (validHost)
+                    edition.HostId = editionDto.HostId;
+                else
+                    throw new BadRequestException("Invalid host!");
+            }
+
+            if (edition.CategoryId != editionDto.CategoryId)
+            {
+                var validCateogry = await _context.QuizCategories.AnyAsync(x => x.Id == editionDto.CategoryId);
+
+                if (validCateogry)
+                    edition.CategoryId = editionDto.CategoryId;
+                else
+                    throw new BadRequestException("Invalid category!");
+            }
+
+            if (edition.LocationId != editionDto.LocationId)
+            {
+                var validLocation = await _context.Locations.AnyAsync(x => x.Id == editionDto.LocationId);
+
+                if (validLocation)
+                    edition.LocationId = editionDto.LocationId;
+                else
+                    throw new BadRequestException("Invalid location!");
+            }
+
+            if (edition.LeagueId != editionDto.LeagueId)
+            {
+                var validLocation = await _context.QuizLeagues.AnyAsync(x => x.Id == editionDto.LeagueId);
+
+                if (validLocation)
+                    edition.LeagueId = editionDto.LeagueId;
+                else
+                    throw new BadRequestException("Invalid league!");
+            }
+
+            DateAndFeeCheck(editionDto);
+
+            PropertyUpdater.UpdateEntityFromDtoSpecificFields(
+                edition,
+                editionDto,
+                [
+                    "FeeType", "Fee", "Duration", "MaxTeamSize", "Description",
+                    "Time", "RegistrationStart", "RegistrationEnd"
+                ]
+            );
+
+            if (_context.Entry(edition).State == EntityState.Unchanged)
+                throw new BadRequestException("Super update!");
+
+            await _context.SaveChangesAsync();
+
+            return await GetById(edition.Id);
+        }
+
+        private void DateAndFeeCheck(NewQuizEditionDto editionDto)
+        {
+            //ako unose stare kvizove?
+            if (editionDto.Time < DateTime.Now)
+                throw new BadRequestException("Quiz already happened?");
+
+            if (editionDto.RegistrationEnd > editionDto.Time || editionDto.RegistrationStart > editionDto.Time || editionDto.RegistrationStart > editionDto.RegistrationEnd)
+                throw new BadRequestException("Dates dont make sense!");
+
+            if (editionDto.FeeType == 3 && editionDto.Fee != 0)
+                throw new BadRequestException("Free quiz but there is a fee?");
         }
     }
 }
