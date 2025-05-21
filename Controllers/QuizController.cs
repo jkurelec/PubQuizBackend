@@ -1,8 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Hosting;
-using NuGet.Protocol.Core.Types;
 using PubQuizBackend.Model.Dto.QuizDto;
-using PubQuizBackend.Service.Implementation;
 using PubQuizBackend.Service.Interface;
 using PubQuizBackend.Util.Extension;
 

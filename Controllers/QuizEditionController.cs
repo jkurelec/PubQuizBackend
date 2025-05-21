@@ -2,7 +2,6 @@
 using PubQuizBackend.Model.Dto.QuizEditionDto;
 using PubQuizBackend.Service.Interface;
 using PubQuizBackend.Util.Extension;
-using System.Threading.Tasks;
 
 namespace PubQuizBackend.Controllers
 {
