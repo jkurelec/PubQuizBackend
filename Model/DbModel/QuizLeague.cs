@@ -11,7 +11,7 @@ public partial class QuizLeague
 
     public int QuizId { get; set; }
 
-    public string? Points { get; set; }
+    public string Points { get; set; } = null!;
 
     public virtual ICollection<LeaguePrize> LeaguePrizes { get; set; } = new List<LeaguePrize>();
 

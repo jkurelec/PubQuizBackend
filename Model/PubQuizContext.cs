@@ -167,7 +167,6 @@ public partial class PubQuizContext : DbContext
 
             entity.HasOne(d => d.League).WithMany(p => p.LeaguePrizes)
                 .HasForeignKey(d => d.LeagueId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("league_prize_league_id_fkey");
         });
 
@@ -548,7 +547,7 @@ public partial class PubQuizContext : DbContext
             entity.Property(e => e.OwnerId).HasColumnName("owner_id");
             entity.Property(e => e.QuizId).HasColumnName("quiz_id");
             entity.Property(e => e.Rating)
-                .HasDefaultValue(0)
+                .HasDefaultValue(1000)
                 .HasColumnName("rating");
 
             entity.HasOne(d => d.Category).WithMany(p => p.Teams)
@@ -602,12 +601,6 @@ public partial class PubQuizContext : DbContext
 
             entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.TeamId).HasColumnName("team_id");
-            entity.Property(e => e.DeleteTeam)
-                .HasDefaultValue(false)
-                .HasColumnName("delete_team");
-            entity.Property(e => e.EditTeam)
-                .HasDefaultValue(false)
-                .HasColumnName("edit_team");
             entity.Property(e => e.RegisterTeam)
                 .HasDefaultValue(false)
                 .HasColumnName("register_team");

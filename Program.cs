@@ -37,6 +37,7 @@ builder.Services.AddScoped<IQuizRepository, QuizRepository>();
 builder.Services.AddScoped<IQuizEditionRepository, QuizEditionRepository>();
 builder.Services.AddScoped<IPrizeRepository, PrizeRepository>();
 builder.Services.AddScoped<IQuizLeagueRepository, QuizLeagueRepository>();
+builder.Services.AddScoped<ITeamRepository, TeamRepository>();
 
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 builder.Services.AddScoped<IQuizCategoryService, QuizCategoryService>();
@@ -47,6 +48,7 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IQuizService, QuizService>();
 builder.Services.AddScoped<IQuizEditionService, QuizEditionService>();
 builder.Services.AddScoped<IQuizLeagueService, QuizLeagueService>();
+builder.Services.AddScoped<ITeamService, TeamService>();
 
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>

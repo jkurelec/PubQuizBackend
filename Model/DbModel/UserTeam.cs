@@ -9,11 +9,7 @@ public partial class UserTeam
 
     public int TeamId { get; set; }
 
-    public bool EditTeam { get; set; }
-
     public bool RegisterTeam { get; set; }
-
-    public bool DeleteTeam { get; set; }
 
     public virtual Team Team { get; set; } = null!;
 
