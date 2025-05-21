@@ -21,9 +21,9 @@ public partial class User
 
     public int Role { get; set; }
 
-    public virtual ICollection<HostOrganizer> HostOrganizers { get; set; } = new List<HostOrganizer>();
+    public virtual ICollection<HostOrganizationQuiz> HostOrganizationQuizzes { get; set; } = new List<HostOrganizationQuiz>();
 
-    public virtual ICollection<Organizer> Organizers { get; set; } = new List<Organizer>();
+    public virtual ICollection<Organization> Organizations { get; set; } = new List<Organization>();
 
     public virtual ICollection<QuizEdition> QuizEditions { get; set; } = new List<QuizEdition>();
 

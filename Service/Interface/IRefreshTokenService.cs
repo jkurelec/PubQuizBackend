@@ -4,9 +4,8 @@ namespace PubQuizBackend.Service.Interface
 {
     public interface IRefreshTokenService
     {
-        public Task<RefreshToken?> GetByUserId(int id);
-        public Task<RefreshToken?> GetByToken(string token);
-        public Task<string?> Create(int userId, int role);
+        public Task<RefreshToken> GetByToken(string token);
+        public Task<string> Create(int userId, int role, int app);
         public Task<bool> Delete(RefreshToken refreshToken);
     }
 }

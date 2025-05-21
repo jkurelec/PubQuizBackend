@@ -1,32 +1,29 @@
 ﻿using Microsoft.IdentityModel.Tokens;
-using PubQuizBackend.Model;
-using PubQuizBackend.Model.DbModel;
-using PubQuizBackend.Utils;
+using PubQuizBackend.Service.Interface;
+using PubQuizBackend.Util;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace PubQuizBackend.Service.Implementation
 {
-    public class JwtService
+    public class JwtService : IJwtService
     {
         private readonly IConfiguration _config;
-        private readonly PubQuizContext _dbContext;
 
-        public JwtService(IConfiguration config, PubQuizContext dbContext)
+        public JwtService(IConfiguration config)
         {
             _config = config;
-            _dbContext = dbContext;
         }
 
-        public string GenerateAccessToken(string userId, string username, string role/*, int port*/)
+        public string GenerateAccessToken(string userId, string username, int role, int app)
         {
+            var stringRole = CustomConverter.GetStringRole(role);
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, userId),
                 new Claim(ClaimTypes.Name, username),
-                new Claim(ClaimTypes.Role, role),
+                new Claim(ClaimTypes.Role, stringRole),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString())
             };
@@ -36,24 +33,14 @@ namespace PubQuizBackend.Service.Implementation
 
             var token = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],
-                //isti ako samo na ovaj api puca
-                audience: GetAudienceString(role/*port*/),
+                audience: GetAudienceString(CustomConverter.GetStringRole(app)),
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(LongevityMultiplyer(CustomConverter.GetIntRole(role))),
+                expires: DateTime.UtcNow.AddMinutes(LongevityMultiplyer(app)),
                 signingCredentials: creds
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-
-        private string GetAudiencePort(int port) =>
-            port switch
-            {
-                1 => _config["Jwt:Audience:Attendee"]!,
-                2 => _config["Jwt:Audience:Organizer"]!,
-                3 => _config["Jwt:Audience:Admin"]!,
-                _ => throw new ArgumentException("Unkown role")
-            };
 
         private string GetAudienceString(string role) =>
             role switch

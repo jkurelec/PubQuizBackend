@@ -1,12 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
-using PubQuizBackend.Auth;
+using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model;
 using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.UserDto;
 using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Util;
-using PubQuizBackend.Utils;
 
 namespace PubQuizBackend.Repository.Implementation
 {
@@ -19,22 +17,18 @@ namespace PubQuizBackend.Repository.Implementation
             _dbContext = dbContext;
         }
 
-        public async Task<User?> Add(RegisterUserDto userinfo)
+        public async Task<User> Add(RegisterUserDto userinfo)
         {
-            if (!await UsernameOrEmailExists(userinfo.Username, userinfo.Email))
-            {
-                var user = await _dbContext.Users.AddAsync(userinfo.ToUser());
-                await _dbContext.SaveChangesAsync();
+            var user = await _dbContext.Users.AddAsync(userinfo.ToUser());
+            await _dbContext.SaveChangesAsync();
 
-                return user.Entity;
-            }
-
-            return null;
+            return user.Entity;
         }
 
-        public async Task<User?> ChangePassword(int id, string password)
+        public async Task<User> ChangePassword(int id, string password)
         {
-            var user = await _dbContext.Users.FindAsync(id);
+            var user = await _dbContext.Users.FindAsync(id)
+                ?? throw new TotalnoSiToPromislioException();
 
             user.Password = password;
 
@@ -45,7 +39,9 @@ namespace PubQuizBackend.Repository.Implementation
 
         public async Task<bool> Delete(int id)
         {
-            _dbContext.Users.Remove(_dbContext.Users.Find(id));
+            _dbContext.Users.Remove(
+                await _dbContext.Users.FindAsync(id) ?? throw new NotFoundException($"User not found!")
+            );
             await _dbContext.SaveChangesAsync();
 
             return true;
@@ -58,61 +54,38 @@ namespace PubQuizBackend.Repository.Implementation
 
         public async Task<User?> GetByEmail(string email)
         {
-            var user = await _dbContext.Users.Where(x => x.Email == email).FirstOrDefaultAsync();
-
-            if (user != null)
-                return user;
-            
-            return null;
+            return await _dbContext.Users.Where(x => x.Email == email).FirstOrDefaultAsync();
         }
 
-        public async Task<User?> GetById(int id)
+        public async Task<User> GetById(int id)
         {
-            var user = await _dbContext.Users.FindAsync(id);
-
-            if (user != null)
-                return user;
-
-            return null;
+            return await _dbContext.Users.FindAsync(id)
+                ?? throw new NotFoundException("User not found!");
         }
 
-        public async Task<User?> GetByIdentifier(string identifier)
+        public async Task<User> GetByIdentifier(string identifier)
         {
             return await _dbContext.Users.FirstOrDefaultAsync(
                 x => x.Email == identifier || x.Username == identifier
-            );
+            ) ?? throw new NotFoundException("User not found!");
         }
 
         public async Task<User?> GetByUsername(string username)
         {
-            var user = await _dbContext.Users.Where(x => x.Username == username).FirstOrDefaultAsync();
-
-            if (user != null)
-                return user;
-
-            return null;
+            return await _dbContext.Users.Where(x => x.Username == username).FirstOrDefaultAsync();
         }
 
-        public async Task<User?> Update(int id, UserDto updatedUser)
+        public async Task<User> Update(UserDto updatedUser)
         {
-            var user = await _dbContext.Users.FindAsync(id);
+            var user = await _dbContext.Users.FindAsync(updatedUser.Id)
+                ?? throw new NotFoundException("User not found!");
 
-            if(user != null)
-            {
-                PropertyUpdater.UpdateEntityFromDto(user, updatedUser, ["Id", "Rating", "Role"]);
+            PropertyUpdater.UpdateEntityFromDto(user, updatedUser, ["Id", "Rating", "Role"]);
 
-                _dbContext.Entry(user).State = EntityState.Modified;
-                await _dbContext.SaveChangesAsync();
+            _dbContext.Entry(user).State = EntityState.Modified;
+            await _dbContext.SaveChangesAsync();
 
-                return user;
-            }
-
-            return null;
-        }
-
-        protected async Task<bool> UsernameOrEmailExists(string username, string email)
-        {
-            return await _dbContext.Users.AnyAsync(x => x.Username == username || x.Email == email);
+            return user;
         }
     }
 }

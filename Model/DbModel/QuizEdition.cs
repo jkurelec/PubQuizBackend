@@ -11,7 +11,7 @@ public partial class QuizEdition
 
     public int QuizId { get; set; }
 
-    public int Host { get; set; }
+    public int HostId { get; set; }
 
     public int CategoryId { get; set; }
 
@@ -21,11 +21,31 @@ public partial class QuizEdition
 
     public int Rating { get; set; }
 
-    public int TotalPoints { get; set; }
+    public decimal TotalPoints { get; set; }
+
+    public int? FeeType { get; set; }
+
+    public int? Fee { get; set; }
+
+    public int? Duration { get; set; }
+
+    public int? MaxTeamSize { get; set; }
+
+    public string? Description { get; set; }
+
+    public DateTime RegistrationStart { get; set; }
+
+    public DateTime RegistrationEnd { get; set; }
+
+    public int? LeagueId { get; set; }
 
     public virtual QuizCategory Category { get; set; } = null!;
 
-    public virtual User HostNavigation { get; set; } = null!;
+    public virtual ICollection<EditionPrize> EditionPrizes { get; set; } = new List<EditionPrize>();
+
+    public virtual User Host { get; set; } = null!;
+
+    public virtual QuizLeague? League { get; set; }
 
     public virtual Location Location { get; set; } = null!;
 

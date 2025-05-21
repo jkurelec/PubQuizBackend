@@ -15,9 +15,11 @@ public partial class QuizQuestion
 
     public string Answer { get; set; } = null!;
 
-    public int Points { get; set; }
+    public decimal Points { get; set; }
 
-    public int? BonusPoints { get; set; }
+    public decimal? BonusPoints { get; set; }
+
+    public string? MediaUrl { get; set; }
 
     public virtual ICollection<QuizAnswer> QuizAnswers { get; set; } = new List<QuizAnswer>();
 

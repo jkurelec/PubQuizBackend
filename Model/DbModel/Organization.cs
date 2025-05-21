@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace PubQuizBackend.Model.DbModel;
 
-public partial class Organizer
+public partial class Organization
 {
     public int Id { get; set; }
 
@@ -13,7 +13,7 @@ public partial class Organizer
 
     public int OwnerId { get; set; }
 
-    public virtual ICollection<HostOrganizer> HostOrganizers { get; set; } = new List<HostOrganizer>();
+    public virtual ICollection<HostOrganizationQuiz> HostOrganizationQuizzes { get; set; } = new List<HostOrganizationQuiz>();
 
     public virtual User Owner { get; set; } = null!;
 

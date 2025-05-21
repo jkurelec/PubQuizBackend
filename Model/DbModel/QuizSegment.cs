@@ -9,7 +9,7 @@ public partial class QuizSegment
 
     public int RoundId { get; set; }
 
-    public int? BonusPoints { get; set; }
+    public decimal? BonusPoints { get; set; }
 
     public virtual ICollection<QuizQuestion> QuizQuestions { get; set; } = new List<QuizQuestion>();
 

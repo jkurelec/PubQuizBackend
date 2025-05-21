@@ -1,4 +1,7 @@
-﻿namespace PubQuizBackend.Model.DbModel;
+﻿using System;
+using System.Collections.Generic;
+
+namespace PubQuizBackend.Model.DbModel;
 
 public partial class RefreshToken
 {
@@ -9,6 +12,8 @@ public partial class RefreshToken
     public string Token { get; set; } = null!;
 
     public DateTime ExpiresAt { get; set; }
+
+    public int App { get; set; }
 
     public virtual User User { get; set; } = null!;
 }

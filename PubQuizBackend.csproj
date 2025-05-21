@@ -25,4 +25,9 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.9.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Model\DbModel\" />
+    <Folder Include="Model\Other\" />
+  </ItemGroup>
+
 </Project>

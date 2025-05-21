@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using NuGet.Common;
+using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model;
 using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Repository.Interface;
@@ -27,6 +27,7 @@ namespace PubQuizBackend.Repository.Implementation
         public async Task<bool> DeleteCountry(Country country)
         {
             _dbContext.Remove(country);
+
             await _dbContext.SaveChangesAsync();
 
             return true;
@@ -37,9 +38,10 @@ namespace PubQuizBackend.Repository.Implementation
             return await _dbContext.Countries.ToListAsync();
         }
 
-        public async Task<Country?> GetCountryById(int id)
+        public async Task<Country> GetCountryById(int id)
         {
-            return await _dbContext.Countries.FindAsync(id);
+            return await _dbContext.Countries.FindAsync(id)
+                ?? throw new NotFoundException($"Country with id: {id} not found!");
         }
 
         public async Task<Country?> GetCountryByName(string name)
@@ -51,18 +53,9 @@ namespace PubQuizBackend.Repository.Implementation
         {
             _dbContext.Entry(country).State = EntityState.Modified;
 
-            try
-            {
-                await _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync();
 
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
-
-            return false;
+            return true;
         }
     }
 }

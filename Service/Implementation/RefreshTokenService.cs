@@ -14,19 +14,20 @@ namespace PubQuizBackend.Service.Implementation
             _repository = refreshTokenRepository;
         }
 
-        public async Task<string?> Create(int userId, int role)
+        public async Task<string> Create(int userId, int role, int app)
         {
             var tokenValue = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
             var expiresAt = DateTime.Now.AddHours(LongevityMultiplyer(role));
-            var token = await _repository.GetByUserId(userId);
+            var token = await _repository.GetByUserIdAndApp(userId, app);
 
             if (token == null)
-                token  = await _repository.Create(
+                token = await _repository.Create(
                     new()
                     {
                         UserId = userId,
                         Token = tokenValue,
-                        ExpiresAt = expiresAt
+                        ExpiresAt = expiresAt,
+                        App = app
                     }
                 );
             else
@@ -35,19 +36,14 @@ namespace PubQuizBackend.Service.Implementation
                 token.ExpiresAt = expiresAt;
             }
 
-            await _repository.Update(token!);
+            await _repository.Update(token);
 
             return tokenValue;
         }
 
-        public async Task<RefreshToken?> GetByToken(string token)
+        public async Task<RefreshToken> GetByToken(string token)
         {
             return await _repository.GetByToken(token);
-        }
-
-        public async Task<RefreshToken?> GetByUserId(int id)
-        {
-            return await _repository.GetByUserId(id);
         }
 
         public async Task<bool> Delete(RefreshToken refreshToken)

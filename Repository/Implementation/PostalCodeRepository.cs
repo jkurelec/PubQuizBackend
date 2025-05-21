@@ -2,7 +2,7 @@
 using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Repository.Interface;
 using Microsoft.EntityFrameworkCore;
-using System.Diagnostics.Metrics;
+using PubQuizBackend.Exceptions;
 
 namespace PubQuizBackend.Repository.Implementation
 {
@@ -21,12 +21,10 @@ namespace PubQuizBackend.Repository.Implementation
         {
             City city;
 
-            if (await _cityRepository.GetCityByName(postalCode.City.Name) == null)
-                city = await _cityRepository.AddCity(postalCode.City);
-            else
-                city = await _cityRepository.GetCityByName(postalCode.City.Name);
+            city = await _cityRepository.GetCityByName(postalCode.City.Name)
+                ?? await _cityRepository.AddCity(postalCode.City);
 
-            postalCode.CityId = city.Id;
+            postalCode.City = city;
 
             await _dbContext.PostalCodes.AddAsync(postalCode);
             await _dbContext.SaveChangesAsync();
@@ -34,7 +32,21 @@ namespace PubQuizBackend.Repository.Implementation
             return postalCode;
         }
 
-        public async Task<bool> DeletePostalCode(PostalCode postalCode)
+  //        {
+  //  "id": null,
+  //  "name": "Caffe bar Gala",
+  //  "address": "Ulica Viktora Cara Emina ",
+  //  "postalCodeId": null,
+  //  "postalCode": "51104",
+  //  "cityId": null,
+  //  "city": "Grad Rijeka",
+  //  "country": "Hrvatska",
+  //  "countryCode": "hr",
+  //  "lat": 45.331433,
+  //  "lon": 14.4328043
+  //}
+
+        public Task<bool> DeletePostalCode(PostalCode postalCode)
         {
             throw new NotImplementedException();
         }
@@ -44,9 +56,10 @@ namespace PubQuizBackend.Repository.Implementation
             return await _dbContext.PostalCodes.ToListAsync();
         }
 
-        public async Task<PostalCode?> GetPostalCodeById(int id)
+        public async Task<PostalCode> GetPostalCodeById(int id)
         {
-            return await _dbContext.PostalCodes.FindAsync(id);
+            return await _dbContext.PostalCodes.FindAsync(id)
+                ?? throw new NotFoundException($"Postal code with id: {id} not found!");
         }
 
         public async Task<PostalCode?> GetPostalCodeByCode(string postalCode)
@@ -54,7 +67,7 @@ namespace PubQuizBackend.Repository.Implementation
             return await _dbContext.PostalCodes.Where(x => x.Code == postalCode).FirstOrDefaultAsync();
         }
 
-        public async Task<bool> UpdatePostalCode(PostalCode postalCode)
+        public Task<bool> UpdatePostalCode(PostalCode postalCode)
         {
             throw new NotImplementedException();
         }

@@ -1,5 +1,6 @@
-﻿using PubQuizBackend.Model.DbModel;
-using PubQuizBackend.Model.Dto;
+﻿using PubQuizBackend.Exceptions;
+using PubQuizBackend.Model.DbModel;
+using PubQuizBackend.Model.Dto.LocationDto;
 using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Service.Interface;
 
@@ -14,48 +15,54 @@ namespace PubQuizBackend.Service.Implementation
             _locationRepository = locationRepository;
         }
 
-        public async Task<LocationDetailsDto> Add(string? locationName = null, string? address = null, string? city = null, string? country = null, int limit = 1)
+        public async Task<LocationDetailedDto> Add(string? locationName = null, string? address = null, string? city = null, string? country = null, int limit = 1, int selection = 0)
         {
-            return await _locationRepository.Add(locationName, address, city, country, limit);
+            return new(
+                await _locationRepository.Add(locationName, address, city, country, limit, selection)
+            );
         }
 
-        public async Task<LocationDetailsDto?> CheckIfExists(string? locationName = null, string? address = null, string? city = null, string? country = null, int limit = 1)
+        public async Task<LocationDetailedDto> CheckIfExists(string? locationName = null, string? address = null, string? city = null, string? country = null)
         {
-            return await _locationRepository.CheckIfExists(locationName, address, city, country, limit);
+            return new(
+                await _locationRepository.CheckIfExists(locationName, address, city, country)
+                    ?? throw new InsufficientDataException()
+            );
         }
+
         public async Task<bool> Delete(int id)
         {
             return await _locationRepository.Delete(id);
         }
 
-        public async Task<List<LocationDetailsDto>?> FindNew(string locationName, string address, string city, string country, int limit = 1)
+        public async Task<List<LocationDetailedDto>> FindNew(string? locationName = null, string? address = null, string? city = null, string? country = null, int limit = 1)
         {
             return await _locationRepository.FindNew(locationName, address, city, country, limit);
         }
 
-        public async Task<List<Location>> GetAllLocations()
+        public async Task<List<LocationDetailedDto>> GetAll()
         {
-            return await _locationRepository.GetAllLocations();
+            return await _locationRepository.GetAll().ContinueWith(x => x.Result.Select(x => new LocationDetailedDto(x)).ToList());
         }
 
-        public async Task<Location?> GetLocationById(int id)
+        public async Task<LocationDetailedDto> GetById(int id)
         {
-            return await _locationRepository.GetLocationById(id);
+            return new(await _locationRepository.GetById(id));
         }
 
-        public async Task<Location?> GetLocationByName(string name)
+        public async Task<LocationDetailedDto> GetByName(string name)
         {
-            return await _locationRepository.GetLocationByName(name);
+            return new(await _locationRepository.GetByName(name));
         }
 
-        public async Task<List<Location>> GetLocationsByCityId(int id)
+        public async Task<List<LocationDetailedDto>> GetByCityId(int id)
         {
-            return await _locationRepository.GetLocationsByCityId(id);
+            return await _locationRepository.GetByCityId(id).ContinueWith(x => x.Result.Select(x => new LocationDetailedDto(x)).ToList());
         }
 
-        public async Task<bool> Update(Location Location)
+        public async Task<Location> Update(LocationUpdateDto location)
         {
-            return await _locationRepository.Update(Location);
+            return await _locationRepository.Update(location);
         }
     }
 }

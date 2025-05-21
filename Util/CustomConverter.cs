@@ -1,4 +1,4 @@
-﻿namespace PubQuizBackend.Utils
+﻿namespace PubQuizBackend.Util
 {
     public static class CustomConverter
     {

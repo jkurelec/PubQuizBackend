@@ -1,4 +1,5 @@
-﻿using PubQuizBackend.Model.DbModel;
+﻿using PubQuizBackend.Exceptions;
+using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.UserDto;
 using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Service.Interface;
@@ -14,29 +15,38 @@ namespace PubQuizBackend.Service.Implementation
             _repository = repository;
         }
 
-        public async Task<User?> Add(RegisterUserDto user)
+        public async Task<User> Add(RegisterUserDto user)
         {
+            if (await _repository.GetByUsername(user.Username) != null || await _repository.GetByEmail(user.Email) != null)
+                throw new ConflictException("Username or email already in use!");
+
             return await _repository.Add(user);
         }
 
-        public async Task<User?> ChangePassword(int id, string password)
+        public async Task<User> ChangePassword(int id, string password)
         {
             return await _repository.ChangePassword(id, password);
         }
 
-        public async Task<User?> GetById(int id)
+        public async Task<List<User>> GetAll()
+        {
+            return await _repository.GetAll();
+        }
+
+        public async Task<User> GetById(int id)
         {
             return await _repository.GetById(id);
         }
 
-        public async Task<User?> GetByIdentifier(string identifier)
+        public async Task<User> GetByIdentifier(string identifier)
         {
             return await _repository.GetByIdentifier(identifier);
         }
 
-        public async Task<User?> GetByUsername(string username)
+        public async Task<User> GetByUsername(string username)
         {
-            return await _repository.GetByUsername(username);
+            return await _repository.GetByUsername(username)
+                ?? throw new NotFoundException("User not found!");
         }
 
         public async Task<bool> Remove(int id)
@@ -44,9 +54,9 @@ namespace PubQuizBackend.Service.Implementation
             return await _repository.Delete(id);
         }
 
-        public async Task<User?> Update(int id, UserDto user)
+        public async Task<User> Update(UserDto user)
         {
-            return await _repository.Update(id, user);
+            return await _repository.Update(user);
         }
     }
 }
