@@ -1,4 +1,5 @@
-﻿using PubQuizBackend.Model.DbModel;
+﻿using PubQuizBackend.Enums;
+using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.PrizesDto;
 using System.ComponentModel.DataAnnotations;
 
@@ -46,6 +47,7 @@ namespace PubQuizBackend.Model.Dto.QuizEditionDto
         public DateTime Time { get; set; }
         public DateTime RegistrationStart { get; set; }
         public DateTime RegistrationEnd { get; set; }
+        public int Visibility { get; set; } = 0;
 
         public QuizEdition ToObject() =>
             new()
@@ -65,7 +67,8 @@ namespace PubQuizBackend.Model.Dto.QuizEditionDto
                 Description = Description,
                 LeagueId = LeagueId,
                 RegistrationStart = RegistrationStart,
-                RegistrationEnd = RegistrationEnd
+                RegistrationEnd = RegistrationEnd,
+                Visibility = Visibility
             };
     }
 }

@@ -58,7 +58,8 @@ namespace PubQuizBackend.Repository.Implementation
                 QuizId = quizId,
                 CreateEdition = permissions.CreateEdition,
                 EditEdition = permissions.EditEdition,
-                DeleteEdition = permissions.DeleteEdition
+                DeleteEdition = permissions.DeleteEdition,
+                CrudQuestion = permissions.CrudQuestion
             };
 
             await _dbContext.HostOrganizationQuizzes.AddAsync(host);
@@ -149,7 +150,8 @@ namespace PubQuizBackend.Repository.Implementation
                 {
                     CreateEdition = host.CreateEdition,
                     EditEdition = host.EditEdition,
-                    DeleteEdition = host.DeleteEdition
+                    DeleteEdition = host.DeleteEdition,
+                    CrudQuestion = host.CrudQuestion
                 }
             };
         }
@@ -180,7 +182,8 @@ namespace PubQuizBackend.Repository.Implementation
                     {
                         CreateEdition = hostOrganizer.CreateEdition,
                         EditEdition = hostOrganizer.EditEdition,
-                        DeleteEdition = hostOrganizer.DeleteEdition
+                        DeleteEdition = hostOrganizer.DeleteEdition,
+                        CrudQuestion = hostOrganizer.CrudQuestion
                     }
                 };
 
@@ -211,6 +214,7 @@ namespace PubQuizBackend.Repository.Implementation
             host.CreateEdition = permissions.CreateEdition;
             host.EditEdition = permissions.EditEdition;
             host.DeleteEdition = permissions.DeleteEdition;
+            host.CrudQuestion = permissions.CrudQuestion;
 
             _dbContext.Entry(host).State = EntityState.Modified;
             await _dbContext.SaveChangesAsync();
@@ -226,7 +230,8 @@ namespace PubQuizBackend.Repository.Implementation
                 {
                     CreateEdition = host.CreateEdition,
                     EditEdition = host.EditEdition,
-                    DeleteEdition = host.DeleteEdition
+                    DeleteEdition = host.DeleteEdition,
+                    CrudQuestion = host.CrudQuestion
                 }
             };
         }

@@ -15,6 +15,8 @@ public partial class QuizAnswer
 
     public int QuestionId { get; set; }
 
+    public int Result { get; set; }
+
     public virtual QuizQuestion Question { get; set; } = null!;
 
     public virtual Team Team { get; set; } = null!;

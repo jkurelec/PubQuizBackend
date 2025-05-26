@@ -130,6 +130,9 @@ public partial class PubQuizContext : DbContext
             entity.Property(e => e.CreateEdition)
                 .HasDefaultValue(false)
                 .HasColumnName("create_edition");
+            entity.Property(e => e.CrudQuestion)
+                .HasDefaultValue(false)
+                .HasColumnName("crud_question");
             entity.Property(e => e.DeleteEdition)
                 .HasDefaultValue(false)
                 .HasColumnName("delete_edition");
@@ -314,6 +317,9 @@ public partial class PubQuizContext : DbContext
                 .HasPrecision(10, 2)
                 .HasColumnName("points");
             entity.Property(e => e.QuestionId).HasColumnName("question_id");
+            entity.Property(e => e.Result)
+                .HasDefaultValue(0)
+                .HasColumnName("result");
             entity.Property(e => e.TeamId).HasColumnName("team_id");
 
             entity.HasOne(d => d.Question).WithMany(p => p.QuizAnswers)
@@ -374,6 +380,9 @@ public partial class PubQuizContext : DbContext
             entity.Property(e => e.TotalPoints)
                 .HasPrecision(10, 2)
                 .HasColumnName("total_points");
+            entity.Property(e => e.Visibility)
+                .HasDefaultValue(0)
+                .HasColumnName("visibility");
 
             entity.HasOne(d => d.Category).WithMany(p => p.QuizEditions)
                 .HasForeignKey(d => d.CategoryId)
@@ -456,11 +465,11 @@ public partial class PubQuizContext : DbContext
                 .HasColumnName("answer");
             entity.Property(e => e.BonusPoints)
                 .HasPrecision(10, 2)
-                .HasDefaultValueSql("0")
                 .HasColumnName("bonus_points");
             entity.Property(e => e.MediaUrl)
                 .HasColumnType("character varying")
                 .HasColumnName("media_url");
+            entity.Property(e => e.Number).HasColumnName("number");
             entity.Property(e => e.Points)
                 .HasPrecision(10, 2)
                 .HasColumnName("points");
@@ -501,9 +510,10 @@ public partial class PubQuizContext : DbContext
                 .HasColumnName("id");
             entity.Property(e => e.BonusPoints)
                 .HasPrecision(10, 2)
-                .HasDefaultValueSql("0")
                 .HasColumnName("bonus_points");
+            entity.Property(e => e.Number).HasColumnName("number");
             entity.Property(e => e.RoundId).HasColumnName("round_id");
+            entity.Property(e => e.Type).HasColumnName("type");
 
             entity.HasOne(d => d.Round).WithMany(p => p.QuizSegments)
                 .HasForeignKey(d => d.RoundId)

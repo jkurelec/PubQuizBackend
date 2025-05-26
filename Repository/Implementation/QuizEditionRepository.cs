@@ -71,6 +71,9 @@ namespace PubQuizBackend.Repository.Implementation
 
             var prizes = new List<EditionPrize>();
 
+            if (editionDto.Visibility < 0 || editionDto.Visibility > 2)
+                throw new BadRequestException("Invalid visibility!");
+
             var entity = await _context.QuizEditions.AddAsync(editionDto.ToObject());
             await _context.SaveChangesAsync();
 
@@ -200,6 +203,9 @@ namespace PubQuizBackend.Repository.Implementation
                     throw new BadRequestException("Invalid league!");
             }
 
+            if (editionDto.Visibility < 0 || editionDto.Visibility > 2)
+                throw new BadRequestException("Invalid visibility!");
+
             DateAndFeeCheck(editionDto);
 
             PropertyUpdater.UpdateEntityFromDtoSpecificFields(
@@ -224,7 +230,7 @@ namespace PubQuizBackend.Repository.Implementation
         private static void DateAndFeeCheck(NewQuizEditionDto editionDto)
         {
             //ako unose stare kvizove?
-            if (editionDto.Time < DateTime.Now)
+            if (editionDto.Time < DateTime.UtcNow)
                 throw new BadRequestException("Quiz already happened?");
 
             if (editionDto.RegistrationEnd > editionDto.Time || editionDto.RegistrationStart > editionDto.Time || editionDto.RegistrationStart > editionDto.RegistrationEnd)

@@ -1,9 +1,10 @@
-﻿using System;
+﻿using PubQuizBackend.Util.Interfaces;
+using System;
 using System.Collections.Generic;
 
 namespace PubQuizBackend.Model.DbModel;
 
-public partial class QuizQuestion
+public partial class QuizQuestion : INumbered
 {
     public int Id { get; set; }
 
@@ -17,9 +18,11 @@ public partial class QuizQuestion
 
     public decimal Points { get; set; }
 
-    public decimal? BonusPoints { get; set; }
+    public decimal BonusPoints { get; set; }
 
     public string? MediaUrl { get; set; }
+
+    public int Number { get; set; }
 
     public virtual ICollection<QuizAnswer> QuizAnswers { get; set; } = new List<QuizAnswer>();
 

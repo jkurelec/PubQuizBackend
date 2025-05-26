@@ -39,6 +39,8 @@ public partial class QuizEdition
 
     public int? LeagueId { get; set; }
 
+    public int Visibility { get; set; }
+
     public virtual QuizCategory Category { get; set; } = null!;
 
     public virtual ICollection<EditionPrize> EditionPrizes { get; set; } = new List<EditionPrize>();
