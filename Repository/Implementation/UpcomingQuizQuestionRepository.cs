@@ -190,10 +190,9 @@ namespace PubQuizBackend.Repository.Implementation
 
                 var oldQuestions = question.Segment.QuizQuestions.OrderBy(x => x.Number).ToList();
 
+                IsNumberValid(newQuestions.Count, orderDto.Number);
+
                 oldQuestions.Remove(question);
-
-                if (newQuestions.Count <= orderDto.Number && )
-
                 newQuestions.Insert(orderDto.Number - 1, question);
 
                 question.SegmentId = orderDto.SuperId.Value;
@@ -208,6 +207,9 @@ namespace PubQuizBackend.Repository.Implementation
             else if (question.Number != orderDto.Number)
             {
                 var questions = question.Segment.QuizQuestions.OrderBy(x => x.Number).ToList();
+
+                IsNumberValid(questions.Count, orderDto.Number);
+
                 questions.Remove(question);
                 questions.Insert(orderDto.Number - 1, question);
 
@@ -229,6 +231,9 @@ namespace PubQuizBackend.Repository.Implementation
             if (round.Number != orderDto.Number)
             {
                 var rounds = round.Edition.QuizRounds.OrderBy(x => x.Number).ToList();
+
+                IsNumberValid(rounds.Count, orderDto.Number);
+
                 rounds.Remove(round);
                 rounds.Insert(orderDto.Number - 1, round);
 
@@ -256,6 +261,8 @@ namespace PubQuizBackend.Repository.Implementation
 
                 var oldSegments = segment.Round.QuizSegments.OrderBy(x => x.Number).ToList();
 
+                IsNumberValid(newSegments.Count, orderDto.Number);
+
                 oldSegments.Remove(segment);
                 newSegments.Insert(orderDto.Number - 1, segment);
 
@@ -271,6 +278,9 @@ namespace PubQuizBackend.Repository.Implementation
             else if (segment.Number != orderDto.Number)
             {
                 var segments = segment.Round.QuizSegments.OrderBy(x => x.Number).ToList();
+
+                IsNumberValid(segments.Count, orderDto.Number);
+
                 segments.Remove(segment);
                 segments.Insert(orderDto.Number - 1, segment);
 
@@ -362,6 +372,12 @@ namespace PubQuizBackend.Repository.Implementation
                     ?? 1;
 
             segmentDto.Id = 0;
+        }
+
+        private static void IsNumberValid(int count, int number)
+        {
+            if (count < number || number < 1)
+                throw new BadRequestException("Invalid number");
         }
     }
 }
