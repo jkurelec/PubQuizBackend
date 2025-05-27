@@ -40,6 +40,8 @@ public partial class PubQuizContext : DbContext
 
     public virtual DbSet<QuizEdition> QuizEditions { get; set; }
 
+    public virtual DbSet<QuizEditionApplication> QuizEditionApplications { get; set; }
+
     public virtual DbSet<QuizEditionResult> QuizEditionResults { get; set; }
 
     public virtual DbSet<QuizLeague> QuizLeagues { get; set; }
@@ -58,6 +60,11 @@ public partial class PubQuizContext : DbContext
 
     public virtual DbSet<UserTeam> UserTeams { get; set; }
 
+    public virtual DbSet<UserTeamEdition> UserTeamEditions { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Username=backend;Password=Pasvord123;Database=pub_quiz");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -139,6 +146,9 @@ public partial class PubQuizContext : DbContext
             entity.Property(e => e.EditEdition)
                 .HasDefaultValue(false)
                 .HasColumnName("edit_edition");
+            entity.Property(e => e.ManageApplication)
+                .HasDefaultValue(false)
+                .HasColumnName("manage_application");
 
             entity.HasOne(d => d.Host).WithMany(p => p.HostOrganizationQuizzes)
                 .HasForeignKey(d => d.HostId)
@@ -405,6 +415,45 @@ public partial class PubQuizContext : DbContext
                 .HasConstraintName("quiz_edition_quiz_id_fkey");
         });
 
+        modelBuilder.Entity<QuizEditionApplication>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("quiz_edition_application_pkey");
+
+            entity.ToTable("quiz_edition_application");
+
+            entity.Property(e => e.Id)
+                .UseIdentityAlwaysColumn()
+                .HasColumnName("id");
+            entity.Property(e => e.Accepted).HasColumnName("accepted");
+            entity.Property(e => e.QuizEditionId).HasColumnName("quiz_edition_id");
+            entity.Property(e => e.TeamId).HasColumnName("team_id");
+
+            entity.HasOne(d => d.QuizEdition).WithMany(p => p.QuizEditionApplications)
+                .HasForeignKey(d => d.QuizEditionId)
+                .HasConstraintName("quiz_edition_application_quiz_edition_id_fkey");
+
+            entity.HasOne(d => d.Team).WithMany(p => p.QuizEditionApplications)
+                .HasForeignKey(d => d.TeamId)
+                .HasConstraintName("quiz_edition_application_team_id_fkey");
+
+            entity.HasMany(d => d.Users).WithMany(p => p.Applications)
+                .UsingEntity<Dictionary<string, object>>(
+                    "QuizEditionApplicationUser",
+                    r => r.HasOne<User>().WithMany()
+                        .HasForeignKey("UserId")
+                        .HasConstraintName("quiz_edition_application_user_user_id_fkey"),
+                    l => l.HasOne<QuizEditionApplication>().WithMany()
+                        .HasForeignKey("ApplicationId")
+                        .HasConstraintName("quiz_edition_application_user_application_id_fkey"),
+                    j =>
+                    {
+                        j.HasKey("ApplicationId", "UserId").HasName("quiz_edition_application_user_pkey");
+                        j.ToTable("quiz_edition_application_user");
+                        j.IndexerProperty<int>("ApplicationId").HasColumnName("application_id");
+                        j.IndexerProperty<int>("UserId").HasColumnName("user_id");
+                    });
+        });
+
         modelBuilder.Entity<QuizEditionResult>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("quiz_edition_results_pkey");
@@ -622,6 +671,29 @@ public partial class PubQuizContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.UserTeams)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("user_team_user_id_fkey");
+        });
+
+        modelBuilder.Entity<UserTeamEdition>(entity =>
+        {
+            entity.HasKey(e => new { e.UserId, e.TeamId, e.QuizEditionResultId }).HasName("user_team_edition_pkey");
+
+            entity.ToTable("user_team_edition");
+
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.TeamId).HasColumnName("team_id");
+            entity.Property(e => e.QuizEditionResultId).HasColumnName("quiz_edition_result_id");
+
+            entity.HasOne(d => d.QuizEditionResult).WithMany(p => p.UserTeamEditions)
+                .HasForeignKey(d => d.QuizEditionResultId)
+                .HasConstraintName("user_team_edition_quiz_edition_result_id_fkey");
+
+            entity.HasOne(d => d.Team).WithMany(p => p.UserTeamEditions)
+                .HasForeignKey(d => d.TeamId)
+                .HasConstraintName("user_team_edition_team_id_fkey");
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserTeamEditions)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("user_team_edition_user_id_fkey");
         });
 
         OnModelCreatingPartial(modelBuilder);

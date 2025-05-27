@@ -6,7 +6,7 @@ using PubQuizBackend.Util.Extension;
 
 namespace PubQuizBackend.Controllers
 {
-    [Route("question/upcoming")]
+    [Route("upcoming/question")]
     [ApiController]
     public class UpcomingQuizQuestionController : ControllerBase
     {

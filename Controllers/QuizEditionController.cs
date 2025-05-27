@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using PubQuizBackend.Model.Dto.ApplicationDto;
 using PubQuizBackend.Model.Dto.QuizEditionDto;
 using PubQuizBackend.Service.Interface;
 using PubQuizBackend.Util.Extension;
@@ -55,7 +56,31 @@ namespace PubQuizBackend.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            return Ok(await _service.Delete(id, User.GetUserId()));
+            await _service.Delete(id, User.GetUserId());
+
+            return NoContent();
+        }
+
+        [HttpPost("apply")]
+        public async Task<IActionResult> Apply(QuizEditionApplicationRequestDto application)
+        {
+            await _service.ApplyTeam(application, User.GetUserId());
+
+            return NoContent();
+        }
+
+        [HttpGet("application/{id}")]
+        public async Task<IActionResult> GetApplications(int id, [FromQuery] bool unanswered = true)
+        {
+            return Ok(await _service.GetApplications(id, User.GetUserId(), unanswered));
+        }
+
+        [HttpPost("application")]
+        public async Task<IActionResult> RespondToApplication(QuizEditionApplicationResponseDto application)
+        {
+            await _service.RespondToApplication(application, User.GetUserId());
+
+            return NoContent();
         }
     }
 }

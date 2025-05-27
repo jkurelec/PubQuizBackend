@@ -59,7 +59,8 @@ namespace PubQuizBackend.Repository.Implementation
                 CreateEdition = permissions.CreateEdition,
                 EditEdition = permissions.EditEdition,
                 DeleteEdition = permissions.DeleteEdition,
-                CrudQuestion = permissions.CrudQuestion
+                CrudQuestion = permissions.CrudQuestion,
+                ManageApplication = permissions.ManageApplication
             };
 
             await _dbContext.HostOrganizationQuizzes.AddAsync(host);
@@ -151,7 +152,8 @@ namespace PubQuizBackend.Repository.Implementation
                     CreateEdition = host.CreateEdition,
                     EditEdition = host.EditEdition,
                     DeleteEdition = host.DeleteEdition,
-                    CrudQuestion = host.CrudQuestion
+                    CrudQuestion = host.CrudQuestion,
+                    ManageApplication = host.ManageApplication
                 }
             };
         }
@@ -183,7 +185,8 @@ namespace PubQuizBackend.Repository.Implementation
                         CreateEdition = hostOrganizer.CreateEdition,
                         EditEdition = hostOrganizer.EditEdition,
                         DeleteEdition = hostOrganizer.DeleteEdition,
-                        CrudQuestion = hostOrganizer.CrudQuestion
+                        CrudQuestion = hostOrganizer.CrudQuestion,
+                        ManageApplication = hostOrganizer.ManageApplication
                     }
                 };
 
@@ -215,6 +218,7 @@ namespace PubQuizBackend.Repository.Implementation
             host.EditEdition = permissions.EditEdition;
             host.DeleteEdition = permissions.DeleteEdition;
             host.CrudQuestion = permissions.CrudQuestion;
+            host.ManageApplication = permissions.ManageApplication;
 
             _dbContext.Entry(host).State = EntityState.Modified;
             await _dbContext.SaveChangesAsync();
@@ -231,7 +235,8 @@ namespace PubQuizBackend.Repository.Implementation
                     CreateEdition = host.CreateEdition,
                     EditEdition = host.EditEdition,
                     DeleteEdition = host.DeleteEdition,
-                    CrudQuestion = host.CrudQuestion
+                    CrudQuestion = host.CrudQuestion,
+                    ManageApplication = host.ManageApplication
                 }
             };
         }

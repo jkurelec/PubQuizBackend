@@ -53,6 +53,8 @@ public partial class QuizEdition
 
     public virtual Quiz Quiz { get; set; } = null!;
 
+    public virtual ICollection<QuizEditionApplication> QuizEditionApplications { get; set; } = new List<QuizEditionApplication>();
+
     public virtual ICollection<QuizEditionResult> QuizEditionResults { get; set; } = new List<QuizEditionResult>();
 
     public virtual ICollection<QuizRound> QuizRounds { get; set; } = new List<QuizRound>();

@@ -18,4 +18,6 @@ public partial class QuizEditionResult
     public virtual QuizEdition Edition { get; set; } = null!;
 
     public virtual Team Team { get; set; } = null!;
+
+    public virtual ICollection<UserTeamEdition> UserTeamEditions { get; set; } = new List<UserTeamEdition>();
 }
