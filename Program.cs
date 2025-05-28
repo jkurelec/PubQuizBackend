@@ -48,6 +48,7 @@ builder.Services.AddScoped<IOrganizationService, OrganizationService>();
 builder.Services.AddScoped<IQuizAnswerService, QuizAnswerService>();
 builder.Services.AddScoped<IQuizCategoryService, QuizCategoryService>();
 builder.Services.AddScoped<IQuizEditionService, QuizEditionService>();
+builder.Services.AddScoped<IQuizEditionApplicationService, QuizEditionApplicationService>();
 builder.Services.AddScoped<IQuizLeagueService, QuizLeagueService>();
 builder.Services.AddScoped<IQuizService, QuizService>();
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();

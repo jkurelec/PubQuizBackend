@@ -60,43 +60,5 @@ namespace PubQuizBackend.Controllers
 
             return NoContent();
         }
-
-        [HttpDelete("{editionId}/team/{teamId}")]
-        public async Task<IActionResult> RemoveTeamFromEdition(int editionId, int teamId)
-        {
-            await _service.RemoveTeamFromEdition(editionId, teamId, User.GetUserId());
-
-            return NoContent();
-        }
-
-        [HttpDelete("{editionId}/withdraw/{teamId}")]
-        public async Task<IActionResult> WithdrawFromEdition(int editionId, int teamId)
-        {
-            await _service.WithdrawFromEdition(editionId, teamId, User.GetUserId());
-
-            return NoContent();
-        }
-
-        [HttpPost("apply")]
-        public async Task<IActionResult> Apply(QuizEditionApplicationRequestDto application)
-        {
-            await _service.ApplyTeam(application, User.GetUserId());
-
-            return NoContent();
-        }
-
-        [HttpGet("application/{id}")]
-        public async Task<IActionResult> GetApplications(int id, [FromQuery] bool unanswered = true)
-        {
-            return Ok(await _service.GetApplications(id, User.GetUserId(), unanswered));
-        }
-
-        [HttpPost("application")]
-        public async Task<IActionResult> RespondToApplication(QuizEditionApplicationResponseDto application)
-        {
-            await _service.RespondToApplication(application, User.GetUserId());
-
-            return NoContent();
-        }
     }
 }

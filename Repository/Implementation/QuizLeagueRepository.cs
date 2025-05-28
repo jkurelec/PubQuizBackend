@@ -10,6 +10,8 @@ using System.Text.RegularExpressions;
 
 namespace PubQuizBackend.Repository.Implementation
 {
+
+    // PROVJERA USERA SE RADI TU KAKO SE NEBI 2 PUTA DOHVACALO IZ BAZE
     public class QuizLeagueRepository : IQuizLeagueRepository
     {
         private readonly PubQuizContext _context;

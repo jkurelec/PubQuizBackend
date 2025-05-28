@@ -1,9 +1,10 @@
-﻿using System;
+﻿using PubQuizBackend.Util.Interfaces;
+using System;
 using System.Collections.Generic;
 
 namespace PubQuizBackend.Model.DbModel;
 
-public partial class QuizSegment
+public partial class QuizSegment : INumbered
 {
     public int Id { get; set; }
 

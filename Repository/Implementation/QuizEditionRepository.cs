@@ -123,12 +123,6 @@ namespace PubQuizBackend.Repository.Implementation
 
         public async Task<QuizEdition> Update(NewQuizEditionDto editionDto, int userId)
         {
-            var organizer = await _context.HostOrganizationQuizzes.Where(x => x.HostId == userId && x.QuizId == editionDto.QuizId).FirstOrDefaultAsync()
-                ?? throw new UnauthorizedException();
-
-            if (!organizer.EditEdition)
-                throw new UnauthorizedException();
-
             var edition = await _context.QuizEditions.Include(x => x.EditionPrizes).FirstOrDefaultAsync(x => x.Id == editionDto.Id && x.QuizId == editionDto.QuizId)
                 ?? throw new BadRequestException();
 
