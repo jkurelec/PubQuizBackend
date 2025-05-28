@@ -9,11 +9,11 @@ public partial class QuizEditionApplication
 
     public int TeamId { get; set; }
 
-    public int QuizEditionId { get; set; }
+    public int EditionId { get; set; }
 
     public bool? Accepted { get; set; }
 
-    public virtual QuizEdition QuizEdition { get; set; } = null!;
+    public virtual QuizEdition Edition { get; set; } = null!;
 
     public virtual Team Team { get; set; } = null!;
 

@@ -23,13 +23,9 @@ public partial class Team
 
     public virtual Quiz Quiz { get; set; } = null!;
 
-    public virtual ICollection<QuizAnswer> QuizAnswers { get; set; } = new List<QuizAnswer>();
-
     public virtual ICollection<QuizEditionApplication> QuizEditionApplications { get; set; } = new List<QuizEditionApplication>();
 
     public virtual ICollection<QuizEditionResult> QuizEditionResults { get; set; } = new List<QuizEditionResult>();
-
-    public virtual ICollection<UserTeamEdition> UserTeamEditions { get; set; } = new List<UserTeamEdition>();
 
     public virtual ICollection<UserTeam> UserTeams { get; set; } = new List<UserTeam>();
 }

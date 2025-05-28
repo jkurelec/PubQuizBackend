@@ -10,11 +10,11 @@ namespace PubQuizBackend.Controllers
 {
     [Route("organizer")]
     [ApiController]
-    public class OrganizerController : ControllerBase
+    public class OrganizationController : ControllerBase
     {
-        private readonly IOrganizerService _service;
+        private readonly IOrganizationService _service;
 
-        public OrganizerController(IOrganizerService service)
+        public OrganizationController(IOrganizationService service)
         {
             _service = service;
         }
@@ -43,14 +43,13 @@ namespace PubQuizBackend.Controllers
             return Ok(await _service.GetHostsFromOrganization(organizerId));
         }
 
-        [RoleAndAudience(Role.ORGANIZER, Audience.ORGANIZER)]
         [HttpPost]
         public async Task<IActionResult> Add(NewOrganizationDto newOraganizer)
         {
             if (User.GetUserId() != newOraganizer.OwnerId)
                 throw new UnauthorizedException();
 
-            var organizer = await _service.Add(newOraganizer.Name, newOraganizer.OwnerId);
+            var organizer = await _service.Add(newOraganizer);
 
             return CreatedAtAction(
                 nameof(GetById),
@@ -59,13 +58,12 @@ namespace PubQuizBackend.Controllers
             );
         }
 
-        [RoleAndAudience(Role.ORGANIZER, Audience.ORGANIZER)]
         [HttpPost("host")]
         public async Task<IActionResult> AddHost(NewHostDto newHost)
         {
             await OwnerCheck(newHost.OrganizerId);
 
-            var host = await _service.AddHost(newHost.OrganizerId, newHost.HostId, newHost.QuizId, newHost.HostPermissions);
+            var host = await _service.AddHost(newHost);
 
             return CreatedAtAction(
                 nameof(GetById),
@@ -74,7 +72,6 @@ namespace PubQuizBackend.Controllers
             );
         }
 
-        [RoleAndAudience(Role.ORGANIZER, Audience.ORGANIZER)]
         [HttpPut]
         public async Task<IActionResult> Update(OrganizationUpdateDto updatedOrganizer)
         {
@@ -83,7 +80,6 @@ namespace PubQuizBackend.Controllers
             return Ok(await _service.Update(updatedOrganizer));
         }
 
-        [RoleAndAudience(Role.ORGANIZER, Audience.ORGANIZER)]
         [HttpPut("host")]
         public async Task<IActionResult> UpdateHost(NewHostDto updatedHost)
         {
@@ -94,38 +90,41 @@ namespace PubQuizBackend.Controllers
             );
         }
 
-        [RoleAndAudience(Role.ORGANIZER, Audience.ORGANIZER)]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             await OwnerCheck(id);
 
-            return Ok(await _service.Delete(id));
+            await _service.Delete(id);
+
+            return NoContent();
         }
 
-        [RoleAndAudience(Role.ORGANIZER, Audience.ORGANIZER)]
         [HttpDelete("{organizerId}/host/{hostId}")]
         public async Task<IActionResult> DeleteHost(int organizerId, int hostId)
         {
             await OwnerCheck(organizerId);
 
-            return Ok(await _service.DeleteHost(organizerId, hostId));
+            await _service.DeleteHost(organizerId, hostId);
+
+            return NoContent();
         }
 
-        [RoleAndAudience(Role.ORGANIZER, Audience.ORGANIZER)]
         [HttpDelete("{organizerId}/host/{hostId}/quiz/{quizId}")]
         public async Task<IActionResult> RemoveHostFromQuiz(int organizerId, int hostId, int quizId)
         {
             await OwnerCheck(organizerId);
 
-            return Ok(await _service.RemoveHostFromQuiz(organizerId, hostId, quizId));
+            await _service.RemoveHostFromQuiz(organizerId, hostId, quizId);
+
+            return NoContent();
         }
 
         private async Task OwnerCheck(int organizerId)
         {
-            var host = await _service.GetById(organizerId);
+            var organization = await _service.GetById(organizerId);
 
-            if (User.GetUserId() != host.Owner.Id)
+            if (User.GetUserId() != organization.Owner.Id)
                 throw new UnauthorizedException();
         }
     }

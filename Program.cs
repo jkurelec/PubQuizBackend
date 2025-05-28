@@ -29,7 +29,7 @@ builder.Services.AddDbContext<PubQuizContext>(options =>
 builder.Services.AddScoped<ICityRepository, CityRepository>();
 builder.Services.AddScoped<ICountryRepository, CountryRepository>();
 builder.Services.AddScoped<ILocationRepository, LocationRepository>();
-builder.Services.AddScoped<IOrganizerRepository, OrganizerRepository>();
+builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
 builder.Services.AddScoped<IPostalCodeRepository, PostalCodeRepository>();
 builder.Services.AddScoped<IPrizeRepository, PrizeRepository>();
 builder.Services.AddScoped<IQuizAnswerRepository, QuizAnswerRepository>();
@@ -44,7 +44,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<ILocationService, LocationService>();
-builder.Services.AddScoped<IOrganizerService, OrganizerService>();
+builder.Services.AddScoped<IOrganizationService, OrganizationService>();
 builder.Services.AddScoped<IQuizAnswerService, QuizAnswerService>();
 builder.Services.AddScoped<IQuizCategoryService, QuizCategoryService>();
 builder.Services.AddScoped<IQuizEditionService, QuizEditionService>();

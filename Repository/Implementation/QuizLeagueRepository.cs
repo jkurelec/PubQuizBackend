@@ -41,7 +41,7 @@ namespace PubQuizBackend.Repository.Implementation
             foreach (var prizeDto in leagueDto.Prizes)
                 prizes.Add(await _prizeRepository.AddLeague(prizeDto, entity.Entity.Id));
 
-            return await GetById(entity.Entity.Id);
+            return await GetByIdDetailed(entity.Entity.Id);
         }
 
         public async Task<bool> Delete(int id, int userId)
@@ -59,6 +59,12 @@ namespace PubQuizBackend.Repository.Implementation
         }
 
         public async Task<QuizLeague> GetById(int id)
+        {
+            return await _context.QuizLeagues.FindAsync(id)
+                    ?? throw new NotFoundException("League not found!");
+        }
+
+        public async Task<QuizLeague> GetByIdDetailed(int id)
         {
             return await _context.QuizLeagues
                 .Include(x => x.LeaguePrizes)
@@ -114,7 +120,7 @@ namespace PubQuizBackend.Repository.Implementation
             
             await _context.SaveChangesAsync();
 
-            return await GetById(leagueDto.Id);
+            return await GetByIdDetailed(leagueDto.Id);
         }
     }
 }

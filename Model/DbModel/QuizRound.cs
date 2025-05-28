@@ -1,10 +1,9 @@
-﻿using PubQuizBackend.Util.Interfaces;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace PubQuizBackend.Model.DbModel;
 
-public partial class QuizRound : INumbered
+public partial class QuizRound
 {
     public int Id { get; set; }
 

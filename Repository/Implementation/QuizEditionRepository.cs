@@ -4,7 +4,6 @@ using PubQuizBackend.Model;
 using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.PrizesDto;
 using PubQuizBackend.Model.Dto.QuizEditionDto;
-using PubQuizBackend.Model.Dto.TeamDto;
 using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Util;
 using System.Text;
@@ -24,25 +23,6 @@ namespace PubQuizBackend.Repository.Implementation
 
         public async Task<QuizEdition> Add(NewQuizEditionDto editionDto, int userId)
         {
-            var organizer = await _context.HostOrganizationQuizzes.Where(x => x.HostId == userId && x.QuizId == editionDto.QuizId).FirstOrDefaultAsync()
-                ?? throw new UnauthorizedException();
-
-            if (!organizer.CreateEdition)
-                throw new UnauthorizedException();
-
-            if (editionDto.LeagueId != null)
-            {
-                var league = await _context.QuizLeagues.FindAsync(editionDto.LeagueId)
-                    ?? throw new NotFoundException("League not found");
-
-                if (league.QuizId != editionDto.QuizId)
-                    throw new UnauthorizedException();
-            }
-
-            if (userId != editionDto.HostId)
-                if (!await _context.HostOrganizationQuizzes.AnyAsync(x => x.HostId == editionDto.HostId && x.QuizId == editionDto.QuizId))
-                    throw new BadRequestException("Who is the host?");
-
             if (await _context.QuizEditions.AnyAsync(x => x.QuizId == editionDto.QuizId && x.Name == editionDto.Name))
             {
                 var altName =
@@ -82,20 +62,11 @@ namespace PubQuizBackend.Repository.Implementation
             foreach (var prizeDto in editionDto.Prizes)
                 prizes.Add(await _prizeRepository.AddEdition(prizeDto, entity.Entity.Id));
 
-            return await GetById(entity.Entity.Id);
+            return await GetByIdDetailed(entity.Entity.Id);
         }
 
-        public async Task Delete(int editionId, int userId)
+        public async Task Delete(QuizEdition edition)
         {
-            var edition = await _context.QuizEditions.FirstOrDefaultAsync(x => x.Id == editionId)
-                ?? throw new UnauthorizedException();
-
-            var host = await _context.HostOrganizationQuizzes.Where(x => x.HostId == userId && x.QuizId == edition.QuizId).FirstOrDefaultAsync()
-                ?? throw new UnauthorizedException();
-
-            if (!host.DeleteEdition)
-                throw new UnauthorizedException();
-
             _context.QuizEditions.Remove(edition);
             await _context.SaveChangesAsync();
         }
@@ -112,6 +83,12 @@ namespace PubQuizBackend.Repository.Implementation
         }
 
         public async Task<QuizEdition> GetById(int id)
+        {
+            return await _context.QuizEditions.FirstOrDefaultAsync(x => x.Id == id)
+                ?? throw new UnauthorizedException();
+        }
+
+        public async Task<QuizEdition> GetByIdDetailed(int id)
         {
             return await _context.QuizEditions
                 .Include(x => x.Host)
@@ -139,6 +116,11 @@ namespace PubQuizBackend.Repository.Implementation
                     ?? throw new NotFoundException("Edition not found!");
         }
 
+        public async Task<bool> IsNameTaken(string name, int quizId)
+        {
+            return await _context.QuizEditions.AnyAsync(x => x.Name == name && x.QuizId == quizId);
+        }
+
         public async Task<QuizEdition> Update(NewQuizEditionDto editionDto, int userId)
         {
             var organizer = await _context.HostOrganizationQuizzes.Where(x => x.HostId == userId && x.QuizId == editionDto.QuizId).FirstOrDefaultAsync()
@@ -152,7 +134,7 @@ namespace PubQuizBackend.Repository.Implementation
 
             if (edition.Name != editionDto.Name)
             {
-                var nameTaken = await _context.QuizEditions.AnyAsync(x => x.Name == editionDto.Name && x.QuizId == editionDto.QuizId);
+                var nameTaken = await IsNameTaken(editionDto.Name, edition.QuizId);
 
                 if (!nameTaken)
                     edition.Name = editionDto.Name;
@@ -224,32 +206,13 @@ namespace PubQuizBackend.Repository.Implementation
 
             await _context.SaveChangesAsync();
 
-            return await GetById(edition.Id);
+            return await GetByIdDetailed(edition.Id);
         }
 
         public async Task ApplyTeam(int editionId, int teamId, IEnumerable<int> userIds, int registrantId)
         {
-            if (!userIds.Any())
-                throw new BadRequestException("No members in team!");
-
-            var registrant = await _context.UserTeams.FindAsync(registrantId, teamId)
-                ?? throw new UnauthorizedException();
-
-            if (registrant.RegisterTeam == false)
-                throw new UnauthorizedException();
-
-            var usersInTeam = await _context.UserTeams
-                .Where(x => x.TeamId == teamId && userIds.Contains(x.UserId))
-                .Select(x => x.UserId)
-                .ToListAsync();
-
-            var usersNotInTeam = userIds.Except(usersInTeam).ToList();
-
-            if (usersNotInTeam.Count > 0)
-                throw new BadRequestException("User not in team!");
-
             var teamRegistered = await _context.QuizEditionApplications
-                .AnyAsync(x => x.TeamId == teamId && x.QuizEditionId == editionId);
+                .AnyAsync(x => x.TeamId == teamId && x.EditionId == editionId);
 
             if (teamRegistered)
                 throw new BadRequestException("Team already applied to this edition");
@@ -274,7 +237,7 @@ namespace PubQuizBackend.Repository.Implementation
                 var entity = await _context.QuizEditionApplications.AddAsync(new QuizEditionApplication
                 {
                     TeamId = teamId,
-                    QuizEditionId = editionId,
+                    EditionId = editionId,
                     Accepted = null
                 });
 
@@ -300,13 +263,7 @@ namespace PubQuizBackend.Repository.Implementation
 
         public async Task<IEnumerable<QuizEditionApplication>> GetApplications(int editionId, int hostId, bool unanswered)
         {
-            var edition = await _context.QuizEditions.FirstOrDefaultAsync(x => x.Id == editionId)
-                ?? throw new UnauthorizedException();
-
-            var host = await _context.HostOrganizationQuizzes.Where(x => x.HostId == hostId && x.QuizId == edition.QuizId).FirstOrDefaultAsync()
-                ?? throw new UnauthorizedException();
-
-            var query = _context.QuizEditionApplications.Where(x => x.QuizEditionId == editionId);
+            var query = _context.QuizEditionApplications.Where(x => x.EditionId == editionId);
 
             if (unanswered)
             {
@@ -332,7 +289,7 @@ namespace PubQuizBackend.Repository.Implementation
             if (application.Accepted != null)
                 throw new UnauthorizedException();
 
-            var edition = await _context.QuizEditions.FirstOrDefaultAsync(x => x.Id == application.QuizEditionId)
+            var edition = await _context.QuizEditions.FirstOrDefaultAsync(x => x.Id == application.EditionId)
                 ?? throw new UnauthorizedException();
 
             var host = await _context.HostOrganizationQuizzes.Where(x => x.HostId == hostId && x.QuizId == edition.QuizId).FirstOrDefaultAsync()
@@ -353,7 +310,7 @@ namespace PubQuizBackend.Repository.Implementation
                         new()
                         {
                             TeamId = application.TeamId,
-                            EditionId = application.QuizEditionId
+                            EditionId = application.EditionId
                         }
                     );
 
@@ -361,12 +318,12 @@ namespace PubQuizBackend.Repository.Implementation
 
                     var userIds = application.Users.Select(x => x.Id).ToList();
 
-                    var sql = new StringBuilder("INSERT INTO user_team_edition (user_id, team_id, quiz_edition_result_id) VALUES ");
+                    var sql = new StringBuilder("INSERT INTO user_edition (user_id, edition_result_id) VALUES ");
                     var parameters = new List<object>();
 
                     for (int i = 0; i < userIds.Count; i++)
                     {
-                        sql.Append($"(@p{parameters.Count}, @p{parameters.Count + 1}, @p{parameters.Count + 2}),");
+                        sql.Append($"(@p{parameters.Count}, @p{parameters.Count + 1}),");
 
                         parameters.Add(userIds[i]);
                         parameters.Add(application.TeamId);
@@ -386,6 +343,43 @@ namespace PubQuizBackend.Repository.Implementation
 
                 throw new DivineException();
             }
+        }
+
+        public async Task RemoveTeamFromEdition(int editionId, int teamId)
+        {
+            var edition = await GetById(editionId);
+
+            if (edition.Time > DateTime.UtcNow)
+                throw new BadRequestException("Can not remove a team before they do not show up!");
+
+            var teamOnEdition = await _context.QuizEditionResults
+                .Include(x => x.Users)
+                .FirstOrDefaultAsync(x => x.TeamId == teamId && x.EditionId == editionId)
+                ?? throw new NotFoundException($"Team {teamId} not found in edition {editionId}!");
+
+            foreach (var user in teamOnEdition.Users)
+                user.Rating -= 50;
+
+            _context.QuizEditionResults.Remove(teamOnEdition);
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task WithdrawFromEdition(int editionId, int teamId)
+        {
+            var edition = await GetById(editionId);
+
+            if (edition.Time < DateTime.UtcNow)
+                throw new BadRequestException("Can not withdraw after the edition started!");
+
+            // DODATI TABLICU TEAM_PULLED_OUT DA ORGANIZATORI ZNAJU JEL TIM UPORNO ODUSTAJE ?!?
+            var teamOnEdition = await _context.QuizEditionResults
+                .FirstOrDefaultAsync(x => x.TeamId == teamId && x.EditionId == editionId)
+                ?? throw new NotFoundException($"Team {teamId} not found in edition {editionId}!");
+
+            _context.QuizEditionResults.Remove(teamOnEdition);
+
+            await _context.SaveChangesAsync();
         }
 
         private static void DateAndFeeCheck(NewQuizEditionDto editionDto)

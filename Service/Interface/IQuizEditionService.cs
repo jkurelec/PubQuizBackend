@@ -12,7 +12,9 @@ namespace PubQuizBackend.Service.Interface
         Task<QuizEditionDetailedDto> Update(NewQuizEditionDto editionDto, int userId);
         Task Delete(int editionId, int userId);
         Task ApplyTeam(QuizEditionApplicationRequestDto application, int registrantId);
+        Task WithdrawFromEdition(int editionId, int teamId, int userId);
         Task<IEnumerable<QuizEditionApplicationDto>> GetApplications(int editionId, int hostId, bool unanswered);
         Task RespondToApplication(QuizEditionApplicationResponseDto application, int hostId);
+        Task RemoveTeamFromEdition(int editionId, int teamId, int userId);
     }
 }
