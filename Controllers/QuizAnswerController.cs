@@ -1,4 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using NuGet.Protocol.Core.Types;
+using PubQuizBackend.Model.Dto.QuizAnswerDto;
+using PubQuizBackend.Service.Interface;
+using PubQuizBackend.Util.Extension;
 
 namespace PubQuizBackend.Controllers
 {
@@ -6,26 +10,59 @@ namespace PubQuizBackend.Controllers
     [ApiController]
     public class QuizAnswerController : ControllerBase
     {
-        [HttpGet]
-        public IEnumerable<string> Get()
+        private readonly IQuizAnswerService _quizAnswerService;
+
+        public QuizAnswerController(IQuizAnswerService quizAnswerService)
         {
-            return new string[] { "value1", "value2" };
+            _quizAnswerService = quizAnswerService;
         }
 
-        [HttpGet("{id}")]
-        public string Get(int id)
+        [HttpGet("teamAnswer/{editionResultId}")]
+        public async Task<IActionResult> GetTeamAnswers(int editionResultId)
         {
-            return "value";
+            return Ok (await _quizAnswerService.GetTeamAnswers(editionResultId, User.GetUserId()));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetEditionResults(int editionId)
+        {
+            return Ok (await _quizAnswerService.GetEditionResults(editionId, User.GetUserId()));
+        }
+
+        [HttpPut("rank/{editionId}")]
+        public async Task<IActionResult> RankTeamsOnEdition(int editionId)
+        {
+            return Ok(await _quizAnswerService.RankTeamsOnEdition(editionId, User.GetUserId()));
+        }
+
+        [HttpPut("rank/breaktie/{promotedId}/{editionId}")]
+        public async Task<IActionResult> BreakTie(int promotedId, int editionId)
+        {
+            return Ok(await _quizAnswerService.BreakTie(promotedId, editionId, User.GetUserId()));
         }
 
         [HttpPost]
-        public void Post([FromBody] string value)
+        public async Task<IActionResult> GradeTeamAnswers(NewQuizRoundResultDto roundDto)
         {
+            return Ok(await _quizAnswerService.GradeTeamAnswers(roundDto, User.GetUserId()));
+        }
+
+        [HttpPost("points")]
+        public async Task<IActionResult> AddTeamRoundPoints(NewQuizRoundResultDto roundDto)
+        {
+            return Ok(await _quizAnswerService.AddTeamRoundPoints(roundDto, User.GetUserId()));
         }
 
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        public async Task<IActionResult> UpdateAnswerPoints(QuizAnswerDetailedDto answerDto)
         {
+            return Ok( await _quizAnswerService.UpdateAnswer(answerDto, User.GetUserId()));
+        }
+
+        [HttpPut("points/{id}")]
+        public async Task<IActionResult> UpdateTeamRoundPoints(QuizAnswerDetailedDto answerDto)
+        {
+            return Ok(await _quizAnswerService.UpdateAnswer(answerDto, User.GetUserId()));
         }
 
         //Jel treba delete?

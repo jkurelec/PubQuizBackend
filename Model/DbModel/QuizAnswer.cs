@@ -7,7 +7,7 @@ public partial class QuizAnswer
 {
     public int Id { get; set; }
 
-    public string? Answer { get; set; }
+    public string Answer { get; set; } = null!;
 
     public decimal Points { get; set; }
 
@@ -15,9 +15,9 @@ public partial class QuizAnswer
 
     public int Result { get; set; }
 
-    public int? QuizEditionResultId { get; set; }
+    public int SegmentResultId { get; set; }
 
     public virtual QuizQuestion Question { get; set; } = null!;
 
-    public virtual QuizEditionResult? QuizEditionResult { get; set; }
+    public virtual QuizSegmentResult SegmentResult { get; set; } = null!;
 }

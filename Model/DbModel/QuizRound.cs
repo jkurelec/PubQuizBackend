@@ -12,7 +12,11 @@ public partial class QuizRound : INumbered
 
     public int EditionId { get; set; }
 
+    public decimal Points { get; set; }
+
     public virtual QuizEdition Edition { get; set; } = null!;
+
+    public virtual ICollection<QuizRoundResult> QuizRoundResults { get; set; } = new List<QuizRoundResult>();
 
     public virtual ICollection<QuizSegment> QuizSegments { get; set; } = new List<QuizSegment>();
 }

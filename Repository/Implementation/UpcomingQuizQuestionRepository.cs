@@ -22,6 +22,17 @@ namespace PubQuizBackend.Repository.Implementation
         public async Task<QuizQuestion> AddQuestion(QuizQuestionDto questionDto)
         {
             var entity = await _context.QuizQuestions.AddAsync(questionDto.ToObject());
+
+            var round = await _context.QuizSegments
+                .Where(x => x.Id == questionDto.SegmentId)
+                .Select(x => x.Round)
+                .Include(r => r.Edition)
+                .FirstOrDefaultAsync()
+                ?? throw new BadRequestException();
+
+            round.Points += questionDto.Points;
+            round.Edition.TotalPoints += questionDto.Points;
+
             await _context.SaveChangesAsync();
 
             return entity.Entity;
@@ -49,24 +60,35 @@ namespace PubQuizBackend.Repository.Implementation
                 //Moguce da nema pitanja a da je doslo do ovdje?
                 ?? throw new BadRequestException("No question found");
 
-            var segmentId = question.SegmentId;
-
-            _context.QuizQuestions.Remove(question);
-
             var segment = await _context.QuizSegments
                 .Include(x => x.QuizQuestions)
-                .FirstOrDefaultAsync(x => x.Id == segmentId)
-                    ?? throw new NotFoundException("Segment not found!");
+                .FirstOrDefaultAsync(x => x.Id == question.SegmentId)
+                ?? throw new NotFoundException("Segment not found!");
 
             Reorder(segment.QuizQuestions.ToList());
+
+            var round = await _context.QuizRounds
+                .Where(x => x.Id == segment.RoundId)
+                .Include(r => r.Edition)
+                .FirstOrDefaultAsync()
+                ?? throw new BadRequestException();
+
+            round.Points -= question.Points;
+            round.Edition.TotalPoints -= question.Points;
+
+            _context.QuizQuestions.Remove(question);
 
             await _context.SaveChangesAsync();
         }
 
         public async Task DeleteRound(int roundId, QuizEdition edition)
         {
-            var round = await _context.QuizRounds.FindAsync(roundId)
+            var round = await _context.QuizRounds
+                .Include(x => x.Edition)
+                .FirstOrDefaultAsync(x => x.Id == roundId)
                 ?? throw new BadRequestException("No question found");
+
+            round.Edition.TotalPoints -= round.Points;
 
             _context.QuizRounds.Remove(round);
 
@@ -97,7 +119,11 @@ namespace PubQuizBackend.Repository.Implementation
 
         public async Task<QuizQuestion> EditQuestion(QuizQuestionDto questionDto)
         {
-            var question = await _context.QuizQuestions.FindAsync(questionDto.Id)
+            var question = await _context.QuizQuestions
+                .Include(x => x.Segment)
+                    .ThenInclude(s => s.Round)
+                        .ThenInclude(r => r.Edition)
+                .FirstOrDefaultAsync(x => x.Id == questionDto.Id)
                 ?? throw new BadRequestException("Question not found!");
 
             if (Enum.IsDefined(questionDto.Type))
@@ -108,7 +134,10 @@ namespace PubQuizBackend.Repository.Implementation
             else
                 throw new BadRequestException("Invalid question type!");
 
-                PropertyUpdater.UpdateEntityFromDto(question, questionDto, "Id", "SegmentId", "Number");
+            question.Segment.Round.Points += questionDto.Points - question.Points;
+            question.Segment.Round.Edition.TotalPoints += questionDto.Points - question.Points;
+
+            PropertyUpdater.UpdateEntityFromDto(question, questionDto, "Id", "SegmentId", "Number");
 
             await _context.SaveChangesAsync();
 

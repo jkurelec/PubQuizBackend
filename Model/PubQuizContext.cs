@@ -50,7 +50,11 @@ public partial class PubQuizContext : DbContext
 
     public virtual DbSet<QuizRound> QuizRounds { get; set; }
 
+    public virtual DbSet<QuizRoundResult> QuizRoundResults { get; set; }
+
     public virtual DbSet<QuizSegment> QuizSegments { get; set; }
+
+    public virtual DbSet<QuizSegmentResult> QuizSegmentResults { get; set; }
 
     public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
 
@@ -325,19 +329,18 @@ public partial class PubQuizContext : DbContext
                 .HasPrecision(10, 2)
                 .HasColumnName("points");
             entity.Property(e => e.QuestionId).HasColumnName("question_id");
-            entity.Property(e => e.QuizEditionResultId).HasColumnName("quiz_edition_result_id");
             entity.Property(e => e.Result)
                 .HasDefaultValue(0)
                 .HasColumnName("result");
+            entity.Property(e => e.SegmentResultId).HasColumnName("segment_result_id");
 
             entity.HasOne(d => d.Question).WithMany(p => p.QuizAnswers)
                 .HasForeignKey(d => d.QuestionId)
                 .HasConstraintName("fk_quiz_answer_question");
 
-            entity.HasOne(d => d.QuizEditionResult).WithMany(p => p.QuizAnswers)
-                .HasForeignKey(d => d.QuizEditionResultId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("fk_quiz_answer_edition_result");
+            entity.HasOne(d => d.SegmentResult).WithMany(p => p.QuizAnswers)
+                .HasForeignKey(d => d.SegmentResultId)
+                .HasConstraintName("fk_quiz_answer_segment_result");
         });
 
         modelBuilder.Entity<QuizCategory>(entity =>
@@ -543,10 +546,39 @@ public partial class PubQuizContext : DbContext
                 .HasColumnName("id");
             entity.Property(e => e.EditionId).HasColumnName("edition_id");
             entity.Property(e => e.Number).HasColumnName("number");
+            entity.Property(e => e.Points)
+                .HasPrecision(5, 2)
+                .HasColumnName("points");
 
             entity.HasOne(d => d.Edition).WithMany(p => p.QuizRounds)
                 .HasForeignKey(d => d.EditionId)
                 .HasConstraintName("round_edition_id_fkey");
+        });
+
+        modelBuilder.Entity<QuizRoundResult>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("quiz_round_result_pkey");
+
+            entity.ToTable("quiz_round_result");
+
+            entity.Property(e => e.Id)
+                .UseIdentityAlwaysColumn()
+                .HasColumnName("id");
+            entity.Property(e => e.EditionResultId).HasColumnName("edition_result_id");
+            entity.Property(e => e.Points)
+                .HasPrecision(5, 2)
+                .HasColumnName("points");
+            entity.Property(e => e.RoundId).HasColumnName("round_id");
+
+            entity.HasOne(d => d.EditionResult).WithMany(p => p.QuizRoundResults)
+                .HasForeignKey(d => d.EditionResultId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("quiz_round_result_edition_result_id_fkey");
+
+            entity.HasOne(d => d.Round).WithMany(p => p.QuizRoundResults)
+                .HasForeignKey(d => d.RoundId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("quiz_round_result_round_id_fkey");
         });
 
         modelBuilder.Entity<QuizSegment>(entity =>
@@ -568,6 +600,29 @@ public partial class PubQuizContext : DbContext
             entity.HasOne(d => d.Round).WithMany(p => p.QuizSegments)
                 .HasForeignKey(d => d.RoundId)
                 .HasConstraintName("segment_round_id_fkey");
+        });
+
+        modelBuilder.Entity<QuizSegmentResult>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("quiz_segment_result_pkey");
+
+            entity.ToTable("quiz_segment_result");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.BonusPoints)
+                .HasPrecision(10, 2)
+                .HasColumnName("bonus_points");
+            entity.Property(e => e.RoundResultId).HasColumnName("round_result_id");
+            entity.Property(e => e.SegmentId).HasColumnName("segment_id");
+
+            entity.HasOne(d => d.RoundResult).WithMany(p => p.QuizSegmentResults)
+                .HasForeignKey(d => d.RoundResultId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("quiz_segment_results_round_result_id_fkey");
+
+            entity.HasOne(d => d.Segment).WithMany(p => p.QuizSegmentResults)
+                .HasForeignKey(d => d.SegmentId)
+                .HasConstraintName("fk_segment_result_segment");
         });
 
         modelBuilder.Entity<RefreshToken>(entity =>
