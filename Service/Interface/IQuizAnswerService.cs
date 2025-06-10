@@ -1,5 +1,4 @@
-﻿using PubQuizBackend.Model.DbModel;
-using PubQuizBackend.Model.Dto.QuizAnswerDto;
+﻿using PubQuizBackend.Model.Dto.QuizAnswerDto;
 
 namespace PubQuizBackend.Service.Interface
 {

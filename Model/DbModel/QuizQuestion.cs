@@ -24,6 +24,8 @@ public partial class QuizQuestion : INumbered
 
     public int Number { get; set; }
 
+    public int Rating { get; set; }
+
     public virtual ICollection<QuizAnswer> QuizAnswers { get; set; } = new List<QuizAnswer>();
 
     public virtual QuizSegment Segment { get; set; } = null!;

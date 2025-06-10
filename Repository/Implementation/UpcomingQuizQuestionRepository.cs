@@ -21,8 +21,6 @@ namespace PubQuizBackend.Repository.Implementation
 
         public async Task<QuizQuestion> AddQuestion(QuizQuestionDto questionDto)
         {
-            var entity = await _context.QuizQuestions.AddAsync(questionDto.ToObject());
-
             var round = await _context.QuizSegments
                 .Where(x => x.Id == questionDto.SegmentId)
                 .Select(x => x.Round)
@@ -30,12 +28,16 @@ namespace PubQuizBackend.Repository.Implementation
                 .FirstOrDefaultAsync()
                 ?? throw new BadRequestException();
 
+            questionDto.Rating = round.Edition.Rating;
+
+            var entityEntry = await _context.QuizQuestions.AddAsync(questionDto.ToObject());
+
             round.Points += questionDto.Points;
             round.Edition.TotalPoints += questionDto.Points;
 
             await _context.SaveChangesAsync();
 
-            return entity.Entity;
+            return entityEntry.Entity;
         }
 
         public async Task<QuizRound> AddRound(QuizRoundDto roundDto)

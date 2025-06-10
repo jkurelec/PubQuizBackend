@@ -15,6 +15,8 @@ public partial class QuizEditionResult
 
     public decimal TotalPoints { get; set; }
 
+    public int Rating { get; set; }
+
     public virtual QuizEdition Edition { get; set; } = null!;
 
     public virtual ICollection<QuizRoundResult> QuizRoundResults { get; set; } = new List<QuizRoundResult>();

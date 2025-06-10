@@ -37,7 +37,6 @@ namespace PubQuizBackend.Repository.Implementation
                 {
                     Name = name,
                     OwnerId = owner.Id,
-                    Rating = owner.Rating,
                     CategoryId = 1,
                     QuizId = 1
                 }

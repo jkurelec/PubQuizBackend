@@ -12,7 +12,6 @@ namespace PubQuizBackend.Model.Dto.ApplicationDto
             Id = application.Id;
             TeamId = application.Team.Id;
             TeamName = application.Team.Name;
-            TeamRating = application.Team.Rating;
             TeamCategory = new(application.Team.Category);
             TeamQuiz = new(application.Team.Quiz);
             TeamMembers = application.Users.Select(x => new UserBriefDto(x)).ToList();
@@ -22,7 +21,6 @@ namespace PubQuizBackend.Model.Dto.ApplicationDto
         public int Id { get; set; }
         public int TeamId { get; set; }
         public string TeamName { get; set; } = null!;
-        public int TeamRating { get; set; }
         public bool? Response { get; set; }
         public QCategoryDto TeamCategory { get; set; } = null!;
         public QuizMinimalDto TeamQuiz { get; set; } = null!;

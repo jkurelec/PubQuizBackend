@@ -469,6 +469,9 @@ public partial class PubQuizContext : DbContext
                 .HasColumnName("id");
             entity.Property(e => e.EditionId).HasColumnName("edition_id");
             entity.Property(e => e.Rank).HasColumnName("rank");
+            entity.Property(e => e.Rating)
+                .HasDefaultValue(1000)
+                .HasColumnName("rating");
             entity.Property(e => e.TeamId).HasColumnName("team_id");
             entity.Property(e => e.TotalPoints)
                 .HasPrecision(10, 2)
@@ -527,6 +530,9 @@ public partial class PubQuizContext : DbContext
                 .HasPrecision(10, 2)
                 .HasColumnName("points");
             entity.Property(e => e.Question).HasColumnName("question");
+            entity.Property(e => e.Rating)
+                .HasDefaultValue(1000)
+                .HasColumnName("rating");
             entity.Property(e => e.SegmentId).HasColumnName("segment_id");
             entity.Property(e => e.Type).HasColumnName("type");
 
@@ -661,9 +667,6 @@ public partial class PubQuizContext : DbContext
                 .HasColumnName("name");
             entity.Property(e => e.OwnerId).HasColumnName("owner_id");
             entity.Property(e => e.QuizId).HasColumnName("quiz_id");
-            entity.Property(e => e.Rating)
-                .HasDefaultValue(1000)
-                .HasColumnName("rating");
 
             entity.HasOne(d => d.Category).WithMany(p => p.Teams)
                 .HasForeignKey(d => d.CategoryId)

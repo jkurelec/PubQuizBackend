@@ -5,6 +5,7 @@ using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.PrizesDto;
 using PubQuizBackend.Model.Dto.QuizEditionDto;
 using PubQuizBackend.Repository.Interface;
+using PubQuizBackend.Service.Interface;
 using PubQuizBackend.Util;
 using System.Text;
 
@@ -14,11 +15,13 @@ namespace PubQuizBackend.Repository.Implementation
     {
         private readonly PubQuizContext _context;
         private readonly IPrizeRepository _prizeRepository;
+        private readonly IEloCalculatorService _eloCalculatorService;
 
-        public QuizEditionRepository(PubQuizContext context, IPrizeRepository prizeRepository)
+        public QuizEditionRepository(PubQuizContext context, IPrizeRepository prizeRepository, IEloCalculatorService eloCalculatorService)
         {
             _context = context;
             _prizeRepository = prizeRepository;
+            _eloCalculatorService = eloCalculatorService;
         }
 
         public async Task<QuizEdition> Add(NewQuizEditionDto editionDto, int userId)
@@ -304,7 +307,7 @@ namespace PubQuizBackend.Repository.Implementation
                         new()
                         {
                             TeamId = application.TeamId,
-                            EditionId = application.EditionId
+                            EditionId = application.EditionId,
                         }
                     );
 

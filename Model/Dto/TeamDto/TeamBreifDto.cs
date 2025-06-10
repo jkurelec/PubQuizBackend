@@ -10,11 +10,9 @@ namespace PubQuizBackend.Model.Dto.TeamDto
         {
             Id = team.Id;
             Name = team.Name;
-            Rating = team.Rating;
         }
 
         public int Id { get; set; }
         public string Name { get; set; } = null!;
-        public int Rating { get; set; }
     }
 }

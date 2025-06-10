@@ -41,6 +41,7 @@ builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<ITeamRepository, TeamRepository>();
 builder.Services.AddScoped<IUpcomingQuizQuestionRepository, UpcomingQuizQuestionRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IEloCalculatorRepository, EloCalculatorRepository>();
 
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<ILocationService, LocationService>();
@@ -55,6 +56,7 @@ builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 builder.Services.AddScoped<ITeamService, TeamService>();
 builder.Services.AddScoped<IUpcomingQuizQuestionService, UpcomingQuizQuestionService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IEloCalculatorService, EloCalculatorService>();
 
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
@@ -84,7 +86,12 @@ using (var scope = app.Services.CreateScope())
 {
     var quizCategoryRepo = scope.ServiceProvider.GetRequiredService<IQuizCategoryRepository>();
     var categories = await quizCategoryRepo.GetAll();
+
     QuizCategoryProvider.Initialize(categories);
+
+    var eloCalculatorService = scope.ServiceProvider.GetRequiredService<IEloCalculatorService>();
+
+    await eloCalculatorService.CalculateKappa();
 }
 
 app.UseGlobalExceptionHandler();

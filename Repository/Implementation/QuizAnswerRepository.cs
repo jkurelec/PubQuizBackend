@@ -245,7 +245,7 @@ namespace PubQuizBackend.Repository.Implementation
             var promotedTeam = editionResults.FirstOrDefault(x => x.Id == promotedId)
                 ?? throw new BadRequestException($"No EditionResult with id => {promotedId} found!");
 
-            var tiedTeams = editionResults.Where(x => x.Rank == promotedTeam.Rank && x.Id != promotedId).ToList();
+            var tiedTeams = editionResults.Where(x => x.Rank == promotedTeam.Rank && x.Id != promotedId && x.EditionId == editionId).ToList();
 
             if (tiedTeams.Count == 0)
                 throw new BadRequestException("No teams tied with given team!");

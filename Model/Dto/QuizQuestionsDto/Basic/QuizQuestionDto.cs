@@ -22,6 +22,7 @@ namespace PubQuizBackend.Model.Dto.QuizQuestionsDto.Basic
             BonusPoints = question.BonusPoints;
             MediaUrl = question.MediaUrl;
             Number = question.Number;
+            Rating = question.Rating;
         }
 
         public int Id { get; set; }
@@ -34,6 +35,7 @@ namespace PubQuizBackend.Model.Dto.QuizQuestionsDto.Basic
         public decimal BonusPoints { get; set; } = 0;
         public string? MediaUrl { get; set; }
         public int Number { get; set; }
+        public int Rating { get; set; }
 
         public QuizQuestion ToObject()
         {
@@ -49,7 +51,8 @@ namespace PubQuizBackend.Model.Dto.QuizQuestionsDto.Basic
                 Points = Points,
                 BonusPoints = BonusPoints,
                 MediaUrl = MediaUrl,
-                Number = Number
+                Number = Number,
+                Rating = Rating
             };
         } 
     }
