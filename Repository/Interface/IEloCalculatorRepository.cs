@@ -8,7 +8,7 @@ namespace PubQuizBackend.Repository.Interface
         Task<QuizEdition> GetEdition(int editionId);
         Task SaveChanges();
         Task AuthorizeHostByEditionId(int editionId, int hostId);
-        Task<int> GetNumberOfParticipations(int id, bool team);
+        Task<int> GetNumberOfParticipations(int id, int entity);
         Task<IEnumerable<int>> GetRatingsFromApplication(int applicationId);
         Task<Dictionary<int, Dictionary<int, List<QuestionResult>>>> GetAnswersForKappa();
     }

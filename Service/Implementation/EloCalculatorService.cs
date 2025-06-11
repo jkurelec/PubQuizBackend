@@ -1,18 +1,17 @@
-﻿using PubQuizBackend.Enums;
+﻿using NuGet.Protocol;
+using PubQuizBackend.Enums;
 using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.TeamDto;
 using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Service.Interface;
 using PubQuizBackend.Util;
-using System.Threading.Tasks;
 
 namespace PubQuizBackend.Service.Implementation
 {
     public class EloCalculatorService : IEloCalculatorService
     {
         private readonly IEloCalculatorRepository _repository;
-        private readonly float TeamKappa = 5f;
 
         public EloCalculatorService(IEloCalculatorRepository repository)
         {
@@ -30,9 +29,9 @@ namespace PubQuizBackend.Service.Implementation
             if (ratingAction == RatingAction.ABORT)
                 throw new BadRequestException("Not all round result are entered!");
             else if (ratingAction == RatingAction.BRIEF)
-                await BriefEloCalculation(edition, ratingAction);
+                await BriefEloCalculation(edition);
             else
-                DetailedEloCalculation(edition);
+                await DetailedEloCalculation(edition);
 
             await _repository.SaveChanges();
         }
@@ -74,10 +73,10 @@ namespace PubQuizBackend.Service.Implementation
                 : RatingAction.BRIEF;
         }
 
-        private async Task BriefEloCalculation(QuizEdition edition, RatingAction ratingAction)
+        private async Task BriefEloCalculation(QuizEdition edition)
         {
             Dictionary<int, TeamRatingCalculationParams> teamRatingCalculationParams = new ();
-            var editionKFactor = await GetKFactor(edition.Rating, edition.Id, false);
+            var editionKFactor = await GetKFactor(edition.Rating, edition.Id, 2);
             var scalingFactor = 400.0f;
             var editionRatingUpdate = 0;
 
@@ -86,12 +85,19 @@ namespace PubQuizBackend.Service.Implementation
                 var teamPlayers = editionResult.Team.UserTeams.Select(t => t.User).ToList();
                 var playerRatings = teamPlayers.Select(p => p.Rating).OrderDescending().ToList();
                 var teamRating = playerRatings.Max();
+                var teamRatingIncrease = 0;
+                var initailWinPropability = GetProbability(edition.Rating, teamRating, scalingFactor);
 
-
-                var teamKFactor = await GetKFactor(teamRating, editionResult.Team.Id, true);
+                var teamKFactor = await GetKFactor(teamRating, editionResult.Team.Id, 1);
 
                 for (int i = 1; i < playerRatings.Count; i++)
-                    teamRating += GetRatingUpdate(teamRating, playerRatings[i], teamKFactor, scalingFactor, Outcome.WIN);
+                {
+                    var probabilityIncrease = GetProbabilityForTeam(teamRating, playerRatings[i], scalingFactor);
+                    
+                    teamRatingIncrease += FindRatingChangeForWinProbability(edition.Rating, teamRating, initailWinPropability * (1 + probabilityIncrease), scalingFactor);
+                }
+
+                teamRating += teamRatingIncrease;
 
                 var wins = (int)editionResult.TotalPoints;
                 var losses = (int)edition.TotalPoints - wins;
@@ -109,25 +115,199 @@ namespace PubQuizBackend.Service.Implementation
             }
 
             edition.Rating += editionRatingUpdate;
+            editionRatingUpdate = 0;
 
-            foreach (var teamRating in teamRatingCalculationParams)
+            foreach (var teamParams in teamRatingCalculationParams)
             {
-                var team = edition.QuizEditionResults.FirstOrDefault(x => x.Id == teamRating.Key)!;
+                var team = edition.QuizEditionResults.FirstOrDefault(x => x.Id == teamParams.Key)!;
+                var teamRating = teamParams.Value.TeamRating;
+                var teamRatingUpdate = 0;
+                var teamKFactor = await GetKFactor(teamRating, teamParams.Key, 1);
 
+                editionRatingUpdate +=
+                        teamParams.Value.Losses * GetRatingUpdate(edition.Rating, teamRating, editionKFactor, scalingFactor, Outcome.WIN) +
+                        teamParams.Value.Wins * GetRatingUpdate(edition.Rating, teamRating, editionKFactor, scalingFactor, Outcome.LOSS) +
+                        teamParams.Value.Draws * GetRatingUpdate(edition.Rating, teamRating, editionKFactor, scalingFactor, Outcome.DRAW);
+
+                teamRatingUpdate += (int)Math.Round(
+                    (
+                        teamParams.Value.Wins * GetRatingUpdate(edition.Rating, teamRating, editionKFactor, scalingFactor, Outcome.WIN) +
+                        teamParams.Value.Losses * GetRatingUpdate(edition.Rating, teamRating, editionKFactor, scalingFactor, Outcome.LOSS) +
+                        teamParams.Value.Draws * GetRatingUpdate(edition.Rating, teamRating, editionKFactor, scalingFactor, Outcome.DRAW)
+                    ) / (double)edition.TotalPoints
+                );
                 
+                edition.QuizEditionResults.FirstOrDefault(x => x.Id == teamParams.Key)!.Rating = teamRating + teamRatingUpdate;
 
-                team.Rating = teamRating.Value.TeamRating;
+                //AKO NAJJACI DOBIVA I GUBI VISENAJVJEROJATNIJE GA SVI OVI DRUGI NECE DOSTICI PA JE BOLJE DA SLABIJI SLINGSHOTAJU DA NAJJACEG! K VEC POMAZE U SLINGSHOTANJU ALI MOZDA PROMJENITI KASNIJE!!!
+                var ratingUpdateValue = (float)(teamRatingUpdate / teamKFactor);
+
+                foreach (var user in team.Users)
+                {
+                    var ratingUpdate = await GetKFactor(user.Rating, user.Id, 0) * ratingUpdateValue;
+
+                    user.Rating += (int)Math.Round(ratingUpdate);
+
+                    if (user.Rating < 100)
+                        user.Rating = 100;
+                }
+            }
+
+            edition.Rating += (int)Math.Round(editionRatingUpdate / ((double)edition.TotalPoints * edition.QuizEditionResults.Count));
+
+            await _repository.SaveChanges();
+        }
+
+        private async Task DetailedEloCalculation(QuizEdition edition)
+        {
+            var editionKFactor = await GetKFactor(edition.Rating, edition.Id, 2);
+            var scalingFactor = 400.0f;
+            var editionRatingUpdate = 0;
+
+            foreach (var editionResult in edition.QuizEditionResults)
+            {
+                var teamPlayers = editionResult.Team.UserTeams.Select(t => t.User).ToList();
+                var playerRatings = teamPlayers.Select(p => p.Rating).OrderDescending().ToList();
+                var teamRating = playerRatings.Max();
+                var teamRatingUpdate = 0;
+                var initailWinPropability = GetProbability(edition.Rating, teamRating, scalingFactor);
+
+                var teamKFactor = await GetKFactor(teamRating, editionResult.Team.Id, 1);
+
+                for (int i = 1; i < playerRatings.Count; i++)
+                {
+                    var probabilityIncrease = GetProbabilityForTeam(teamRating, playerRatings[i], scalingFactor);
+
+                    teamRatingUpdate += FindRatingChangeForWinProbability(edition.Rating, teamRating, initailWinPropability * (1 + probabilityIncrease), scalingFactor);
+                }
+
+                teamRating += teamRatingUpdate;
+
+                editionResult.Rating = teamRating;
+
+                foreach (var round in editionResult.QuizRoundResults)
+                {
+                    foreach (var segment in round.QuizSegmentResults)
+                    {
+                        foreach (var answer in segment.QuizAnswers)
+                        {
+                            var outcome = Outcome.DRAW;
+
+                            if (answer.Result == (int)QuestionResult.Incorrect)
+                                outcome = Outcome.WIN;
+                            else if (answer.Result == (int)QuestionResult.Correct)
+                                outcome = Outcome.LOSS;
+                            else
+                                outcome = Outcome.DRAW;
+
+                            var ratingUpdate = GetRatingUpdate(edition.Rating, teamRating, editionKFactor, scalingFactor, outcome);
+                            answer.Question.Rating = edition.Rating + ratingUpdate;
+                            editionRatingUpdate += ratingUpdate;
+                        }
+                    }
+                }
+            }
+
+            var totalQuestions = 0;
+
+            foreach (var round in edition.QuizRounds)
+            {
+                foreach (var segment in round.QuizSegments)
+                {
+                    totalQuestions += segment.QuizQuestions.Count;
+                }
+            }
+
+            var totalTeams = edition.QuizEditionResults.Count;
+            var totalEntries = totalTeams * totalQuestions;
+
+            var questionRatingUpdates = new Dictionary<int, int>();
+
+            foreach (var editionResult in edition.QuizEditionResults)
+            {
+                var teamPlayers = editionResult.Team.UserTeams.Select(t => t.User).ToList();
+                var teamRating = editionResult.Rating;
+                var teamRatingUpdate = 0;
+                var teamKFactor = await GetKFactor(teamRating, editionResult.Team.Id, 1);
+
+                foreach (var round in editionResult.QuizRoundResults)
+                {
+                    foreach (var segment in round.QuizSegmentResults)
+                    {
+                        foreach (var answer in segment.QuizAnswers)
+                        {
+                            var questionId = answer.QuestionId;
+
+                            if (!questionRatingUpdates.ContainsKey(questionId))
+                                questionRatingUpdates[questionId] = 0;
+
+                            if (answer.Result == (int)QuestionResult.Incorrect)
+                            {
+                                questionRatingUpdates[questionId] += GetRatingUpdate(answer.Question.Rating, teamRating, editionKFactor, scalingFactor, Outcome.WIN);
+                                teamRatingUpdate += GetRatingUpdate(edition.Rating, teamRating, teamKFactor, scalingFactor, Outcome.LOSS);
+                            }
+                            else if (answer.Result == (int)QuestionResult.Correct)
+                            {
+                                questionRatingUpdates[questionId] += GetRatingUpdate(answer.Question.Rating, teamRating, editionKFactor, scalingFactor, Outcome.LOSS);
+                                teamRatingUpdate += GetRatingUpdate(edition.Rating, teamRating, teamKFactor, scalingFactor, Outcome.WIN);
+                            }
+                            else
+                            {
+                                questionRatingUpdates[questionId] += GetRatingUpdate(answer.Question.Rating, teamRating, editionKFactor, scalingFactor, Outcome.DRAW); ;
+                                teamRatingUpdate += GetRatingUpdate(edition.Rating, teamRating, teamKFactor, scalingFactor, Outcome.DRAW);
+                            }
+                        }
+                    }
+                }
+
+                var finalTeamRatingUpdate = (int)Math.Round(teamRatingUpdate / (double)totalQuestions);
+
+                editionResult.Rating += finalTeamRatingUpdate;
+
+                if (editionResult.Rating < 100)
+                    editionResult.Rating = 100;
+
+                var playerRatingUpdateValue = finalTeamRatingUpdate / (double)teamKFactor;
+
+                foreach (var user in teamPlayers)
+                {
+                    var ratingUpdate = await GetKFactor(user.Rating, user.Id, 0) * playerRatingUpdateValue;
+
+                    user.Rating += (int)Math.Round(ratingUpdate);
+
+                    if (user.Rating < 100)
+                        user.Rating = 100;
+                }
+
+                var editionRating = 0;
+
+                foreach (var round in edition.QuizRounds)
+                {
+                    foreach (var segment in round.QuizSegments)
+                    {
+                        foreach (var question in segment.QuizQuestions)
+                        {
+                            questionRatingUpdates.TryGetValue(question.Id, out var questionRatingUpdate);
+
+                            question.Rating += questionRatingUpdate;
+
+                            if (question.Rating < 100)
+                                question.Rating = 100;
+
+                            editionRating += question.Rating;
+                        }
+                    }
+                }
+
+                edition.Rating = (int)Math.Round(editionRating / (double)totalQuestions);
+
+                await _repository.SaveChanges();
             }
         }
 
-        private static void DetailedEloCalculation(QuizEdition edition)
+        private async Task<int> GetKFactor(int rating, int id, int entity)
         {
-            // Implement brief elo calculation logic here
-        }
-
-        private async Task<int> GetKFactor(int rating, int id, bool team = true)
-        {
-            var participationsCount = await _repository.GetNumberOfParticipations(id, team);
+            var participationsCount = await _repository.GetNumberOfParticipations(id, entity);
 
             int k = (int)Math.Round(800.0 / participationsCount);
 
@@ -159,13 +339,14 @@ namespace PubQuizBackend.Service.Implementation
 
                 foreach (var answerRating in questionRating.Value)
                 {
-                    var draws = answerRating.Value.Count(x => x == QuestionResult.Parital);
                     var total = answerRating.Value.Count;
+                    var draws = answerRating.Value.Count(x => x == QuestionResult.Parital);
+                    var winsAndLosses = total - draws;
 
                     kappas[questionRating.Key].Add(
                         answerRating.Key,
                         total > 100
-                            ? (float)draws / total
+                            ? (float)draws / winsAndLosses
                             : 0.05f
                     );
                 }
@@ -215,14 +396,14 @@ namespace PubQuizBackend.Service.Implementation
             }
         }
 
-        public static int FindRatingForWinProbability(int editionRating, int initialTeamRating, float targetWinProbability, float scalingFactor,float kappa)
+        public static int FindRatingChangeForWinProbability(int editionRating, int initialTeamRating, float targetWinProbability, float scalingFactor)
         {
-            //var kappa = KappaProvider.GetKappa(editionRating / 50, initialTeamRating / 50);
+            var kappa = KappaProvider.GetKappa(editionRating / 50, initialTeamRating / 50);
             var winProbForEqualRatings = 1.0f / (2.0f + kappa);
 
             if (MathF.Abs(targetWinProbability - winProbForEqualRatings) < float.Epsilon * 100f)
             {
-                return 0; // Rating difference is 0 when probabilities match for equal ratings
+                return 0;
             }
 
             var x = (targetWinProbability * kappa + MathF.Sqrt(MathF.Pow(targetWinProbability * kappa, 2) + 4 * targetWinProbability - 4 * MathF.Pow(targetWinProbability, 2)))
@@ -231,6 +412,13 @@ namespace PubQuizBackend.Service.Implementation
             var rating = (int)(scalingFactor * MathF.Log10(x));
 
             return rating;
+        }
+
+        private static float GetProbabilityForTeam(int targetRating, int opponentRating, float scalingFactor)
+        {
+            float rAB = targetRating - opponentRating;
+
+            return Sigma(rAB, 5f, scalingFactor);
         }
     }
 }

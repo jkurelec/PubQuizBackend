@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
 using PubQuizBackend.Enums;
 using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model;
@@ -72,15 +73,21 @@ namespace PubQuizBackend.Repository.Implementation
                 ?? throw new NotFoundException($"Edition with id => {editionId} not found!");
         }
 
-        public async Task<int> GetNumberOfParticipations(int id, bool team)
+        public async Task<int> GetNumberOfParticipations(int id, int entity)
         {
-            return team
-                ? await _context.QuizEditionResults
-                    .Where(x => x.Edition.Time < DateTime.UtcNow)
-                    .CountAsync(x => x.TeamId == id)
-                : await _context.QuizEditions
-                    .Where(x => x.Time < DateTime.UtcNow)
-                    .CountAsync(x => x.QuizId == id);
+            return entity switch
+            {
+                0 => await _context.QuizEditionResults
+                                        .Where(x => x.Edition.Time < DateTime.UtcNow)
+                                        .CountAsync(x => x.Team.UserTeams.Any(x => x.UserId == id)),
+                1 => await _context.QuizEditionResults
+                                        .Where(x => x.Edition.Time < DateTime.UtcNow)
+                                        .CountAsync(x => x.TeamId == id),
+                2 => await _context.QuizEditions
+                                        .Where(x => x.Time < DateTime.UtcNow)
+                                        .CountAsync(x => x.QuizId == id),
+                _ => throw new BadRequestException("Unknown entity type."),
+            };
         }
 
         public async Task<IEnumerable<int>> GetRatingsFromApplication(int applicationId)
