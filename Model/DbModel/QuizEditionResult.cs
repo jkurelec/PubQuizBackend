@@ -11,11 +11,17 @@ public partial class QuizEditionResult
 
     public int EditionId { get; set; }
 
-    public int Rank { get; set; }
+    public int? Rank { get; set; }
 
     public decimal TotalPoints { get; set; }
 
+    public int Rating { get; set; }
+
     public virtual QuizEdition Edition { get; set; } = null!;
 
+    public virtual ICollection<QuizRoundResult> QuizRoundResults { get; set; } = new List<QuizRoundResult>();
+
     public virtual Team Team { get; set; } = null!;
+
+    public virtual ICollection<User> Users { get; set; } = new List<User>();
 }

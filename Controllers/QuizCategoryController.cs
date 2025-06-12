@@ -2,9 +2,7 @@
 using PubQuizBackend.Auth.RoleAndAudienceFilter;
 using PubQuizBackend.Enums;
 using PubQuizBackend.Model.Dto.QuizCategoryDto;
-using PubQuizBackend.Service.Implementation;
 using PubQuizBackend.Service.Interface;
-using System.Threading.Tasks;
 
 namespace PubQuizBackend.Controllers
 {

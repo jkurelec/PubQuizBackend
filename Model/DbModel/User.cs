@@ -31,5 +31,11 @@ public partial class User
 
     public virtual ICollection<Team> Teams { get; set; } = new List<Team>();
 
+    public virtual ICollection<UserRatingHistory> UserRatingHistories { get; set; } = new List<UserRatingHistory>();
+
     public virtual ICollection<UserTeam> UserTeams { get; set; } = new List<UserTeam>();
+
+    public virtual ICollection<QuizEditionApplication> Applications { get; set; } = new List<QuizEditionApplication>();
+
+    public virtual ICollection<QuizEditionResult> EditionResults { get; set; } = new List<QuizEditionResult>();
 }

@@ -17,6 +17,10 @@ public partial class HostOrganizationQuiz
 
     public bool DeleteEdition { get; set; }
 
+    public bool CrudQuestion { get; set; }
+
+    public bool ManageApplication { get; set; }
+
     public virtual User Host { get; set; } = null!;
 
     public virtual Organization Organization { get; set; } = null!;

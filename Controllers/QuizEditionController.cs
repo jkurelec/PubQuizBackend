@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using PubQuizBackend.Model.Dto.ApplicationDto;
 using PubQuizBackend.Model.Dto.QuizEditionDto;
 using PubQuizBackend.Service.Interface;
 using PubQuizBackend.Util.Extension;
-using System.Threading.Tasks;
 
 namespace PubQuizBackend.Controllers
 {
@@ -56,7 +56,9 @@ namespace PubQuizBackend.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            return Ok(await _service.Delete(id, User.GetUserId()));
+            await _service.Delete(id, User.GetUserId());
+
+            return NoContent();
         }
     }
 }

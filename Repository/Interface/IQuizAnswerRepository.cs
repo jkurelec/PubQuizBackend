@@ -1,0 +1,22 @@
+﻿using PubQuizBackend.Model.DbModel;
+using PubQuizBackend.Model.Dto.QuizAnswerDto;
+
+namespace PubQuizBackend.Repository.Interface
+{
+    public interface IQuizAnswerRepository
+    {
+        Task AuthorizeHostByRoundId(int hostId, int roundId);
+        Task AuthorizeHostByEditionResultId(int hostId, int roundId);
+        Task AuthorizeHostByEditionId(int hostId, int roundId);
+        Task<QuizRoundResult> GradeTeamRoundAnswers(NewQuizRoundResultDto roundDto);
+        Task<int> ValidateEditionResultId(int editionId, int teamId);
+        Task<QuizAnswer> UpdateAnswer(QuizAnswerDetailedDto answerDto, int hostId);
+        Task<QuizSegmentResult> UpdateSegment(QuizSegmentResultDetailedDto segmentResultDto, int hostId);
+        Task<QuizRoundResult> AddTeamRoundPoints(NewQuizRoundResultDto roundResultDto, int hostId);
+        Task<QuizRoundResult> UpdateTeamRoundPoints(NewQuizRoundResultDto roundResultDto, int hostId);
+        Task<IEnumerable<QuizRoundResult>> GetTeamAnswers(int editionResultId, int hostId);
+        Task<IEnumerable<QuizEditionResult>> GetEditionResults(int editionId);
+        Task<IEnumerable<QuizEditionResult>> RankTeamsOnEdition(int editionId);
+        Task<IEnumerable<QuizEditionResult>> BreakTie(int promotedId,int editionId);
+    }
+}

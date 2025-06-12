@@ -5,15 +5,17 @@ namespace PubQuizBackend.Repository.Interface
 {
     public interface ITeamRepository
     {
-        public Task<Team> Add(string name, int ownerId);
-        public Task<Team> Update(UpdateTeamDto teamDto, int ownerId);
-        public Task Delete(int ownerId);
-        public Task<Team> GetById(int id);
-        public Task<Team> GetByOwnerId(int id);
-        public Task<List<Team>> GetAll();
-        public Task ChangeOwner(int newOwnerId, int oldOwnerId);
-        public Task AddMember(TeamMemberDto teamMember, int ownerId);
-        public Task EditMember(TeamMemberDto teamMember, int ownerId);
-        public Task RemoveMember(int userId, int ownerId);
+        Task AddMember(TeamMemberDto teamMember, int ownerId);
+        Task ChangeOwner(int newOwnerId, int oldOwnerId);
+        Task Delete(int ownerId);
+        Task EditMember(TeamMemberDto teamMember, int ownerId);
+        Task RemoveMember(int userId, int ownerId);
+        Task<IEnumerable<int>> FilterMemberIdsInTeam(IEnumerable<int> userIds, int teamId);
+        Task<List<Team>> GetAll();
+        Task<Team> Add(string name, int ownerId);
+        Task<UserTeam> GetMemeberById(int userId, int teamId);
+        Task<Team> GetById(int id);
+        Task<Team> GetByOwnerId(int id);
+        Task<Team> Update(UpdateTeamDto teamDto, int ownerId);
     }
 }

@@ -133,6 +133,8 @@ namespace PubQuizBackend.Repository.Implementation
             return quiz;
         }
 
+
+        // OVO MOZE BITI ANYASYNC
         private async Task IsOwner(int organizerId, int ownerId)
         {
             _ = await _context.Organizations.FirstOrDefaultAsync(x => x.OwnerId == ownerId && x.Id == organizerId)

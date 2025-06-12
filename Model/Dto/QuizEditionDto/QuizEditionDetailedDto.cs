@@ -1,4 +1,6 @@
-﻿using PubQuizBackend.Model.DbModel;
+﻿using PubQuizBackend.Enums;
+using PubQuizBackend.Exceptions;
+using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.LocationDto;
 using PubQuizBackend.Model.Dto.PrizesDto;
 using PubQuizBackend.Model.Dto.QuizCategoryDto;
@@ -36,6 +38,9 @@ namespace PubQuizBackend.Model.Dto.QuizEditionDto
             if (edition.League != null)
                 League = new(edition.League);
             Prizes = edition.EditionPrizes.Select(x => new PrizeDto(x)).ToList();
+            Visibility = Enum.IsDefined(typeof(Visibility), edition.Visibility)
+                ? (Visibility)edition.Visibility
+                : throw new DivineException();
         }
 
         public int Id { get; set; }
@@ -57,5 +62,6 @@ namespace PubQuizBackend.Model.Dto.QuizEditionDto
         public DateTime RegistrationEnd { get; set; }
         public QuizLeagueBriefDto? League { get; set; }
         public IEnumerable<PrizeDto> Prizes { get; set; } = new List<PrizeDto>();
+        public Visibility Visibility { get; set; } = Visibility.INVISIBLE;
     }
 }

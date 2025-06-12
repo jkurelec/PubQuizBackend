@@ -11,8 +11,6 @@ public partial class Team
 
     public string Name { get; set; } = null!;
 
-    public int Rating { get; set; }
-
     public int CategoryId { get; set; }
 
     public int QuizId { get; set; }
@@ -23,7 +21,7 @@ public partial class Team
 
     public virtual Quiz Quiz { get; set; } = null!;
 
-    public virtual ICollection<QuizAnswer> QuizAnswers { get; set; } = new List<QuizAnswer>();
+    public virtual ICollection<QuizEditionApplication> QuizEditionApplications { get; set; } = new List<QuizEditionApplication>();
 
     public virtual ICollection<QuizEditionResult> QuizEditionResults { get; set; } = new List<QuizEditionResult>();
 

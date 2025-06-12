@@ -37,7 +37,6 @@ namespace PubQuizBackend.Repository.Implementation
                 {
                     Name = name,
                     OwnerId = owner.Id,
-                    Rating = owner.Rating,
                     CategoryId = 1,
                     QuizId = 1
                 }
@@ -135,6 +134,20 @@ namespace PubQuizBackend.Repository.Implementation
                 .ThenInclude(t => t.User)
                 .FirstOrDefaultAsync(x => x.Id == id)
                     ?? throw new NotFoundException("No team found!");
+        }
+
+        public async Task<UserTeam> GetMemeberById(int userId, int teamId)
+        {
+            return await _context.UserTeams.FindAsync(userId, teamId)
+                ?? throw new NotFoundException("No member found!");
+        }
+
+        public async Task<IEnumerable<int>> FilterMemberIdsInTeam(IEnumerable<int> userIds, int teamId)
+        {
+            return await _context.UserTeams
+                .Where(x => x.TeamId == teamId && userIds.Contains(x.UserId))
+                .Select(x => x.UserId)
+                .ToListAsync();
         }
 
         public async Task<Team> GetByOwnerId(int id)
