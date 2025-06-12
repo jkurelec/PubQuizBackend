@@ -12,10 +12,12 @@ namespace PubQuizBackend.Service.Implementation
     public class EloCalculatorService : IEloCalculatorService
     {
         private readonly IEloCalculatorRepository _repository;
+        private readonly IRatingHistoryService _ratingHistoryService;
 
-        public EloCalculatorService(IEloCalculatorRepository repository)
+        public EloCalculatorService(IEloCalculatorRepository repository, IRatingHistoryService ratingHistoryService)
         {
             _repository = repository;
+            _ratingHistoryService = ratingHistoryService;
         }
 
         public async Task CalculateEditionElo(int editionId, int hostId)
@@ -23,6 +25,9 @@ namespace PubQuizBackend.Service.Implementation
             await _repository.AuthorizeHostByEditionId(editionId, hostId);
 
             var edition = await _repository.GetEdition(editionId);
+
+            if (edition.Rated)
+                throw new BadRequestException("Edition already rated!");
 
             var ratingAction = GetRatingAction(edition);
 
@@ -150,10 +155,33 @@ namespace PubQuizBackend.Service.Implementation
 
                     if (user.Rating < 100)
                         user.Rating = 100;
+
+                    await _ratingHistoryService.AddUserRatingHistories(
+                        new ()
+                        {
+                            UserId = user.Id,
+                            Rating = user.Rating,
+                            Date = DateTime.UtcNow
+                        }
+                    );
                 }
             }
 
-            edition.Rating += (int)Math.Round(editionRatingUpdate / ((double)edition.TotalPoints * edition.QuizEditionResults.Count));
+            var finalEditionRatingUpdate = (int)Math.Round(editionRatingUpdate / ((double)edition.TotalPoints * edition.QuizEditionResults.Count));
+            edition.Rating += finalEditionRatingUpdate;
+
+            edition.Quiz.Rating += finalEditionRatingUpdate;
+
+            await _ratingHistoryService.AddQuizRatingHistories(
+                new()
+                {
+                    QuizId = edition.QuizId,
+                    Rating = edition.Quiz.Rating,
+                    Date = DateTime.UtcNow
+                }
+            );
+
+            edition.Rated = true;
 
             await _repository.SaveChanges();
         }
@@ -277,9 +305,19 @@ namespace PubQuizBackend.Service.Implementation
 
                     if (user.Rating < 100)
                         user.Rating = 100;
+
+                    await _ratingHistoryService.AddUserRatingHistories(
+                        new()
+                        {
+                            UserId = user.Id,
+                            Rating = user.Rating,
+                            Date = DateTime.UtcNow
+                        }
+                    );
                 }
 
                 var editionRating = 0;
+                var quizRatingUpdate = 0;
 
                 foreach (var round in edition.QuizRounds)
                 {
@@ -290,6 +328,7 @@ namespace PubQuizBackend.Service.Implementation
                             questionRatingUpdates.TryGetValue(question.Id, out var questionRatingUpdate);
 
                             question.Rating += questionRatingUpdate;
+                            quizRatingUpdate += questionRatingUpdate;
 
                             if (question.Rating < 100)
                                 question.Rating = 100;
@@ -300,6 +339,20 @@ namespace PubQuizBackend.Service.Implementation
                 }
 
                 edition.Rating = (int)Math.Round(editionRating / (double)totalQuestions);
+
+                var finalQuiznRatingUpdate = (int)Math.Round(quizRatingUpdate / (double)totalQuestions);
+                edition.Quiz.Rating += finalQuiznRatingUpdate;
+
+                await _ratingHistoryService.AddQuizRatingHistories(
+                    new()
+                    {
+                        QuizId = edition.QuizId,
+                        Rating = edition.Quiz.Rating,
+                        Date = DateTime.UtcNow
+                    }
+                );
+
+                edition.Rated = true;
 
                 await _repository.SaveChanges();
             }

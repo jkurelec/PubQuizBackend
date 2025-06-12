@@ -41,6 +41,8 @@ public partial class QuizEdition
 
     public int Visibility { get; set; }
 
+    public bool Rated { get; set; }
+
     public virtual QuizCategory Category { get; set; } = null!;
 
     public virtual ICollection<EditionPrize> EditionPrizes { get; set; } = new List<EditionPrize>();
@@ -56,6 +58,8 @@ public partial class QuizEdition
     public virtual ICollection<QuizEditionApplication> QuizEditionApplications { get; set; } = new List<QuizEditionApplication>();
 
     public virtual ICollection<QuizEditionResult> QuizEditionResults { get; set; } = new List<QuizEditionResult>();
+
+    public virtual ICollection<QuizRatingHistory> QuizRatingHistories { get; set; } = new List<QuizRatingHistory>();
 
     public virtual ICollection<QuizRound> QuizRounds { get; set; } = new List<QuizRound>();
 }

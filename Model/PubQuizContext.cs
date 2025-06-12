@@ -48,6 +48,8 @@ public partial class PubQuizContext : DbContext
 
     public virtual DbSet<QuizQuestion> QuizQuestions { get; set; }
 
+    public virtual DbSet<QuizRatingHistory> QuizRatingHistories { get; set; }
+
     public virtual DbSet<QuizRound> QuizRounds { get; set; }
 
     public virtual DbSet<QuizRoundResult> QuizRoundResults { get; set; }
@@ -61,6 +63,8 @@ public partial class PubQuizContext : DbContext
     public virtual DbSet<Team> Teams { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
+
+    public virtual DbSet<UserRatingHistory> UserRatingHistories { get; set; }
 
     public virtual DbSet<UserTeam> UserTeams { get; set; }
 
@@ -382,6 +386,9 @@ public partial class PubQuizContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("name");
             entity.Property(e => e.QuizId).HasColumnName("quiz_id");
+            entity.Property(e => e.Rated)
+                .HasDefaultValue(false)
+                .HasColumnName("rated");
             entity.Property(e => e.Rating).HasColumnName("rating");
             entity.Property(e => e.RegistrationEnd).HasColumnName("registration_end");
             entity.Property(e => e.RegistrationStart).HasColumnName("registration_start");
@@ -536,6 +543,26 @@ public partial class PubQuizContext : DbContext
             entity.HasOne(d => d.Segment).WithMany(p => p.QuizQuestions)
                 .HasForeignKey(d => d.SegmentId)
                 .HasConstraintName("quiz_question_segment_id_fkey");
+        });
+
+        modelBuilder.Entity<QuizRatingHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("quiz_rating_history_pkey");
+
+            entity.ToTable("quiz_rating_history");
+
+            entity.Property(e => e.Id)
+                .UseIdentityAlwaysColumn()
+                .HasColumnName("id");
+            entity.Property(e => e.Date)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("date");
+            entity.Property(e => e.QuizId).HasColumnName("quiz_id");
+            entity.Property(e => e.Rating).HasColumnName("rating");
+
+            entity.HasOne(d => d.Quiz).WithMany(p => p.QuizRatingHistories)
+                .HasForeignKey(d => d.QuizId)
+                .HasConstraintName("quiz_rating_history_quiz_id_fkey");
         });
 
         modelBuilder.Entity<QuizRound>(entity =>
@@ -723,6 +750,26 @@ public partial class PubQuizContext : DbContext
                         j.IndexerProperty<int>("UserId").HasColumnName("user_id");
                         j.IndexerProperty<int>("EditionResultId").HasColumnName("edition_result_id");
                     });
+        });
+
+        modelBuilder.Entity<UserRatingHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("user_rating_history_pkey");
+
+            entity.ToTable("user_rating_history");
+
+            entity.Property(e => e.Id)
+                .UseIdentityAlwaysColumn()
+                .HasColumnName("id");
+            entity.Property(e => e.Date)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("date");
+            entity.Property(e => e.Rating).HasColumnName("rating");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserRatingHistories)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("user_rating_history_user_id_fkey");
         });
 
         modelBuilder.Entity<UserTeam>(entity =>

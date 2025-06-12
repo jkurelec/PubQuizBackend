@@ -42,6 +42,7 @@ builder.Services.AddScoped<ITeamRepository, TeamRepository>();
 builder.Services.AddScoped<IUpcomingQuizQuestionRepository, UpcomingQuizQuestionRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IEloCalculatorRepository, EloCalculatorRepository>();
+builder.Services.AddScoped<IRatingHistoryRepository, RatingHistoryRepository>();
 
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<ILocationService, LocationService>();
@@ -57,6 +58,7 @@ builder.Services.AddScoped<ITeamService, TeamService>();
 builder.Services.AddScoped<IUpcomingQuizQuestionService, UpcomingQuizQuestionService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEloCalculatorService, EloCalculatorService>();
+builder.Services.AddScoped<IRatingHistoryService, RatingHistoryService>();
 
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>

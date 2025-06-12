@@ -57,6 +57,11 @@ namespace PubQuizBackend.Repository.Implementation
             return dictionary;
         }
 
+        public PubQuizContext GetContext()
+        {
+            return _context;
+        }
+
         public async Task<QuizEdition> GetEdition(int editionId)
         {
             return await _context.QuizEditions
@@ -69,6 +74,7 @@ namespace PubQuizBackend.Repository.Implementation
                     .ThenInclude(e => e.QuizRoundResults)
                         .ThenInclude(r => r.QuizSegmentResults)
                             .ThenInclude(s => s.QuizAnswers)
+                .Include(x => x.Quiz)
                 .FirstOrDefaultAsync(x => x.Id == editionId)
                 ?? throw new NotFoundException($"Edition with id => {editionId} not found!");
         }
