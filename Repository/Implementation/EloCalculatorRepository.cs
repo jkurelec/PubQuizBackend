@@ -24,7 +24,7 @@ namespace PubQuizBackend.Repository.Implementation
                 .AnyAsync(x => x.Id == editionId && x.HostId == hostId);
 
             if (!hostOfEdition)
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
         }
 
         public async Task<Dictionary<int, Dictionary<int, List<QuestionResult>>>> GetAnswersForKappa()

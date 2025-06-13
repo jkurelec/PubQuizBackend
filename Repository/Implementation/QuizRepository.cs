@@ -73,7 +73,7 @@ namespace PubQuizBackend.Repository.Implementation
             await IsOwner(id, ownerId);
 
             var quiz = await _context.Quizzes.FindAsync(id)
-                ?? throw new UnauthorizedException();
+                ?? throw new ForbiddenException();
 
             _context.Quizzes.Remove(quiz);
             await _context.SaveChangesAsync();
@@ -111,7 +111,7 @@ namespace PubQuizBackend.Repository.Implementation
                 ?? throw new DivineException();
 
             if (quiz.OrganizationId != quizDto.OrganizationId)
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
 
             var quizLocationIds = quiz.Locations.Select(l => l.Id).ToHashSet();
             var providedLocationIds = quizDto.Locations.ToHashSet();
@@ -138,7 +138,7 @@ namespace PubQuizBackend.Repository.Implementation
         private async Task IsOwner(int organizerId, int ownerId)
         {
             _ = await _context.Organizations.FirstOrDefaultAsync(x => x.OwnerId == ownerId && x.Id == organizerId)
-                ?? throw new UnauthorizedException();
+                ?? throw new ForbiddenException();
         }
     }
 }

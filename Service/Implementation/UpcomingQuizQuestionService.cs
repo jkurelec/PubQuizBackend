@@ -168,7 +168,7 @@ namespace PubQuizBackend.Service.Implementation
         private void UnauthorizedHostOrEditionHappened(HostOrganizationQuiz host, QuizEdition edition)
         {
             if (!host.CrudQuestion)
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
 
             _repository.EditionHappened(edition);
         }

@@ -52,7 +52,7 @@ namespace PubQuizBackend.Repository.Implementation
             );
 
             if (!validHost)
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
         }
 
         public async Task AuthorizeHostByEditionResultId(int hostId, int editionResultId)
@@ -64,7 +64,7 @@ namespace PubQuizBackend.Repository.Implementation
             );
 
             if (!validHost)
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
         }
         
         public async Task AuthorizeHostByEditionId(int hostId, int editionId)
@@ -76,7 +76,7 @@ namespace PubQuizBackend.Repository.Implementation
             );
 
             if (!validHost)
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
         }
 
         public async Task<QuizAnswer> UpdateAnswer(QuizAnswerDetailedDto answerDto, int hostId)
@@ -88,7 +88,7 @@ namespace PubQuizBackend.Repository.Implementation
             );
 
             if (!validHost)
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
 
             var question = await _context.QuizQuestions.FindAsync(answerDto.QuestionId)
                 ?? throw new BadRequestException($"Question {answerDto.QuestionId} not found!");
@@ -127,7 +127,7 @@ namespace PubQuizBackend.Repository.Implementation
             );
 
             if (!validHost)
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
 
             var segment = await _context.QuizSegments.FindAsync(segmentResultDto.SegmentId)
                 ?? throw new BadRequestException($"Segment {segmentResultDto.SegmentId} not found!");

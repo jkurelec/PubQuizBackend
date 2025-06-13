@@ -51,7 +51,7 @@ namespace PubQuizBackend.Service.Implementation
             return await _repository.Delete(refreshToken);
         }
 
-        private static int LongevityMultiplyer(int role) =>
+        public int LongevityMultiplyer(int role) =>
             role switch
             {
                 1 => 168,

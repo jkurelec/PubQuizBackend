@@ -82,6 +82,26 @@ builder.Services.AddAuthentication("Bearer")
         };
     });
 
+var allowedOrigins = new[] { "https://localhost:7147", "https://localhost:5001", "https://example.com" };
+
+builder.Services.AddCors(
+    options =>
+    {
+        options.AddPolicy(
+            "AllowFrontend",
+            builder =>
+            {
+                builder
+                    .WithOrigins(allowedOrigins)
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials();
+            }
+        );
+    }
+);
+
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -107,6 +127,8 @@ if (app.Environment.IsDevelopment())
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();

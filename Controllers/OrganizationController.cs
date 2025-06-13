@@ -47,7 +47,7 @@ namespace PubQuizBackend.Controllers
         public async Task<IActionResult> Add(NewOrganizationDto newOraganizer)
         {
             if (User.GetUserId() != newOraganizer.OwnerId)
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
 
             var organizer = await _service.Add(newOraganizer);
 
@@ -125,7 +125,7 @@ namespace PubQuizBackend.Controllers
             var organization = await _service.GetById(organizerId);
 
             if (User.GetUserId() != organization.Owner.Id)
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
         }
     }
 }

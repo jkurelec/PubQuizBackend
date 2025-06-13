@@ -7,5 +7,6 @@ namespace PubQuizBackend.Service.Interface
         Task<RefreshToken> GetByToken(string token);
         Task<string> Create(int userId, int role, int app);
         Task<bool> Delete(RefreshToken refreshToken);
+        int LongevityMultiplyer(int role);
     }
 }

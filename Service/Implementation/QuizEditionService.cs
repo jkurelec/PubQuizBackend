@@ -23,14 +23,14 @@ namespace PubQuizBackend.Service.Implementation
             var organizer = await _organizationRepository.GetHost(userId, editionDto.QuizId);
 
             if (!organizer.CreateEdition)
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
 
             if (editionDto.LeagueId != null)
             {
                 var league = await _leagueRepository.GetById(editionDto.LeagueId.Value);
 
                 if (league.QuizId != editionDto.QuizId)
-                    throw new UnauthorizedException();
+                    throw new ForbiddenException();
             }
 
             if (userId != editionDto.HostId)
@@ -51,7 +51,7 @@ namespace PubQuizBackend.Service.Implementation
             var host = await _organizationRepository.GetHost(userId, edition.QuizId);
 
             if (!host.DeleteEdition)
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
 
             await _editionRepository.Delete(edition);
         }
@@ -80,7 +80,7 @@ namespace PubQuizBackend.Service.Implementation
             var host = await _organizationRepository.GetHostByEditionId(userId, editionDto.Id);
 
             if (!host.EditEdition)
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
 
             return new(await _editionRepository.Update(editionDto,userId));
         }

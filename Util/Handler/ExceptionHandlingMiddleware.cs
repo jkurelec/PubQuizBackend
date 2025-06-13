@@ -34,6 +34,9 @@ namespace PubQuizBackend.Util.Handler
 
             switch (exception)
             {
+                case ForbiddenException:
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                    break;
                 case NotFoundException:
                     context.Response.StatusCode = StatusCodes.Status404NotFound;
                     break;

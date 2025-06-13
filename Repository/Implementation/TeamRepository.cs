@@ -64,7 +64,7 @@ namespace PubQuizBackend.Repository.Implementation
                 ?? throw new BadRequestException("No team!");
 
             if (team.OwnerId != ownerId)
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
 
             var exists = await _context.UserTeams.FindAsync(teamMember.UserId, teamMember.TeamId);
 
@@ -84,7 +84,7 @@ namespace PubQuizBackend.Repository.Implementation
                 ?? throw new BadRequestException("New owner not found!");
 
             if (!team.UserTeams.Any(x => x.UserId == newOwnerId))
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
 
             team.OwnerId = newOwnerId;
 
@@ -94,7 +94,7 @@ namespace PubQuizBackend.Repository.Implementation
         public async Task Delete(int ownerId)
         {
             var team = await _context.Teams.FirstOrDefaultAsync(x => x.OwnerId == ownerId)
-                ?? throw new UnauthorizedException();
+                ?? throw new ForbiddenException();
 
             _context.Teams.Remove(team);
 
@@ -107,7 +107,7 @@ namespace PubQuizBackend.Repository.Implementation
                 ?? throw new BadRequestException("No team!");
 
             if (team.OwnerId != ownerId)
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
 
             var member = await _context.UserTeams.FindAsync(teamMember.UserId, teamMember.TeamId)
                 ?? throw new BadRequestException("Member not found!");
@@ -179,10 +179,10 @@ namespace PubQuizBackend.Repository.Implementation
                 .Include(x => x.Category)
                 .Include(x => x.Quiz)
                 .FirstOrDefaultAsync(x => x.OwnerId == ownerId)
-                    ?? throw new UnauthorizedException();
+                    ?? throw new ForbiddenException();
 
             if (team.OwnerId != ownerId)
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
 
             team.Name = teamDto.Name;
 

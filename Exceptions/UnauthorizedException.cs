@@ -1,6 +1,6 @@
 ﻿namespace PubQuizBackend.Exceptions
 {
-    public class UnauthorizedException() : Exception("Nema šanse! >:(")
+    public class UnauthorizedException() : Exception()
     {
     }
 }

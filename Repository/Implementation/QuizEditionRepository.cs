@@ -88,7 +88,7 @@ namespace PubQuizBackend.Repository.Implementation
         public async Task<QuizEdition> GetById(int id)
         {
             return await _context.QuizEditions.FirstOrDefaultAsync(x => x.Id == id)
-                ?? throw new UnauthorizedException();
+                ?? throw new ForbiddenException();
         }
 
         public async Task<QuizEdition> GetByIdDetailed(int id)
@@ -281,19 +281,19 @@ namespace PubQuizBackend.Repository.Implementation
         public async Task RespondToApplication(int applicationId, bool applicationResponse, int hostId)
         {
             var application = await _context.QuizEditionApplications.Include(x => x.Users).FirstOrDefaultAsync(x => x.Id == applicationId)
-                ?? throw new UnauthorizedException();
+                ?? throw new ForbiddenException();
 
             if (application.Accepted != null)
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
 
             var edition = await _context.QuizEditions.FirstOrDefaultAsync(x => x.Id == application.EditionId)
-                ?? throw new UnauthorizedException();
+                ?? throw new ForbiddenException();
 
             var host = await _context.HostOrganizationQuizzes.Where(x => x.HostId == hostId && x.QuizId == edition.QuizId).FirstOrDefaultAsync()
-                ?? throw new UnauthorizedException();
+                ?? throw new ForbiddenException();
 
             if (!host.ManageApplication)
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
 
             using var transaction = await _context.Database.BeginTransactionAsync();
 

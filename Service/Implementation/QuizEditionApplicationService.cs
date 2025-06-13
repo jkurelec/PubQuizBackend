@@ -26,7 +26,7 @@ namespace PubQuizBackend.Service.Implementation
             var registrant = await _teamRepository.GetMemeberById(registrantId, application.TeamId);
 
             if (registrant.RegisterTeam == false)
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
 
             var usersInTeam = await _teamRepository.FilterMemberIdsInTeam(application.UserIds, application.TeamId);
 
@@ -53,7 +53,7 @@ namespace PubQuizBackend.Service.Implementation
             var host = await _organizationRepository.GetHostByEditionId(userId, editionId);
 
             if (!host.ManageApplication)
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
 
             await _editionRepository.RemoveTeamFromEdition(editionId, teamId);
         }
@@ -68,7 +68,7 @@ namespace PubQuizBackend.Service.Implementation
             var teamMember = await _teamRepository.GetMemeberById(userId, teamId);
 
             if (!teamMember.RegisterTeam)
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
 
             await _editionRepository.WithdrawFromEdition(editionId, teamId);
         }

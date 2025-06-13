@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto;
 using PubQuizBackend.Model.Dto.UserDto;
 using PubQuizBackend.Service.Interface;
@@ -34,17 +35,23 @@ namespace PubQuizBackend.Controllers
             if(user == null)
                 return BadRequest("Username or Email already taken!");
 
+            HttpContext.Response.Cookies.Append("refreshToken", await _refreshTokenService.Create(user.Id, user.Role, intApp), new CookieOptions
+            {
+                HttpOnly = true,
+                //Secure = true,
+                //SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddHours(_refreshTokenService.LongevityMultiplyer(user.Role))
+            });
+
             return Ok(new
             {
-                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Username, user.Role, intApp),
-                RefreshToken = await _refreshTokenService.Create(user.Id, user.Role, intApp)
+                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Username, user.Role, intApp)
             });
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginUserDto loginUserDto)
         {
-
             var user = await _userService.GetByIdentifier(loginUserDto.Identifier);
 
             if (user == null || user.Password != loginUserDto.Password)
@@ -55,17 +62,27 @@ namespace PubQuizBackend.Controllers
 
             var intApp = CustomConverter.GetIntRole(appName.First()!);
 
+            HttpContext.Response.Cookies.Append("refreshToken", await _refreshTokenService.Create(user.Id, user.Role, intApp), new CookieOptions
+            {
+                HttpOnly = true,
+                //Secure = true,
+                //SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddHours(_refreshTokenService.LongevityMultiplyer(user.Role))
+            });
+
             return Ok(new
             {
-                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Username, user.Role, intApp),
-                RefreshToken = await _refreshTokenService.Create(user.Id, user.Role, intApp)
+                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Username, user.Role, intApp)
             });
         }
 
         [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh(RefreshTokenDto refreshToken)
+        public async Task<IActionResult> Refresh()
         {
-            var token = await _refreshTokenService.GetByToken(refreshToken.Value);
+            if (!Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
+                return Unauthorized("Refresh token not found");
+
+            var token = await _refreshTokenService.GetByToken(refreshToken);
 
             if (!Request.Headers.TryGetValue("AppName", out var appName) && appName.FirstOrDefault() != "")
                 return BadRequest("Invalid request");

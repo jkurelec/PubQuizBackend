@@ -49,7 +49,7 @@ namespace PubQuizBackend.Controllers
         {
             return (User.GetUserId() == userDto.Id || User.GetUserRole() == Role.ADMIN)
                 ? Ok(await _service.Update(userDto))
-                : throw new UnauthorizedException();
+                : throw new ForbiddenException();
 
         }
 

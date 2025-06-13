@@ -328,13 +328,13 @@ namespace PubQuizBackend.Repository.Implementation
         public async Task<HostOrganizationQuiz> GetHost(int quizId, int userId)
         {
             return await _context.HostOrganizationQuizzes.FirstOrDefaultAsync(x => x.HostId == userId && x.QuizId == quizId)
-                ?? throw new UnauthorizedException();
+                ?? throw new ForbiddenException();
         }
 
         public async Task<QuizEdition> EditionFromQuestion(int questionId)
         {
             var question = await _context.QuizQuestions.Include(x => x.Segment).ThenInclude(s => s.Round).ThenInclude(r => r.Edition).FirstOrDefaultAsync(x => x.Id == questionId)
-                ?? throw new UnauthorizedException();
+                ?? throw new ForbiddenException();
 
             return question.Segment.Round.Edition;
         }
@@ -342,7 +342,7 @@ namespace PubQuizBackend.Repository.Implementation
         public async Task<QuizEdition> EditionFromSegment(int segmentId)
         {
             var segment = await _context.QuizSegments.Include(x => x.Round).ThenInclude(r => r.Edition).FirstOrDefaultAsync(x => x.Id == segmentId)
-                ?? throw new UnauthorizedException();
+                ?? throw new ForbiddenException();
 
             return segment.Round.Edition;
         }
@@ -350,7 +350,7 @@ namespace PubQuizBackend.Repository.Implementation
         public async Task<QuizEdition> EditionFromRound(int roundId)
         {
             var round = await _context.QuizRounds.Include(r => r.Edition).FirstOrDefaultAsync(x => x.Id == roundId)
-                ?? throw new UnauthorizedException();
+                ?? throw new ForbiddenException();
 
             return round.Edition;
         }
@@ -358,7 +358,7 @@ namespace PubQuizBackend.Repository.Implementation
         public async Task<QuizEdition> GetEdition(int editionId)
         {
             var edition = await _context.QuizEditions.FindAsync(editionId)
-                ?? throw new UnauthorizedException();
+                ?? throw new ForbiddenException();
 
             return edition;
         }

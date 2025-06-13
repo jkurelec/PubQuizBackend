@@ -27,7 +27,7 @@ namespace PubQuizBackend.Repository.Implementation
         public async Task<QuizLeague> Add(NewQuizLeagueDto leagueDto, int userId)
         {
             var owner = await _context.Quizzes.FirstOrDefaultAsync(x => x.Organization.OwnerId == userId && x.Id == leagueDto.QuizId)
-                ?? throw new UnauthorizedException();
+                ?? throw new ForbiddenException();
 
             if (await _context.QuizLeagues.AnyAsync(x => x.Name == leagueDto.Name))
                 throw new BadRequestException("League name already exists!");
@@ -52,7 +52,7 @@ namespace PubQuizBackend.Repository.Implementation
                 ?? throw new NotFoundException("League not found!");
 
             if (league.Quiz.Organization.OwnerId != userId)
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
 
             _context.QuizLeagues.Remove(league);
             await _context.SaveChangesAsync();
@@ -92,7 +92,7 @@ namespace PubQuizBackend.Repository.Implementation
                 ?? throw new NotFoundException("League not found!");
 
             if (league.Quiz.Organization.OwnerId != userId)
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
 
             PropertyUpdater.UpdateEntityFromDto(league, leagueDto, ["Id", "QuizId"]);
 
