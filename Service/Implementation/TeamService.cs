@@ -55,6 +55,13 @@ namespace PubQuizBackend.Service.Implementation
             return new(await _repository.GetByOwnerId(id));
         }
 
+        public async Task<IEnumerable<TeamDetailedDto>> GetByUserId(int userId)
+        {
+            var teams = await _repository.GetByUserId(userId);
+
+            return teams.Select(x => new TeamDetailedDto(x)).ToList();
+        }
+
         public async Task RemoveMember(int userId, int ownerId)
         {
             await _repository.RemoveMember(userId, ownerId);

@@ -41,6 +41,9 @@ namespace PubQuizBackend.Model.Dto.QuizEditionDto
             Visibility = Enum.IsDefined(typeof(Visibility), edition.Visibility)
                 ? (Visibility)edition.Visibility
                 : throw new DivineException();
+            MaxTeams = edition.MaxTeams;
+            AcceptedTeams = edition.AcceptedTeams;
+            PendingTeams = edition.PendingTeams;
         }
 
         public int Id { get; set; }
@@ -63,5 +66,8 @@ namespace PubQuizBackend.Model.Dto.QuizEditionDto
         public QuizLeagueBriefDto? League { get; set; }
         public IEnumerable<PrizeDto> Prizes { get; set; } = new List<PrizeDto>();
         public Visibility Visibility { get; set; } = Visibility.INVISIBLE;
+        public int MaxTeams { get; set; }
+        public int AcceptedTeams { get; set; }
+        public int PendingTeams { get; set; }
     }
 }

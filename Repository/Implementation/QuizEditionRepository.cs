@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using PubQuizBackend.Enums;
 using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model;
 using PubQuizBackend.Model.DbModel;
@@ -13,12 +15,14 @@ namespace PubQuizBackend.Repository.Implementation
 {
     public class QuizEditionRepository : IQuizEditionRepository
     {
+        private readonly IMemoryCache _cache;
         private readonly PubQuizContext _context;
         private readonly IPrizeRepository _prizeRepository;
         private readonly IEloCalculatorService _eloCalculatorService;
 
-        public QuizEditionRepository(PubQuizContext context, IPrizeRepository prizeRepository, IEloCalculatorService eloCalculatorService)
+        public QuizEditionRepository(IMemoryCache cache, PubQuizContext context, IPrizeRepository prizeRepository, IEloCalculatorService eloCalculatorService)
         {
+            _cache = cache;
             _context = context;
             _prizeRepository = prizeRepository;
             _eloCalculatorService = eloCalculatorService;
@@ -44,6 +48,9 @@ namespace PubQuizBackend.Repository.Implementation
 
             if (!await _context.Locations.AnyAsync(x => x.Id == editionDto.LocationId))
                 throw new BadRequestException("Location?");
+
+            if (editionDto.MaxTeams < 2)
+                throw new BadRequestException("Max teams must be at least 2!");
 
             DateAndFeeCheck(editionDto);
 
@@ -91,19 +98,53 @@ namespace PubQuizBackend.Repository.Implementation
                 ?? throw new ForbiddenException();
         }
 
-        public async Task<QuizEdition> GetByIdDetailed(int id)
+        public async Task<QuizEdition> GetByIdDetailed(int id, int? userId = null)
         {
-            return await _context.QuizEditions
+            var edition = await _context.QuizEditions
                 .Include(x => x.Host)
                 .Include(x => x.Category)
-                .Include(x => x.Location)
-                .ThenInclude(l => l.City)
-                .ThenInclude(c => c.Country)
+                .Include(x => x.Location).ThenInclude(l => l.City).ThenInclude(c => c.Country)
                 .Include(x => x.Quiz)
                 .Include(x => x.League)
                 .Include(x => x.EditionPrizes)
                 .FirstOrDefaultAsync(x => x.Id == id)
-                    ?? throw new NotFoundException("Edition not found!");
+                ?? throw new NotFoundException("Edition not found!");
+
+            if (edition.Time < DateTime.UtcNow)
+            {
+                var results = await _context.QuizEditionResults
+                    .Include(r => r.QuizRoundResults)
+                    .Where(r => r.EditionId == id)
+                    .ToListAsync();
+
+                edition.QuizEditionResults = results;
+
+                if ((Visibility)edition.Visibility == Visibility.ONLY_ATTENDEE && userId != null)
+                {
+                    var teamResults = await _context.QuizEditionResults
+                        .Include(x => x.QuizRoundResults)
+                            .ThenInclude(r => r.QuizSegmentResults)
+                                .ThenInclude(s => s.QuizAnswers)
+                        .Where(x => x.Users.Any(u => u.Id == userId) && x.EditionId == id)
+                        .FirstOrDefaultAsync();
+
+                    if (teamResults != null)
+                    {
+                        var existing = edition.QuizEditionResults.FirstOrDefault(r => r.Id == teamResults.Id);
+
+                        if (existing != null)
+                            edition.QuizEditionResults.Remove(existing);
+
+                        edition.QuizEditionResults.Add(teamResults);
+                        edition.QuizRounds = await GetRoundsWithAnswers(id);
+                    }
+                }
+
+                if ((Visibility)edition.Visibility == Visibility.VISIBLE)
+                    edition.QuizRounds = await GetRoundsWithAnswers(id);
+            }
+
+            return edition;
         }
 
         public async Task<IEnumerable<QuizEdition>> GetByQuizId(int id)
@@ -117,6 +158,92 @@ namespace PubQuizBackend.Repository.Implementation
                 .Where(x => x.QuizId == id)
                 .ToListAsync()
                     ?? throw new NotFoundException("Edition not found!");
+        }
+
+        public async Task<IEnumerable<QuizEdition>> GetPage(int page, int pageSize, EditionFilter editionFilter)
+        {
+            IQueryable<QuizEdition> query = _context.QuizEditions
+                .AsNoTracking()
+                .Include(x => x.Category);
+
+            query = editionFilter switch
+            {
+                EditionFilter.NEWEST => query.OrderByDescending(x => x.Time),
+                EditionFilter.OLDEST => query.OrderBy(x => x.Time),
+                EditionFilter.HIGHEST_RATED => query.OrderByDescending(x => x.Rating),
+                EditionFilter.LOWEST_RATED => query.OrderBy(x => x.Rating),
+                _ => query.OrderByDescending(x => x.Time)
+            };
+
+            var result = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return result;
+        }
+
+        public async Task<IEnumerable<QuizEdition>> GetUpcomingCompletedPage(int page, int pageSize, EditionFilter editionFilter, bool upcoming = true)
+        {
+            IQueryable<QuizEdition> query = _context.QuizEditions
+                .AsNoTracking()
+                .Include(x => x.Category)
+                .Where(x => upcoming
+                    ? x.Time > DateTime.UtcNow
+                    : x.Time < DateTime.UtcNow);
+
+            query = editionFilter switch
+            {
+                EditionFilter.NEWEST => query.OrderByDescending(x => x.Time),
+                EditionFilter.OLDEST => query.OrderBy(x => x.Time),
+                EditionFilter.HIGHEST_RATED => query.OrderByDescending(x => x.Rating),
+                EditionFilter.LOWEST_RATED => query.OrderBy(x => x.Rating),
+                _ => query.OrderByDescending(x => x.Time)
+            };
+
+            var result = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return result;
+        }
+
+        public async Task<int> GetTotalCount(EditionTimeFilter filter)
+        {
+            string cacheKey = filter switch
+            {
+                EditionTimeFilter.UPCOMING => "QuizEditionTotalCount_Upcoming",
+                EditionTimeFilter.PAST => "QuizEditionTotalCount_Past",
+                _ => "QuizEditionTotalCount_All"
+            };
+
+            if (!_cache.TryGetValue(cacheKey, out int count))
+            {
+                IQueryable<QuizEdition> query = _context.QuizEditions;
+
+                switch (filter)
+                {
+                    case EditionTimeFilter.UPCOMING:
+                        query = query.Where(q => q.Time > DateTime.UtcNow);
+                        break;
+                    case EditionTimeFilter.PAST:
+                        query = query.Where(q => q.Time <= DateTime.UtcNow);
+                        break;
+                    case EditionTimeFilter.ALL:
+                    default:
+                        break;
+                }
+
+                count = await query.CountAsync();
+
+                var cacheEntryOptions = new MemoryCacheEntryOptions()
+                    .SetAbsoluteExpiration(TimeSpan.FromMinutes(10));
+
+                _cache.Set(cacheKey, count, cacheEntryOptions);
+            }
+
+            return count;
         }
 
         public async Task<bool> IsNameTaken(string name, int quizId)
@@ -185,6 +312,9 @@ namespace PubQuizBackend.Repository.Implementation
             if (editionDto.Visibility < 0 || editionDto.Visibility > 2)
                 throw new BadRequestException("Invalid visibility!");
 
+            if (editionDto.MaxTeams < 2)
+                throw new BadRequestException("Max teams must be at least 2!");
+
             DateAndFeeCheck(editionDto);
 
             PropertyUpdater.UpdateEntityFromDtoSpecificFields(
@@ -219,7 +349,7 @@ namespace PubQuizBackend.Repository.Implementation
                     SELECT u.* FROM ""user"" u
                     INNER JOIN quiz_edition_application_user qau ON qau.user_id = u.id
                     INNER JOIN quiz_edition_application qea ON qea.id = qau.application_id
-                    WHERE qea.quiz_edition_id = {editionId} AND u.id = ANY({userIds.ToArray()})
+                    WHERE qea.edition_id = {editionId} AND u.id = ANY({userIds.ToArray()})
                     LIMIT 1")
                 .Select(u => u.Username)
                 .FirstOrDefaultAsync();
@@ -248,6 +378,12 @@ namespace PubQuizBackend.Repository.Implementation
                         entity.Entity.Id, userId
                     );
                 }
+
+                var edition = await GetById(editionId);
+
+                edition.PendingTeams += 1;
+
+                await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
             }
@@ -289,11 +425,11 @@ namespace PubQuizBackend.Repository.Implementation
             var edition = await _context.QuizEditions.FirstOrDefaultAsync(x => x.Id == application.EditionId)
                 ?? throw new ForbiddenException();
 
-            var host = await _context.HostOrganizationQuizzes.Where(x => x.HostId == hostId && x.QuizId == edition.QuizId).FirstOrDefaultAsync()
-                ?? throw new ForbiddenException();
+            //var host = await _context.HostOrganizationQuizzes.Where(x => x.HostId == hostId && x.QuizId == edition.QuizId).FirstOrDefaultAsync()
+            //    ?? throw new ForbiddenException();
 
-            if (!host.ManageApplication)
-                throw new ForbiddenException();
+            //if (!host.ManageApplication)
+            //    throw new ForbiddenException();
 
             using var transaction = await _context.Database.BeginTransactionAsync();
 
@@ -311,6 +447,8 @@ namespace PubQuizBackend.Repository.Implementation
                         }
                     );
 
+                    edition.AcceptedTeams += 1;
+
                     await _context.SaveChangesAsync();
 
                     var userIds = application.Users.Select(x => x.Id).ToList();
@@ -323,7 +461,6 @@ namespace PubQuizBackend.Repository.Implementation
                         sql.Append($"(@p{parameters.Count}, @p{parameters.Count + 1}),");
 
                         parameters.Add(userIds[i]);
-                        parameters.Add(application.TeamId);
                         parameters.Add(entity.Entity.Id);
                     }
 
@@ -332,6 +469,9 @@ namespace PubQuizBackend.Repository.Implementation
                     await _context.Database.ExecuteSqlRawAsync(sql.ToString(), parameters.ToArray());
                 }
 
+                edition.PendingTeams -= 1;
+
+                await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
             catch
@@ -359,6 +499,8 @@ namespace PubQuizBackend.Repository.Implementation
 
             _context.QuizEditionResults.Remove(teamOnEdition);
 
+            edition.AcceptedTeams -= 1;
+
             await _context.SaveChangesAsync();
         }
 
@@ -369,14 +511,29 @@ namespace PubQuizBackend.Repository.Implementation
             if (edition.Time < DateTime.UtcNow)
                 throw new BadRequestException("Can not withdraw after the edition started!");
 
-            // DODATI TABLICU TEAM_PULLED_OUT DA ORGANIZATORI ZNAJU JEL TIM UPORNO ODUSTAJE ?!?
-            var teamOnEdition = await _context.QuizEditionResults
+            var application = await _context.QuizEditionApplications
+                .FirstOrDefaultAsync(x => x.TeamId == teamId && x.EditionId == editionId)
+                ?? throw new NotFoundException($"Application for team {teamId} in edition {editionId} not found!");
+
+            if (application.Accepted == null)
+            {
+                application.Accepted = false;
+                edition.PendingTeams -= 1;
+            }
+            else if (application.Accepted == true)
+            {
+                // DODATI TABLICU TEAM_PULLED_OUT DA ORGANIZATORI ZNAJU JEL TIM UPORNO ODUSTAJE ?!?
+                var teamOnEdition = await _context.QuizEditionResults
                 .FirstOrDefaultAsync(x => x.TeamId == teamId && x.EditionId == editionId)
                 ?? throw new NotFoundException($"Team {teamId} not found in edition {editionId}!");
 
-            _context.QuizEditionResults.Remove(teamOnEdition);
+                _context.QuizEditionResults.Remove(teamOnEdition);
+                edition.AcceptedTeams -= 1;
+            }
+            else
+                throw new BadRequestException("Nisi prihvacen na ediciju, kako ces se odjaviti onda?");
 
-            await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
         }
 
         private static void DateAndFeeCheck(NewQuizEditionDto editionDto)
@@ -430,6 +587,15 @@ namespace PubQuizBackend.Repository.Implementation
             }
 
             return changed;
+        }
+
+        private async Task<List<QuizRound>> GetRoundsWithAnswers(int editionId)
+        {
+            return await _context.QuizRounds
+                .Include(x => x.QuizSegments)
+                    .ThenInclude(s => s.QuizQuestions)
+                .Where(x => x.EditionId == editionId)
+                .ToListAsync();
         }
     }
 }

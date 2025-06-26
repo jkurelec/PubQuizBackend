@@ -191,6 +191,13 @@ namespace PubQuizBackend.Repository.Implementation
             return team;
         }
 
-
+        public async Task<IEnumerable<Team>> GetByUserId(int userId)
+        {
+            return await _context.Teams
+                .Where(t => t.UserTeams.Any(ut => ut.UserId == userId))
+                .Include(t => t.Category)
+                .Include(t => t.Quiz)
+                .ToListAsync();
+        }
     }
 }

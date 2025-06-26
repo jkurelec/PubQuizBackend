@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.ApplicationDto;
 using PubQuizBackend.Service.Interface;
 using PubQuizBackend.Util.Extension;
 
 namespace PubQuizBackend.Controllers
 {
-    [Route("editionapplication")]
+    [Route("application")]
     [ApiController]
     public class QuizEditionApplicationController : ControllerBase
     {
@@ -52,6 +53,29 @@ namespace PubQuizBackend.Controllers
             await _service.RespondToApplication(application, User.GetUserId());
 
             return NoContent();
+        }
+
+        [HttpGet("accepted/{id}")]
+        public async Task<IActionResult> GetAcceptedApplicationsByEdition(int id)
+        {
+            return Ok (await _service.GetAcceptedApplicationsByEdition(id));
+        }
+
+        [HttpGet("check/{editionId}")]
+        public async Task<IActionResult> CheckIfUserApplied(int editionId)
+        {
+            //int userId;
+
+            //try
+            //{
+            //    userId = User.GetUserId();
+            //}
+            //catch
+            //{
+            //    return Ok (false);
+            //}
+
+            return Ok (await _service.CheckIfUserApplied(User.GetUserId(), editionId));
         }
     }
 }

@@ -26,6 +26,7 @@ namespace PubQuizBackend.Model.Dto.QuizEditionDto
             Time = quizEdition.Time;
             RegistrationStart = quizEdition.RegistrationStart;
             RegistrationEnd = quizEdition.RegistrationEnd;
+            MaxTeams = quizEdition.MaxTeams;
         }
 
         public int Id { get; set; } = 0;
@@ -48,6 +49,7 @@ namespace PubQuizBackend.Model.Dto.QuizEditionDto
         public DateTime RegistrationStart { get; set; }
         public DateTime RegistrationEnd { get; set; }
         public int Visibility { get; set; } = 0;
+        public int MaxTeams { get; set; }
 
         public QuizEdition ToObject() =>
             new()
@@ -68,7 +70,8 @@ namespace PubQuizBackend.Model.Dto.QuizEditionDto
                 LeagueId = LeagueId,
                 RegistrationStart = RegistrationStart,
                 RegistrationEnd = RegistrationEnd,
-                Visibility = Visibility
+                Visibility = Visibility,
+                MaxTeams = MaxTeams
             };
     }
 }

@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PubQuizBackend.Model.Dto.ApplicationDto;
+using PubQuizBackend.Enums;
 using PubQuizBackend.Model.Dto.QuizEditionDto;
 using PubQuizBackend.Service.Interface;
 using PubQuizBackend.Util.Extension;
@@ -26,13 +26,56 @@ namespace PubQuizBackend.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            return Ok(await _service.GetById(id));
+            try
+            {
+                var userId = User.GetUserId();
+
+                return Ok(await _service.GetById(id, userId));
+            }
+            catch
+            {
+                return Ok(await _service.GetById(id));
+            }
+            
         }
 
         [HttpGet("quiz/{id}")]
         public async Task<IActionResult> GetByQuizId(int id)
         {
             return Ok(await _service.GetByQuizId(id));
+        }
+
+        [HttpGet("paged/upcoming")]
+        public async Task<IActionResult> GetUpcomingPaged(int page = 1, int pageSize = 10, EditionFilter filter = EditionFilter.NEWEST)
+        {
+            var items = await _service.GetUpcomingCompletedPage(page, pageSize, filter, upcoming: true);
+            var totalCount = await _service.GetTotalCount(EditionTimeFilter.UPCOMING);
+
+            Response.Headers["X-Total-Count"] = totalCount.ToString();
+
+            return Ok(items);
+        }
+
+        [HttpGet("paged/completed")]
+        public async Task<IActionResult> GetCompletedPaged(int page = 1, int pageSize = 10, EditionFilter filter = EditionFilter.NEWEST)
+        {
+            var items = await _service.GetUpcomingCompletedPage(page, pageSize, filter, upcoming: false);
+            var totalCount = await _service.GetTotalCount(EditionTimeFilter.PAST);
+
+            Response.Headers["X-Total-Count"] = totalCount.ToString();
+
+            return Ok(items);
+        }
+
+        [HttpGet("paged/all")]
+        public async Task<IActionResult> GetAllPaged(int page = 1, int pageSize = 10, EditionFilter filter = EditionFilter.NEWEST)
+        {
+            var items = await _service.GetPage(page, pageSize, filter);
+            var totalCount = await _service.GetTotalCount(EditionTimeFilter.ALL);
+
+            Response.Headers["X-Total-Count"] = totalCount.ToString();
+
+            return Ok(items);
         }
 
         [HttpPost]

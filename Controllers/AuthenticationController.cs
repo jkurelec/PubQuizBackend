@@ -38,8 +38,9 @@ namespace PubQuizBackend.Controllers
             HttpContext.Response.Cookies.Append("refreshToken", await _refreshTokenService.Create(user.Id, user.Role, intApp), new CookieOptions
             {
                 HttpOnly = true,
-                //Secure = true,
-                //SameSite = SameSiteMode.Strict,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Path = "/",
                 Expires = DateTime.UtcNow.AddHours(_refreshTokenService.LongevityMultiplyer(user.Role))
             });
 
@@ -65,8 +66,10 @@ namespace PubQuizBackend.Controllers
             HttpContext.Response.Cookies.Append("refreshToken", await _refreshTokenService.Create(user.Id, user.Role, intApp), new CookieOptions
             {
                 HttpOnly = true,
-                //Secure = true,
-                //SameSite = SameSiteMode.Strict,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                //Path = "/",
+                //Domain = "192.168.0.213",
                 Expires = DateTime.UtcNow.AddHours(_refreshTokenService.LongevityMultiplyer(user.Role))
             });
 
@@ -80,7 +83,7 @@ namespace PubQuizBackend.Controllers
         public async Task<IActionResult> Refresh()
         {
             if (!Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
-                return Unauthorized("Refresh token not found");
+                return Forbid("Nemože zločko");
 
             var token = await _refreshTokenService.GetByToken(refreshToken);
 
@@ -92,6 +95,37 @@ namespace PubQuizBackend.Controllers
                 {
                     AccessToken = _jwtService.GenerateAccessToken(token.User.Id.ToString(), token.User.Username, token.User.Role, CustomConverter.GetIntRole(appName.First()!))
                 });
+
+            return Forbid("Nemože zločko");
+        }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            if (!Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
+                return Unauthorized("Refresh token not found");
+
+            var token = await _refreshTokenService.GetByToken(refreshToken);
+
+            if (!Request.Headers.TryGetValue("AppName", out var appName) && appName.FirstOrDefault() != "")
+                return BadRequest("Invalid request");
+
+            if (token != null)
+            {
+                await _refreshTokenService.Delete(token);
+
+                HttpContext.Response.Cookies.Append("refreshToken", "", new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.None,
+                    //Path = "/",
+                    //Domain = "192.168.0.213",
+                    Expires = DateTimeOffset.UtcNow.AddDays(-1)
+                });
+
+                return Ok();
+            }
 
             return Unauthorized("Nemože zločko");
         }

@@ -83,6 +83,13 @@ namespace PubQuizBackend.Controllers
             return Ok(await _service.GetByOwnerId(id));
         }
 
+        [HttpGet("user/{id}")]
+        public async Task<IActionResult> GetByUserId(int id)
+        {
+            return Ok(await _service.GetByUserId(id));
+        }
+        
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {

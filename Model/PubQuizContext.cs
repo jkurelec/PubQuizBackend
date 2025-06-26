@@ -68,6 +68,9 @@ public partial class PubQuizContext : DbContext
 
     public virtual DbSet<UserTeam> UserTeams { get; set; }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Username=backend;Password=Pasvord123;Database=pub_quiz");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -373,6 +376,9 @@ public partial class PubQuizContext : DbContext
             entity.Property(e => e.Id)
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("id");
+            entity.Property(e => e.AcceptedTeams)
+                .HasDefaultValue(0)
+                .HasColumnName("accepted_teams");
             entity.Property(e => e.CategoryId).HasColumnName("category_id");
             entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.Duration).HasColumnName("duration");
@@ -382,9 +388,15 @@ public partial class PubQuizContext : DbContext
             entity.Property(e => e.LeagueId).HasColumnName("league_id");
             entity.Property(e => e.LocationId).HasColumnName("location_id");
             entity.Property(e => e.MaxTeamSize).HasColumnName("max_team_size");
+            entity.Property(e => e.MaxTeams)
+                .HasDefaultValue(0)
+                .HasColumnName("max_teams");
             entity.Property(e => e.Name)
                 .HasMaxLength(255)
                 .HasColumnName("name");
+            entity.Property(e => e.PendingTeams)
+                .HasDefaultValue(0)
+                .HasColumnName("pending_teams");
             entity.Property(e => e.QuizId).HasColumnName("quiz_id");
             entity.Property(e => e.Rated)
                 .HasDefaultValue(false)

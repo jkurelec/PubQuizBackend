@@ -16,6 +16,7 @@ namespace PubQuizBackend.Repository.Interface
         Task<UserTeam> GetMemeberById(int userId, int teamId);
         Task<Team> GetById(int id);
         Task<Team> GetByOwnerId(int id);
+        Task<IEnumerable<Team>> GetByUserId(int id);
         Task<Team> Update(UpdateTeamDto teamDto, int ownerId);
     }
 }

@@ -5,6 +5,8 @@ namespace PubQuizBackend.Model.Dto.QuizAnswerDto
 {
     public class QuizEditionResultBriefDto
     {
+        public QuizEditionResultBriefDto() { }
+
         public QuizEditionResultBriefDto(QuizEditionResult editionResult)
         {
             Id = editionResult.Id;

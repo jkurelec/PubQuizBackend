@@ -22,6 +22,7 @@ builder.Services.AddControllers(
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddMemoryCache();
 
 builder.Services.AddDbContext<PubQuizContext>(options =>
     options.UseNpgsql(builder.Configuration["ConnectionStrings:DBConnection"]));
@@ -43,6 +44,7 @@ builder.Services.AddScoped<IUpcomingQuizQuestionRepository, UpcomingQuizQuestion
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IEloCalculatorRepository, EloCalculatorRepository>();
 builder.Services.AddScoped<IRatingHistoryRepository, RatingHistoryRepository>();
+builder.Services.AddScoped<IQuizEditionApplicationRepository, QuizEditionApplicationRepository>();
 
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<ILocationService, LocationService>();
@@ -82,7 +84,7 @@ builder.Services.AddAuthentication("Bearer")
         };
     });
 
-var allowedOrigins = new[] { "https://localhost:7147", "https://localhost:5001", "https://example.com" };
+var allowedOrigins = new[] { "https://192.168.0.187", "https://localhost:7147" };
 
 builder.Services.AddCors(
     options =>
@@ -95,7 +97,19 @@ builder.Services.AddCors(
                     .WithOrigins(allowedOrigins)
                     .AllowAnyMethod()
                     .AllowAnyHeader()
+                    .WithExposedHeaders("X-Total-Count")
                     .AllowCredentials();
+            }
+        );
+    }
+);
+
+builder.WebHost.ConfigureKestrel(options =>
+    {
+        options.ListenAnyIP(5164);
+        options.ListenAnyIP(7062, listenOptions =>
+            {
+                listenOptions.UseHttps();
             }
         );
     }

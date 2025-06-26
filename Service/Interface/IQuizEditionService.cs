@@ -1,4 +1,5 @@
-﻿using PubQuizBackend.Model.Dto.ApplicationDto;
+﻿using PubQuizBackend.Enums;
+using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.QuizEditionDto;
 
 namespace PubQuizBackend.Service.Interface
@@ -7,7 +8,10 @@ namespace PubQuizBackend.Service.Interface
     {
         Task<IEnumerable<QuizEditionBriefDto>> GetAll();
         Task<IEnumerable<QuizEditionBriefDto>> GetByQuizId(int id);
-        Task<QuizEditionDetailedDto> GetById(int id);
+        Task<QuizEditionDetailedDto> GetById(int id, int? user = null);
+        Task<IEnumerable<QuizEditionMinimalDto>> GetPage(int page, int pageSize, EditionFilter editionFilter);
+        Task<IEnumerable<QuizEditionMinimalDto>> GetUpcomingCompletedPage(int page, int pageSize, EditionFilter editionFilter, bool upcoming = true);
+        Task<int> GetTotalCount(EditionTimeFilter filter);
         Task<QuizEditionDetailedDto> Add(NewQuizEditionDto editionDto, int userId);
         Task<QuizEditionDetailedDto> Update(NewQuizEditionDto editionDto, int userId);
         Task Delete(int editionId, int userId);

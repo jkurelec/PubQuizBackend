@@ -43,6 +43,12 @@ public partial class QuizEdition
 
     public bool Rated { get; set; }
 
+    public int MaxTeams { get; set; }
+
+    public int AcceptedTeams { get; set; }
+
+    public int PendingTeams { get; set; }
+
     public virtual QuizCategory Category { get; set; } = null!;
 
     public virtual ICollection<EditionPrize> EditionPrizes { get; set; } = new List<EditionPrize>();

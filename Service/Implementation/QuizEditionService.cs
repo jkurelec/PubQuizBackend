@@ -1,4 +1,6 @@
-﻿using PubQuizBackend.Exceptions;
+﻿using PubQuizBackend.Enums;
+using PubQuizBackend.Exceptions;
+using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.QuizEditionDto;
 using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Service.Interface;
@@ -63,9 +65,14 @@ namespace PubQuizBackend.Service.Implementation
             return editions.Select(x => new QuizEditionBriefDto(x)).ToList();
         }
 
-        public async Task<QuizEditionDetailedDto> GetById(int id)
+        public async Task<QuizEditionDetailedDto> GetById(int id, int? userId = null)
         {
-            return new(await _editionRepository.GetByIdDetailed(id));
+            var edition = await _editionRepository.GetByIdDetailed(id, userId);
+
+            if (edition.Time < DateTime.UtcNow)
+                return new PastQuizEditionDetailedDto(edition);
+
+            return new(edition);
         }
 
         public async Task<IEnumerable<QuizEditionBriefDto>> GetByQuizId(int id)
@@ -73,6 +80,25 @@ namespace PubQuizBackend.Service.Implementation
             var editions = await _editionRepository.GetByQuizId(id);
 
             return editions.Select(x => new QuizEditionBriefDto(x)).ToList();
+        }
+
+        public async Task<int> GetTotalCount(EditionTimeFilter filter)
+        {
+            return await _editionRepository.GetTotalCount(filter);
+        }
+
+        public async Task<IEnumerable<QuizEditionMinimalDto>> GetPage(int page, int pageSize, EditionFilter editionFilter)
+        {
+            var editions = await _editionRepository.GetPage(page, pageSize, editionFilter);
+
+            return editions.Select(x => new QuizEditionMinimalDto(x)).ToList();
+        }
+
+        public async Task<IEnumerable<QuizEditionMinimalDto>> GetUpcomingCompletedPage(int page, int pageSize, EditionFilter editionFilter, bool upcoming = true)
+        {
+            var editions = await _editionRepository.GetUpcomingCompletedPage(page, pageSize, editionFilter, upcoming);
+
+            return editions.Select(x => new QuizEditionMinimalDto(x)).ToList();
         }
 
         public async Task<QuizEditionDetailedDto> Update(NewQuizEditionDto editionDto, int userId)

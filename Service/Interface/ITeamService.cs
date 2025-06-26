@@ -1,4 +1,5 @@
-﻿using PubQuizBackend.Model.Dto.TeamDto;
+﻿using PubQuizBackend.Model.DbModel;
+using PubQuizBackend.Model.Dto.TeamDto;
 
 namespace PubQuizBackend.Service.Interface
 {
@@ -14,5 +15,6 @@ namespace PubQuizBackend.Service.Interface
         Task<TeamDetailedDto> GetById(int id);
         Task<TeamDetailedDto> GetByOwnerId(int id);
         Task<TeamDetailedDto> Update(UpdateTeamDto teamDto, int ownerId);
+        Task<IEnumerable<TeamDetailedDto>> GetByUserId(int userId);
     }
 }
