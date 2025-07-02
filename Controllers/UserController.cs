@@ -32,17 +32,17 @@ namespace PubQuizBackend.Controllers
                 new UserBriefDto(await _service.GetById(id))
             );
 
-        [HttpPost]
-        public async Task<IActionResult> Add(RegisterUserDto userDto)
-        {
-            var user = await _service.Add(userDto);
+        //[HttpPost]
+        //public async Task<IActionResult> Add(RegisterUserDto userDto)
+        //{
+        //    var user = await _service.Add(userDto);
 
-            return CreatedAtAction(
-                nameof(Get),
-                new { id = user.Id },
-                user
-            );
-        }
+        //    return CreatedAtAction(
+        //        nameof(Get),
+        //        new { id = user.Id },
+        //        user
+        //    );
+        //}
 
         [HttpPut]
         public async Task<IActionResult> Update(UserDto userDto)

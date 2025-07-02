@@ -48,7 +48,7 @@ namespace PubQuizBackend.Controllers
         }
 
         [HttpPost("respond")]
-        public async Task<IActionResult> RespondToApplication(QuizEditionApplicationResponseDto application)
+        public async Task<IActionResult> RespondToApplication(ApplicationResponseDto application)
         {
             await _service.RespondToApplication(application, User.GetUserId());
 
@@ -61,21 +61,18 @@ namespace PubQuizBackend.Controllers
             return Ok (await _service.GetAcceptedApplicationsByEdition(id));
         }
 
-        [HttpGet("check/{editionId}")]
+        [HttpGet("check/applied/{editionId}")]
         public async Task<IActionResult> CheckIfUserApplied(int editionId)
         {
-            //int userId;
-
-            //try
-            //{
-            //    userId = User.GetUserId();
-            //}
-            //catch
-            //{
-            //    return Ok (false);
-            //}
-
             return Ok (await _service.CheckIfUserApplied(User.GetUserId(), editionId));
         }
+
+        [HttpGet("check/withdraw/{teamId}/{editionId}")]
+        public async Task<IActionResult> CanUserWithdraw(int teamId, int editionId)
+        {
+            return Ok(await _service.CanUserWithdraw(User.GetUserId(), teamId, editionId));
+        }
+
+        
     }
 }

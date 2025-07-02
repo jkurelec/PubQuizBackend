@@ -62,15 +62,16 @@ public partial class PubQuizContext : DbContext
 
     public virtual DbSet<Team> Teams { get; set; }
 
+    public virtual DbSet<TeamApplication> TeamApplications { get; set; }
+
+    public virtual DbSet<TeamInvitation> TeamInvitations { get; set; }
+
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UserRatingHistory> UserRatingHistories { get; set; }
 
     public virtual DbSet<UserTeam> UserTeams { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Username=backend;Password=Pasvord123;Database=pub_quiz");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -717,6 +718,60 @@ public partial class PubQuizContext : DbContext
                 .HasConstraintName("attendee_team_quiz_id_fkey");
         });
 
+        modelBuilder.Entity<TeamApplication>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("team_application_pkey");
+
+            entity.ToTable("team_application");
+
+            entity.HasIndex(e => new { e.UserId, e.TeamId }, "unique_application").IsUnique();
+
+            entity.Property(e => e.Id)
+                .UseIdentityAlwaysColumn()
+                .HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Response).HasColumnName("response");
+            entity.Property(e => e.TeamId).HasColumnName("team_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.Team).WithMany(p => p.TeamApplications)
+                .HasForeignKey(d => d.TeamId)
+                .HasConstraintName("fk_team_application_team");
+
+            entity.HasOne(d => d.User).WithMany(p => p.TeamApplications)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("fk_team_application_user");
+        });
+
+        modelBuilder.Entity<TeamInvitation>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("team_invitation_pkey");
+
+            entity.ToTable("team_invitation");
+
+            entity.HasIndex(e => new { e.UserId, e.TeamId }, "unique_invitation").IsUnique();
+
+            entity.Property(e => e.Id)
+                .UseIdentityAlwaysColumn()
+                .HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Response).HasColumnName("response");
+            entity.Property(e => e.TeamId).HasColumnName("team_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.Team).WithMany(p => p.TeamInvitations)
+                .HasForeignKey(d => d.TeamId)
+                .HasConstraintName("fk_team_invitation_team");
+
+            entity.HasOne(d => d.User).WithMany(p => p.TeamInvitations)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("fk_team_invitation_user");
+        });
+
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("host_pkey");
@@ -735,9 +790,8 @@ public partial class PubQuizContext : DbContext
             entity.Property(e => e.Lastname)
                 .HasMaxLength(255)
                 .HasColumnName("lastname");
-            entity.Property(e => e.Password)
-                .HasMaxLength(255)
-                .HasColumnName("password");
+            entity.Property(e => e.PasswordHash).HasColumnName("password_hash");
+            entity.Property(e => e.PasswordSalt).HasColumnName("password_salt");
             entity.Property(e => e.Rating)
                 .HasDefaultValue(1000)
                 .HasColumnName("rating");

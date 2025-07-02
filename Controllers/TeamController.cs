@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using PubQuizBackend.Model.Dto.ApplicationDto;
 using PubQuizBackend.Model.Dto.TeamDto;
 using PubQuizBackend.Service.Interface;
 using PubQuizBackend.Util.Extension;
@@ -16,15 +17,56 @@ namespace PubQuizBackend.Controllers
             _service = service;
         }
 
-        [HttpPost("member")]
-        public async Task<IActionResult> AddMember(TeamMemberDto teamMember)
+        [HttpPost("invite")]
+        public async Task<IActionResult> InviteUser(TeamMemberDto teamMember)
         {
-            await _service.AddMember(teamMember, User.GetUserId());
-            
-            return NoContentAtAction(
-                nameof(GetById),
-                new { id = teamMember.TeamId }
-                );
+            await _service.InviteUser(teamMember, User.GetUserId());
+
+            return Ok();
+        }
+
+        [HttpPost("apply")]
+        public async Task<IActionResult> ApplyToTeam(TeamMemberDto teamMember)
+        {
+            await _service.ApplyToTeam(teamMember.TeamId, User.GetUserId());
+
+            return Ok();
+        }
+
+        [HttpPost("reply/application")]
+        public async Task<IActionResult> AnswerApplication(ApplicationResponseDto applicationResponse)
+        {
+            await _service.AnswerApplication(
+                applicationResponse.ApplicationId,
+                User.GetUserId(),
+                applicationResponse.Response
+            );
+
+            return Ok();
+        }
+
+        [HttpPost("reply/invitation")]
+        public async Task<IActionResult> AnswerInvitation(ApplicationResponseDto applicationResponse)
+        {
+            await _service.AnswerInvitation(
+                applicationResponse.ApplicationId,
+                User.GetUserId(),
+                applicationResponse.Response
+            );
+
+            return Ok ();
+        }
+
+        [HttpGet("applications")]
+        public async Task<IActionResult> GetApplications()
+        {
+            return Ok (await _service.GetTeamApplications(User.GetUserId()));
+        }
+
+        [HttpGet("invitations")]
+        public async Task<IActionResult> GetInvitations()
+        {
+            return Ok (await _service.GetTeamInvitations(User.GetUserId()));
         }
 
         [HttpPut("owner/{id}")]
@@ -99,7 +141,21 @@ namespace PubQuizBackend.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(UpdateTeamDto teamDto)
         {
-            return Ok(await _service.Update(teamDto, User.GetUserId()));
+            return Ok (await _service.Update(teamDto, User.GetUserId()));
+        }
+
+        [HttpGet("registerRights/{editionId}")]
+        public async Task<IActionResult> GetTeamsForRegistration(int editionId)
+        {
+            return Ok (await _service.GetTeamsForRegistration(User.GetUserId(), editionId));
+        }
+
+        [HttpDelete("leave/{teamId}")]
+        public async Task<IActionResult> LeaveTeam(int teamId)
+        {
+            await _service.LeaveTeam(User.GetUserId(), teamId);
+
+            return NoContent();
         }
     }
 }

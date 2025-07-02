@@ -9,5 +9,6 @@ namespace PubQuizBackend.Repository.Interface
         Task<int> GetMaxTeamsByEditionId(int id);
         Task<QuizEditionApplication> GetApplicationById(int id);
         Task<bool> CheckIfUserApplied(int userId, int editionId);
+        Task<QuizEditionApplication> GetApplicationByUserAndEditionId(int userId, int editionId);
     }
 }

@@ -16,14 +16,14 @@ namespace PubQuizBackend.Model.Dto.TeamDto
             OwnerId = team.OwnerId;
             Category = new(team.Category);
             Quiz = new(team.Quiz);
-            TeamMembers = team.UserTeams.Select(x => new UserBriefDto(x.User)).ToList();
+            TeamMembers = team.UserTeams.Select(x => new UserTeamDto(x)).ToList();
         }
 
         public int Id { get; set; }
         public string Name { get; set; } = null!;
-        public int OwnerId;
+        public int OwnerId { get; set; }
         public QCategoryDto Category { get; set; } = null!;
         public QuizMinimalDto Quiz { get; set; } = null!;
-        public IEnumerable<UserBriefDto> TeamMembers { get; set; } = new List<UserBriefDto>();
+        public IEnumerable<UserTeamDto> TeamMembers { get; set; } = new List<UserTeamDto>();
     }
 }

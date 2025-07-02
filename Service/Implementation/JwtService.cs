@@ -16,14 +16,16 @@ namespace PubQuizBackend.Service.Implementation
             _config = config;
         }
 
-        public string GenerateAccessToken(string userId, string username, int role, int app)
+        public string GenerateAccessToken(string userId, string username, int role, int? teamId, int app)
         {
             var stringRole = CustomConverter.GetStringRole(role);
+
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, userId),
                 new Claim(ClaimTypes.Name, username),
                 new Claim(ClaimTypes.Role, stringRole),
+                new Claim("teamId", teamId?.ToString() ?? string.Empty),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString())
             };

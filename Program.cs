@@ -84,7 +84,7 @@ builder.Services.AddAuthentication("Bearer")
         };
     });
 
-var allowedOrigins = new[] { "https://192.168.0.187", "https://localhost:7147" };
+var allowedOrigins = new[] { "https://192.168.0.187", "https://localhost:7147", "https://localhost:7148" };
 
 builder.Services.AddCors(
     options =>

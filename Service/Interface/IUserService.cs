@@ -5,7 +5,7 @@ namespace PubQuizBackend.Service.Interface
 {
     public interface IUserService
     {
-        Task<User> Add(RegisterUserDto user);
+        Task<User> Add(User user);
         Task<bool> Remove(int id);
         Task<List<User>> GetAll();
         Task<User> GetById(int id);
@@ -13,5 +13,6 @@ namespace PubQuizBackend.Service.Interface
         Task<User> Update(UserDto user);
         Task<User> ChangePassword(int id, string password);
         Task<User> GetByIdentifier(string identifier);
+        Task ExistsByUsernameOrEmail(string username, string email);
     }
 }

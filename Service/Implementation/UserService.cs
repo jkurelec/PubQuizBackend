@@ -15,17 +15,20 @@ namespace PubQuizBackend.Service.Implementation
             _repository = repository;
         }
 
-        public async Task<User> Add(RegisterUserDto user)
+        public async Task<User> Add(User user)
         {
-            if (await _repository.GetByUsername(user.Username) != null || await _repository.GetByEmail(user.Email) != null)
-                throw new ConflictException("Username or email already in use!");
-
             return await _repository.Add(user);
         }
 
         public async Task<User> ChangePassword(int id, string password)
         {
             return await _repository.ChangePassword(id, password);
+        }
+
+        public async Task ExistsByUsernameOrEmail(string username, string email)
+        {
+            if (await _repository.GetByUsername(username) != null || await _repository.GetByEmail(email) != null)
+                throw new ConflictException("Username or email already in use!");
         }
 
         public async Task<List<User>> GetAll()

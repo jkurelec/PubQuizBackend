@@ -2,6 +2,7 @@
 using PubQuizBackend.Model.Dto.ApplicationDto;
 using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Service.Interface;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace PubQuizBackend.Service.Implementation
 {
@@ -47,6 +48,21 @@ namespace PubQuizBackend.Service.Implementation
             await _editionRepository.ApplyTeam(application.EditionId, application.TeamId, application.UserIds, registrantId);
         }
 
+        public async Task<bool> CanUserWithdraw(int userId, int teamId, int editionId)
+        {
+            var application = await _applicationRepository.GetApplicationByUserAndEditionId(userId, editionId);
+
+            if (application.Accepted == false)
+                return false;
+
+            var registrant = await _teamRepository.GetMemeberById(userId, teamId);
+
+            if (!registrant.RegisterTeam)
+                return false;
+
+            return true;
+        }
+
         public async Task<bool> CheckIfUserApplied(int userId, int editionId)
         {
             return await _applicationRepository.CheckIfUserApplied(userId, editionId);
@@ -79,7 +95,7 @@ namespace PubQuizBackend.Service.Implementation
             await _editionRepository.RemoveTeamFromEdition(editionId, teamId);
         }
 
-        public async Task RespondToApplication(QuizEditionApplicationResponseDto applicationDto, int hostId)
+        public async Task RespondToApplication(ApplicationResponseDto applicationDto, int hostId)
         {
             var application = await _applicationRepository.GetApplicationById(applicationDto.ApplicationId);
             var takenSpots = await _applicationRepository.GetAcceptedCountByEditionId(application.EditionId);

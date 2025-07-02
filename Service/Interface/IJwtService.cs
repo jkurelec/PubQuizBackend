@@ -2,6 +2,6 @@
 {
     public interface IJwtService
     {
-        string GenerateAccessToken(string userId, string username, int role, int app);
+        string GenerateAccessToken(string userId, string username, int role, int? teamId, int app);
     }
 }

@@ -54,5 +54,13 @@ namespace PubQuizBackend.Repository.Implementation
                 .SelectMany(x => x.Users)
                 .AnyAsync(u => u.Id == userId);
         }
+
+        public async Task<QuizEditionApplication> GetApplicationByUserAndEditionId(int userId, int editionId)
+        {
+            return await _context.QuizEditionApplications
+                .Where(x => x.EditionId == editionId && x.Users.Any(x => x.Id == userId))
+                .FirstOrDefaultAsync()
+                ?? throw new NotFoundException($"Application for the edition => {editionId} not found!");
+        }
     }
 }

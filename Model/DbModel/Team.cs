@@ -25,5 +25,9 @@ public partial class Team
 
     public virtual ICollection<QuizEditionResult> QuizEditionResults { get; set; } = new List<QuizEditionResult>();
 
+    public virtual ICollection<TeamApplication> TeamApplications { get; set; } = new List<TeamApplication>();
+
+    public virtual ICollection<TeamInvitation> TeamInvitations { get; set; } = new List<TeamInvitation>();
+
     public virtual ICollection<UserTeam> UserTeams { get; set; } = new List<UserTeam>();
 }

@@ -15,11 +15,13 @@ public partial class User
 
     public string Email { get; set; } = null!;
 
-    public string Password { get; set; } = null!;
-
     public int Rating { get; set; }
 
     public int Role { get; set; }
+
+    public byte[] PasswordHash { get; set; } = null!;
+
+    public byte[] PasswordSalt { get; set; } = null!;
 
     public virtual ICollection<HostOrganizationQuiz> HostOrganizationQuizzes { get; set; } = new List<HostOrganizationQuiz>();
 
@@ -28,6 +30,10 @@ public partial class User
     public virtual ICollection<QuizEdition> QuizEditions { get; set; } = new List<QuizEdition>();
 
     public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+
+    public virtual ICollection<TeamApplication> TeamApplications { get; set; } = new List<TeamApplication>();
+
+    public virtual ICollection<TeamInvitation> TeamInvitations { get; set; } = new List<TeamInvitation>();
 
     public virtual ICollection<Team> Teams { get; set; } = new List<Team>();
 

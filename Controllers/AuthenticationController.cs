@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PubQuizBackend.Model.DbModel;
-using PubQuizBackend.Model.Dto;
 using PubQuizBackend.Model.Dto.UserDto;
+using PubQuizBackend.Model.Other;
 using PubQuizBackend.Service.Interface;
 using PubQuizBackend.Util;
+using PubQuizBackend.Util.Helpers;
 
 namespace PubQuizBackend.Controllers
 {
@@ -14,12 +15,14 @@ namespace PubQuizBackend.Controllers
         private readonly IUserService _userService;
         private readonly IRefreshTokenService _refreshTokenService;
         private readonly IJwtService _jwtService;
+        private readonly ITeamService _teamService;
 
-        public AuthenticationController(IUserService userService, IRefreshTokenService refreshTokenService, IJwtService jwtService)
+        public AuthenticationController(IUserService userService, IRefreshTokenService refreshTokenService, IJwtService jwtService, ITeamService teamService)
         {
             _userService = userService;
             _refreshTokenService = refreshTokenService;
             _jwtService = jwtService;
+            _teamService = teamService;
         }
 
         [HttpPost("register")]
@@ -30,10 +33,23 @@ namespace PubQuizBackend.Controllers
 
             var intApp = CustomConverter.GetIntRole(appName.First()!);
 
-            var user = await _userService.Add(registerUserDto);
+            await _userService.ExistsByUsernameOrEmail(registerUserDto.Username, registerUserDto.Email);
 
-            if(user == null)
-                return BadRequest("Username or Email already taken!");
+            PasswordHelper.CreatePasswordHash(registerUserDto.Password, out byte[] passwordHash, out byte[] passwordSalt);
+
+            var user = new User
+            {
+                Username = registerUserDto.Username,
+                Role = registerUserDto.Role,
+                Rating = 1000,
+                Firstname = registerUserDto.Firstname,
+                Lastname = registerUserDto.Lastname,
+                Email = registerUserDto.Email,
+                PasswordHash = passwordHash,
+                PasswordSalt = passwordSalt
+            };
+
+            await _userService.Add(user);
 
             HttpContext.Response.Cookies.Append("refreshToken", await _refreshTokenService.Create(user.Id, user.Role, intApp), new CookieOptions
             {
@@ -46,8 +62,51 @@ namespace PubQuizBackend.Controllers
 
             return Ok(new
             {
-                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Username, user.Role, intApp)
+                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Username, user.Role, null, intApp)
             });
+        }
+
+        [HttpPost("changePassword")]
+        public async Task<IActionResult> Register(ChangePassword changePassword)
+        {
+            await _userService.ChangePassword(changePassword.Id, changePassword.Password);
+            return Ok("Password changed successfully.");
+            //if (!Request.Headers.TryGetValue("AppName", out var appName) && appName.FirstOrDefault() != "Attendee")
+            //    return BadRequest("Invalid request");
+
+            //var intApp = CustomConverter.GetIntRole(appName.First()!);
+
+            //await _userService.ExistsByUsernameOrEmail(registerUserDto.Username, registerUserDto.Email);
+
+            //PasswordHelper.CreatePasswordHash(registerUserDto.Password, out byte[] passwordHash, out byte[] passwordSalt);
+
+            //var user = new User
+            //{
+            //    Username = registerUserDto.Username,
+            //    Role = registerUserDto.Role,
+            //    Rating = 1000,
+            //    Firstname = registerUserDto.Firstname,
+            //    Lastname = registerUserDto.Lastname,
+            //    Email = registerUserDto.Email,
+            //    PasswordHash = passwordHash,
+            //    PasswordSalt = passwordSalt
+            //};
+
+            //await _userService.Add(user);
+
+            //HttpContext.Response.Cookies.Append("refreshToken", await _refreshTokenService.Create(user.Id, user.Role, intApp), new CookieOptions
+            //{
+            //    HttpOnly = true,
+            //    Secure = true,
+            //    SameSite = SameSiteMode.None,
+            //    Path = "/",
+            //    Expires = DateTime.UtcNow.AddHours(_refreshTokenService.LongevityMultiplyer(user.Role))
+            //});
+
+            //return Ok(new
+            //{
+            //    AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Username, user.Role, null, intApp)
+            //});
         }
 
         [HttpPost("login")]
@@ -55,27 +114,30 @@ namespace PubQuizBackend.Controllers
         {
             var user = await _userService.GetByIdentifier(loginUserDto.Identifier);
 
-            if (user == null || user.Password != loginUserDto.Password)
+            if (user == null)
                 return BadRequest("Invalid username, email or password.");
 
-            if (!Request.Headers.TryGetValue("AppName", out var appName) && appName.FirstOrDefault() != "")
+            if (!PasswordHelper.VerifyPasswordHash(loginUserDto.Password, user.PasswordHash, user.PasswordSalt))
+                return BadRequest("Invalid username, email or password.");
+
+            if (!Request.Headers.TryGetValue("AppName", out var appName) && appName.FirstOrDefault() != "Attendee")
                 return BadRequest("Invalid request");
 
             var intApp = CustomConverter.GetIntRole(appName.First()!);
+
+            var teamId = await _teamService.GetIdByOwnerId(user.Id);
 
             HttpContext.Response.Cookies.Append("refreshToken", await _refreshTokenService.Create(user.Id, user.Role, intApp), new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true,
                 SameSite = SameSiteMode.None,
-                //Path = "/",
-                //Domain = "192.168.0.213",
                 Expires = DateTime.UtcNow.AddHours(_refreshTokenService.LongevityMultiplyer(user.Role))
             });
 
             return Ok(new
             {
-                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Username, user.Role, intApp)
+                AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Username, user.Role, teamId, intApp)
             });
         }
 
@@ -90,10 +152,12 @@ namespace PubQuizBackend.Controllers
             if (!Request.Headers.TryGetValue("AppName", out var appName) && appName.FirstOrDefault() != "")
                 return BadRequest("Invalid request");
 
+            var teamId = await _teamService.GetIdByOwnerId(token.UserId);
+
             if (token != null)
                 return Ok(new
                 {
-                    AccessToken = _jwtService.GenerateAccessToken(token.User.Id.ToString(), token.User.Username, token.User.Role, CustomConverter.GetIntRole(appName.First()!))
+                    AccessToken = _jwtService.GenerateAccessToken(token.User.Id.ToString(), token.User.Username, token.User.Role, teamId, CustomConverter.GetIntRole(appName.First()!))
                 });
 
             return Forbid("Nemože zločko");

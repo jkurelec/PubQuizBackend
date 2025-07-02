@@ -10,9 +10,10 @@ namespace PubQuizBackend.Repository.Interface
         Task<User?> GetByEmail(string email);
         Task<User> ChangePassword(int id, string password);
         Task<bool> Delete(int id);
-        Task<User> Add(RegisterUserDto user);
+        Task<User> Add(User user);
         Task<User> Update(UserDto user);
         Task<List<User>> GetAll();
         Task<User> GetByIdentifier(string identifier);
+        Task<bool> UserExists(int id);
     }
 }
