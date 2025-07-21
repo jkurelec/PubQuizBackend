@@ -13,6 +13,7 @@ namespace PubQuizBackend.Service.Interface
         Task<Location> Update(LocationUpdateDto updatedLocation);
         Task<bool> Delete(int id);
         Task<List<LocationDetailedDto>> FindNew(string? locationName = null, string? address = null, string? city = null, string? country = null, int limit = 1);
-        Task<LocationDetailedDto> CheckIfExists(string? locationName = null, string? address = null, string? city = null, string? country = null);
+        Task<LocationDetailedDto?> CheckIfExists(string? locationName = null, string? address = null, string? city = null, string? country = null);
+        Task<List<LocationDetailedDto>> SearchByText(string searchText, int limit = 10);
     }
 }

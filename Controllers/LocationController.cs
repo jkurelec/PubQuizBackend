@@ -15,8 +15,8 @@ namespace PubQuizBackend.Controllers
             _locationService = locationService;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> Get(string? locationName = null, string? address = null, string? city = null, string? country = null)
+        [HttpGet("check")]
+        public async Task<IActionResult> CheckIfExists(string? locationName = null, string? address = null, string? city = null, string? country = null)
         {
             return Ok(
                 await _locationService.CheckIfExists(locationName, address, city, country)
@@ -65,6 +65,16 @@ namespace PubQuizBackend.Controllers
             await _locationService.Delete(id);
 
             return Ok();
+        }
+
+        [HttpGet("list")]
+        public async Task<IActionResult> Search(string? search = null, int limit = 10)
+        {
+            var results = string.IsNullOrWhiteSpace(search)
+                ? await _locationService.GetAll()
+                : await _locationService.SearchByText(search, limit);
+
+            return Ok(results);
         }
     }
 }

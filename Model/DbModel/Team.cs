@@ -15,6 +15,8 @@ public partial class Team
 
     public int QuizId { get; set; }
 
+    public string? ProfileImage { get; set; }
+
     public virtual QuizCategory Category { get; set; } = null!;
 
     public virtual User Owner { get; set; } = null!;

@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model;
 using PubQuizBackend.Model.DbModel;
@@ -78,6 +77,43 @@ namespace PubQuizBackend.Repository.Implementation
         public async Task<User?> GetByUsername(string username)
         {
             return await _context.Users.Where(x => x.Username == username).FirstOrDefaultAsync();
+        }
+
+        public async Task<User> GetDetailedById(int id)
+        {
+            return await _context.Users
+                .Include(x => x.HostOrganizationQuizzes)
+                    .ThenInclude(h => h.Quiz)
+                .Include(x => x.QuizEditions)
+                    .ThenInclude(e => e.Category)
+                .Include(x => x.Teams)
+                .Include(x => x.EditionResults)
+                    .ThenInclude(r => r.Edition)
+                        .ThenInclude(e => e.Category)
+                .Include(x => x.EditionResults)
+                    .ThenInclude(r => r.Team)
+                .FirstOrDefaultAsync(x => x.Id == id)
+                ?? throw new NotFoundException("User not found!");
+        }
+
+        public async Task<IEnumerable<User>> Search(string? username = null, string? sortBy = null, bool descending = false, int limit = 25)
+        {
+            var query = _context.Users.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(username))
+            {
+                query = query.Where(u => u.Username.Contains(username));
+            }
+
+            query = sortBy?.ToLower() switch
+            {
+                "email" => descending ? query.OrderByDescending(u => u.Email) : query.OrderBy(u => u.Email),
+                "rating" => descending ? query.OrderByDescending(u => u.Rating) : query.OrderBy(u => u.Rating),
+                "username" => descending ? query.OrderByDescending(u => u.Username) : query.OrderBy(u => u.Username),
+                _ => query.OrderBy(u => u.Id)
+            };
+
+            return await query.Take(limit).ToListAsync();
         }
 
         public async Task<User> Update(UserDto updatedUser)

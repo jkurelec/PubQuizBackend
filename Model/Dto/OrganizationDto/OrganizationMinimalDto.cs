@@ -10,9 +10,11 @@ namespace PubQuizBackend.Model.Dto.OrganizationDto
         {
             Id = organization.Id;
             Name = organization.Name;
+            ProfileImage = organization.ProfileImage;
         }
 
         public int Id { get; set; }
         public string Name { get; set; } = null!;
+        public string? ProfileImage { get; set; }
     }
 }

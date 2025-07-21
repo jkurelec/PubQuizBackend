@@ -15,5 +15,7 @@ namespace PubQuizBackend.Repository.Interface
         Task<List<User>> GetAll();
         Task<User> GetByIdentifier(string identifier);
         Task<bool> UserExists(int id);
+        Task<IEnumerable<User>> Search(string? username = null, string? sortBy = null, bool descending = false, int limit = 25);
+        Task<User> GetDetailedById(int id);
     }
 }

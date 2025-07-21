@@ -22,12 +22,14 @@ namespace PubQuizBackend.Service.Implementation
             );
         }
 
-        public async Task<LocationDetailedDto> CheckIfExists(string? locationName = null, string? address = null, string? city = null, string? country = null)
+        public async Task<LocationDetailedDto?> CheckIfExists(string? locationName = null, string? address = null, string? city = null, string? country = null)
         {
-            return new(
-                await _locationRepository.CheckIfExists(locationName, address, city, country)
-                    ?? throw new InsufficientDataException()
-            );
+            var location = await _locationRepository.CheckIfExists(locationName, address, city, country);
+
+            if (location == null)
+                return null;
+
+            return new (location);
         }
 
         public async Task<bool> Delete(int id)
@@ -63,6 +65,12 @@ namespace PubQuizBackend.Service.Implementation
         public async Task<Location> Update(LocationUpdateDto location)
         {
             return await _locationRepository.Update(location);
+        }
+
+        public async Task<List<LocationDetailedDto>> SearchByText(string searchText, int limit = 10)
+        {
+            var locations = await _locationRepository.SearchByText(searchText, limit);
+            return locations.Select(l => new LocationDetailedDto(l)).ToList();
         }
     }
 }

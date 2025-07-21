@@ -20,6 +20,7 @@ namespace PubQuizBackend.Model.Dto.QuizDto
             Categories = quiz.QuizCategories.Select(x => new QCategoryDto(x)).ToList();
             QuizEditions = quiz.QuizEditions.Select(x => new QuizEditionMinimalDto(x));
             Teams = quiz.Teams.Select(x => new TeamBreifDto(x));
+            ProfileImage = quiz.ProfileImage;
         }
 
         public int Id { get; set; }
@@ -28,8 +29,9 @@ namespace PubQuizBackend.Model.Dto.QuizDto
         public int Rating { get; set; }
         public int EditionsHosted { get; set; }
         public IEnumerable<LocationBriefDto> Locations { get; set; } = new List<LocationBriefDto>();
-        public IEnumerable<QuizCategoryDto.QCategoryDto> Categories { get; set; } = new List<QuizCategoryDto.QCategoryDto>();
+        public IEnumerable<QCategoryDto> Categories { get; set; } = new List<QCategoryDto>();
         public IEnumerable<QuizEditionMinimalDto> QuizEditions { get; set; } = null!;
         public IEnumerable<TeamBreifDto> Teams { get; set; } = null!;
+        public string? ProfileImage { get; set; }
     }
 }

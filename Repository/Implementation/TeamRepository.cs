@@ -38,7 +38,8 @@ namespace PubQuizBackend.Repository.Implementation
                     Name = name,
                     OwnerId = owner.Id,
                     CategoryId = 1,
-                    QuizId = 1
+                    QuizId = 1,
+                    ProfileImage = "default.jpg"
                 }
             );
 

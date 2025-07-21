@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PubQuizBackend.Auth.RoleAndAudienceFilter;
-using PubQuizBackend.Enums;
 using PubQuizBackend.Exceptions;
+using PubQuizBackend.Model.Dto.ApplicationDto;
 using PubQuizBackend.Model.Dto.OrganizationDto;
 using PubQuizBackend.Service.Interface;
 using PubQuizBackend.Util.Extension;
@@ -80,6 +79,14 @@ namespace PubQuizBackend.Controllers
             return Ok(await _service.Update(updatedOrganizer));
         }
 
+        [HttpPost("profile-image")]
+        public async Task<IActionResult> UpdateProfileImage(IFormFile image)
+        {
+            var newFileName = await _service.UpdateProfileImage(User.GetUserId(), image);
+
+            return Ok(newFileName);
+        }
+
         [HttpPut("host")]
         public async Task<IActionResult> UpdateHost(NewHostDto updatedHost)
         {
@@ -118,6 +125,64 @@ namespace PubQuizBackend.Controllers
             await _service.RemoveHostFromQuiz(organizerId, hostId, quizId);
 
             return NoContent();
+        }
+
+        [HttpGet("invite")]
+        public async Task<IActionResult> GetInvitations()
+        {
+            return Ok(await _service.GetInvitations(User.GetUserId()));
+        }
+
+        [HttpPost("invite/send")]
+        public async Task<IActionResult> InviteHostToOrganization(QuizInvitationRequestDto request)
+        {
+            await _service.InviteHostToOrganization(request, User.GetUserId());
+
+            return Ok();
+        }
+
+        [HttpPost("invite/respond")]
+        public async Task<IActionResult> RespondToInvitation(ApplicationResponseDto response)
+        {
+            await _service.RespondToInvitation(User.GetUserId(), response);
+
+            return Ok();
+        }
+
+        [HttpGet("host")]
+        public async Task<IActionResult> GetByHost()
+        {
+            return Ok(await _service.GetByHost(User.GetUserId()));
+        }
+
+        [HttpGet("from-owner")]
+        public async Task<IActionResult> GetOwnerOrganization()
+        {
+            return Ok(await _service.GetOwnerOrganization(User.GetUserId()));
+        }
+
+        [HttpGet("for-new-host/{hostId}")]
+        public async Task<IActionResult> GetAvaliableQuizzesForNewHost(int hostId)
+        {
+            var organization = await _service.GetOwnerOrganization(User.GetUserId())
+                ?? throw new ForbiddenException();
+
+            return Ok(await _service.GetAvaliableQuizzesForNewHost(hostId, organization.Id));
+        }
+
+        [HttpGet("invitation/pending")]
+        public async Task<IActionResult> GetOrganizationPendingQuizInvitations()
+        {
+            var organization = await _service.GetOwnerOrganization(User.GetUserId())
+                ?? throw new ForbiddenException();
+
+            return Ok(await _service.GetOrganizationPendingQuizInvitations(organization.Id));
+        }
+
+        [HttpGet("hosts-by-quiz/{quizId}")]
+        public async Task<IActionResult> GetHostsByQuiz(int quizId)
+        {
+            return Ok(await _service.GetHostsByQuiz(quizId));
         }
 
         private async Task OwnerCheck(int organizerId)

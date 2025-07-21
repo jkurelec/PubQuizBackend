@@ -21,6 +21,8 @@ public partial class Location
 
     public double Lon { get; set; }
 
+    public string? ProfileImage { get; set; }
+
     public virtual City City { get; set; } = null!;
 
     public virtual PostalCode PostalCode { get; set; } = null!;

@@ -27,6 +27,7 @@ namespace PubQuizBackend.Repository.Implementation
             var categories = await _context.QuizCategories.Where(x => quizDto.Categories.Contains(x.Id)).ToListAsync();
 
             var quiz = quizDto.ToObject(categories, locations);
+            quiz.ProfileImage = "default.jpg";
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -45,7 +46,9 @@ namespace PubQuizBackend.Repository.Implementation
                         QuizId = quiz.Id,
                         CreateEdition = true,
                         EditEdition = true,
-                        DeleteEdition = true
+                        DeleteEdition = true,
+                        CrudQuestion = true,
+                        ManageApplication = true
                     }
                 );
 
@@ -113,6 +116,9 @@ namespace PubQuizBackend.Repository.Implementation
             if (quiz.OrganizationId != quizDto.OrganizationId)
                 throw new ForbiddenException();
 
+            if (quizDto.Name == null || quizDto.Name == "" || quizDto.Locations.Count == 0 || quizDto.Locations == null || quizDto.Categories.Count == 0 || quizDto.Categories == null)
+                throw new BadRequestException("None of the properties can be empty!");
+
             var quizLocationIds = quiz.Locations.Select(l => l.Id).ToHashSet();
             var providedLocationIds = quizDto.Locations.ToHashSet();
             var quizCategoryIds = quiz.Locations.Select(l => l.Id).ToHashSet();
@@ -133,12 +139,37 @@ namespace PubQuizBackend.Repository.Implementation
             return quiz;
         }
 
+        public async Task<IEnumerable<Quiz>> GetByHostAndOrganization(int hostId, int organizationId)
+        {
+            return await _context.HostOrganizationQuizzes
+                .Include(x => x.Quiz)
+                .Where(x =>
+                    x.HostId == hostId
+                    && x.OrganizationId == organizationId
+                )
+                .Select(x => x.Quiz)
+                .ToListAsync();
+        }
+
+        public async Task<Quiz> GetOwnerQuizByIds(int ownerId, int quizId)
+        {
+            return await _context.Quizzes
+                .Include(x => x.Organization)
+                .Where(x => x.Organization.OwnerId == ownerId && x.Id == quizId)
+                .FirstOrDefaultAsync()
+                ?? throw new ForbiddenException();
+        }
 
         // OVO MOZE BITI ANYASYNC
         private async Task IsOwner(int organizerId, int ownerId)
         {
             _ = await _context.Organizations.FirstOrDefaultAsync(x => x.OwnerId == ownerId && x.Id == organizerId)
                 ?? throw new ForbiddenException();
+        }
+
+        public async Task Save()
+        {
+            await _context.SaveChangesAsync();
         }
     }
 }

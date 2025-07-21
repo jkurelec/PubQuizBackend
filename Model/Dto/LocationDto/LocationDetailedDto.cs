@@ -19,6 +19,7 @@ namespace PubQuizBackend.Model.Dto.LocationDto
             CountryCode = location.City.Country.CountryCode;
             Lat = location.Lat;
             Lon = location.Lon;
+            ProfileImage = location.ProfileImage;
         }
 
         public int? Id { get; set; }
@@ -32,6 +33,7 @@ namespace PubQuizBackend.Model.Dto.LocationDto
         public string CountryCode { get; set; } = null!;
         public double Lat { get; set; }
         public double Lon { get; set; }
+        public string? ProfileImage { get; set; }
 
         public Location ToLocation(PostalCode? postalCode = null)
         {

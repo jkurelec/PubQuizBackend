@@ -14,5 +14,6 @@ namespace PubQuizBackend.Repository.Interface
         Task<bool> Delete(int id);
         Task<List<LocationDetailedDto>> FindNew(string? locationName = null, string? address = null, string? city = null, string? country = null, int limit = 1);
         Task<Location?> CheckIfExists(string? locationName = null, string? address = null, string? city = null, string? country = null);
+        Task<List<Location>> SearchByText(string searchText, int limit = 10);
     }
 }

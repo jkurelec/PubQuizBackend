@@ -6,7 +6,7 @@ using PubQuizBackend.Service.Interface;
 
 namespace PubQuizBackend.Controllers
 {
-    [Route("quizcategory")]
+    [Route("category")]
     [ApiController]
     public class QuizCategoryController : ControllerBase
     {

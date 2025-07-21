@@ -17,6 +17,7 @@ namespace PubQuizBackend.Model.Dto.QuizEditionDto
             MaxTeams = edition.MaxTeams;
             AcceptedTeams = edition.AcceptedTeams;
             PendingTeams = edition.PendingTeams;
+            ProfileImage = edition.ProfileImage;
         }
 
         public int Id { get; set; }
@@ -27,5 +28,6 @@ namespace PubQuizBackend.Model.Dto.QuizEditionDto
         public int MaxTeams { get; set; }
         public int AcceptedTeams { get; set; }
         public int PendingTeams { get; set; }
+        public string? ProfileImage { get; set; }
     }
 }

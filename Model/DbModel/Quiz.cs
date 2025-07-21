@@ -15,11 +15,15 @@ public partial class Quiz
 
     public int EditionsHosted { get; set; }
 
+    public string? ProfileImage { get; set; }
+
     public virtual ICollection<HostOrganizationQuiz> HostOrganizationQuizzes { get; set; } = new List<HostOrganizationQuiz>();
 
     public virtual Organization Organization { get; set; } = null!;
 
     public virtual ICollection<QuizEdition> QuizEditions { get; set; } = new List<QuizEdition>();
+
+    public virtual ICollection<QuizInvitation> QuizInvitations { get; set; } = new List<QuizInvitation>();
 
     public virtual ICollection<QuizLeague> QuizLeagues { get; set; } = new List<QuizLeague>();
 

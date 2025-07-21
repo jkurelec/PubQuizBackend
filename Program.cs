@@ -27,6 +27,8 @@ builder.Services.AddMemoryCache();
 builder.Services.AddDbContext<PubQuizContext>(options =>
     options.UseNpgsql(builder.Configuration["ConnectionStrings:DBConnection"]));
 
+builder.Services.AddHttpClient<MediaServerClient>();
+
 builder.Services.AddScoped<ICityRepository, CityRepository>();
 builder.Services.AddScoped<ICountryRepository, CountryRepository>();
 builder.Services.AddScoped<ILocationRepository, LocationRepository>();
@@ -45,6 +47,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IEloCalculatorRepository, EloCalculatorRepository>();
 builder.Services.AddScoped<IRatingHistoryRepository, RatingHistoryRepository>();
 builder.Services.AddScoped<IQuizEditionApplicationRepository, QuizEditionApplicationRepository>();
+builder.Services.AddScoped<IHostRepository, HostRepository>();
 
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<ILocationService, LocationService>();
@@ -84,25 +87,38 @@ builder.Services.AddAuthentication("Bearer")
         };
     });
 
-var allowedOrigins = new[] { "https://192.168.0.187", "https://localhost:7147", "https://localhost:7148" };
+var allowedOrigins = new[] { "https://192.168.0.187", "https://localhost:7147", "https://localhost:7148", "http://localhost:5066" };
 
-builder.Services.AddCors(
-    options =>
+//builder.Services.AddCors(
+//    options =>
+//    {
+//        options.AddPolicy(
+//            "AllowFrontend",
+//            builder =>
+//            {
+//                builder
+//                    .WithOrigins(allowedOrigins)
+//                    .AllowAnyMethod()
+//                    .AllowAnyHeader()
+//                    .WithExposedHeaders("X-Total-Count")
+//                    .AllowCredentials();
+//            }
+//        );
+//    }
+//);
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", builder =>
     {
-        options.AddPolicy(
-            "AllowFrontend",
-            builder =>
-            {
-                builder
-                    .WithOrigins(allowedOrigins)
-                    .AllowAnyMethod()
-                    .AllowAnyHeader()
-                    .WithExposedHeaders("X-Total-Count")
-                    .AllowCredentials();
-            }
-        );
-    }
-);
+        builder
+            .SetIsOriginAllowed(origin => true)
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .WithExposedHeaders("X-Total-Count")
+            .AllowCredentials();
+    });
+});
 
 builder.WebHost.ConfigureKestrel(options =>
     {
@@ -142,7 +158,8 @@ app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.UseHttpsRedirection();
 
-app.UseCors("AllowFrontend");
+//app.UseCors("AllowFrontend");
+app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();

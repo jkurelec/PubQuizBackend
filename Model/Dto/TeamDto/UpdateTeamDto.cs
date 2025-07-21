@@ -1,6 +1,4 @@
-﻿using PubQuizBackend.Model.DbModel;
-
-namespace PubQuizBackend.Model.Dto.TeamDto
+﻿namespace PubQuizBackend.Model.Dto.TeamDto
 {
     public class UpdateTeamDto
     {

@@ -1,5 +1,6 @@
 ﻿using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model.DbModel;
+using PubQuizBackend.Model.Dto.QuizDto;
 using PubQuizBackend.Model.Dto.UserDto;
 using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Service.Interface;
@@ -52,9 +53,28 @@ namespace PubQuizBackend.Service.Implementation
                 ?? throw new NotFoundException("User not found!");
         }
 
+        public async Task<UserDetailedDto> GetDetailedById(int id)
+        {
+            var user = await _repository.GetDetailedById(id);
+
+            var hostingQuizzes = user.HostOrganizationQuizzes
+                .Select(x => x.Quiz)
+                .Select(x => new QuizMinimalDto(x))
+                .ToList();
+
+            return new UserDetailedDto(user, hostingQuizzes);
+        }
+
         public async Task<bool> Remove(int id)
         {
             return await _repository.Delete(id);
+        }
+
+        public async Task<IEnumerable<UserBriefDto>> Search(string? username = null, string? sortBy = null, bool descending = false, int limit = 25)
+        {
+            var users = await _repository.Search(username, sortBy, descending, limit);
+
+            return users.Select(x => new UserBriefDto(x)).ToList();
         }
 
         public async Task<User> Update(UserDto user)

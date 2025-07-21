@@ -46,7 +46,8 @@ namespace PubQuizBackend.Controllers
                 Lastname = registerUserDto.Lastname,
                 Email = registerUserDto.Email,
                 PasswordHash = passwordHash,
-                PasswordSalt = passwordSalt
+                PasswordSalt = passwordSalt,
+                ProfileImage = "default.jpg"
             };
 
             await _userService.Add(user);
@@ -145,22 +146,64 @@ namespace PubQuizBackend.Controllers
         public async Task<IActionResult> Refresh()
         {
             if (!Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
-                return Forbid("Nemože zločko");
+            {
+                HttpContext.Response.Cookies.Append("refreshToken", "", new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.None,
+                    //Path = "/",
+                    //Domain = "192.168.0.213",
+                    Expires = DateTimeOffset.UtcNow.AddDays(-1)
+                });
+
+                return Forbid("Bearer");
+            }
+                
 
             var token = await _refreshTokenService.GetByToken(refreshToken);
+
+            if (token == null)
+            {
+                HttpContext.Response.Cookies.Append("refreshToken", "", new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.None,
+                    //Path = "/",
+                    //Domain = "192.168.0.213",
+                    Expires = DateTimeOffset.UtcNow.AddDays(-1)
+                });
+
+                return Forbid("Bearer");
+            }
+
+            if (token!.ExpiresAt < DateTime.UtcNow)
+            {
+                HttpContext.Response.Cookies.Append("refreshToken", "", new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.None,
+                    //Path = "/",
+                    //Domain = "192.168.0.213",
+                    Expires = DateTimeOffset.UtcNow.AddDays(-1)
+                });
+
+                await _refreshTokenService.Delete(token);
+
+                return Forbid("Bearer");
+            }
 
             if (!Request.Headers.TryGetValue("AppName", out var appName) && appName.FirstOrDefault() != "")
                 return BadRequest("Invalid request");
 
             var teamId = await _teamService.GetIdByOwnerId(token.UserId);
 
-            if (token != null)
-                return Ok(new
-                {
-                    AccessToken = _jwtService.GenerateAccessToken(token.User.Id.ToString(), token.User.Username, token.User.Role, teamId, CustomConverter.GetIntRole(appName.First()!))
-                });
-
-            return Forbid("Nemože zločko");
+            return Ok(new
+            {
+                AccessToken = _jwtService.GenerateAccessToken(token.User.Id.ToString(), token.User.Username, token.User.Role, teamId, CustomConverter.GetIntRole(appName.First()!))
+            });
         }
 
         [HttpPost("logout")]

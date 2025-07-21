@@ -13,6 +13,8 @@ public partial class Organization
 
     public int OwnerId { get; set; }
 
+    public string? ProfileImage { get; set; }
+
     public virtual ICollection<HostOrganizationQuiz> HostOrganizationQuizzes { get; set; } = new List<HostOrganizationQuiz>();
 
     public virtual User Owner { get; set; } = null!;

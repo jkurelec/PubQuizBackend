@@ -13,6 +13,7 @@ namespace PubQuizBackend.Model.Dto.LocationDto
             Address = location.Address;
             City = location.City.Name;
             Country = location.City.Country.Name;
+            ProfileImage = location.ProfileImage;
         }
 
         public int? Id { get; set; }
@@ -20,5 +21,6 @@ namespace PubQuizBackend.Model.Dto.LocationDto
         public string Address { get; set; } = null!;
         public string City { get; set; } = null!;
         public string Country { get; set; } = null!;
+        public string? ProfileImage { get; set; }
     }
 }

@@ -28,6 +28,12 @@ namespace PubQuizBackend.Controllers
             return Ok(await _service.GetById(id, detailed == 1));
         }
 
+        [HttpGet("host/{organizationId}")]
+        public async Task<IActionResult> GetByHostAndOrganization(int organizationId)
+        {
+            return Ok(await _service.GetByHostAndOrganization(User.GetUserId(), organizationId));
+        }
+
         [HttpPost]
         public async Task<IActionResult> Add(NewQuizDto quizDto)
         {
@@ -51,6 +57,14 @@ namespace PubQuizBackend.Controllers
         {
             await _service.Delete(id, User.GetUserId());
             return Ok();
+        }
+
+        [HttpPost("profile-image/{quizId}")]
+        public async Task<IActionResult> UpdateProfileImage(IFormFile image, int quizId)
+        {
+            var newImageName = await _service.UpdateProfileImage(image, quizId, User.GetUserId());
+
+            return Ok(newImageName);
         }
     }
 }

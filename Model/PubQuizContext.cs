@@ -44,6 +44,8 @@ public partial class PubQuizContext : DbContext
 
     public virtual DbSet<QuizEditionResult> QuizEditionResults { get; set; }
 
+    public virtual DbSet<QuizInvitation> QuizInvitations { get; set; }
+
     public virtual DbSet<QuizLeague> QuizLeagues { get; set; }
 
     public virtual DbSet<QuizQuestion> QuizQuestions { get; set; }
@@ -210,6 +212,9 @@ public partial class PubQuizContext : DbContext
                 .HasMaxLength(100)
                 .HasColumnName("name");
             entity.Property(e => e.PostalCodeId).HasColumnName("postal_code_id");
+            entity.Property(e => e.ProfileImage)
+                .HasMaxLength(255)
+                .HasColumnName("profile_image");
 
             entity.HasOne(d => d.City).WithMany(p => p.Locations)
                 .HasForeignKey(d => d.CityId)
@@ -236,6 +241,9 @@ public partial class PubQuizContext : DbContext
                 .HasMaxLength(100)
                 .HasColumnName("name");
             entity.Property(e => e.OwnerId).HasColumnName("owner_id");
+            entity.Property(e => e.ProfileImage)
+                .HasMaxLength(255)
+                .HasColumnName("profile_image");
 
             entity.HasOne(d => d.Owner).WithMany(p => p.Organizations)
                 .HasForeignKey(d => d.OwnerId)
@@ -277,6 +285,9 @@ public partial class PubQuizContext : DbContext
                 .HasMaxLength(100)
                 .HasColumnName("name");
             entity.Property(e => e.OrganizationId).HasColumnName("organization_id");
+            entity.Property(e => e.ProfileImage)
+                .HasMaxLength(255)
+                .HasColumnName("profile_image");
             entity.Property(e => e.Rating)
                 .HasDefaultValue(1000)
                 .HasColumnName("rating");
@@ -398,6 +409,9 @@ public partial class PubQuizContext : DbContext
             entity.Property(e => e.PendingTeams)
                 .HasDefaultValue(0)
                 .HasColumnName("pending_teams");
+            entity.Property(e => e.ProfileImage)
+                .HasMaxLength(255)
+                .HasColumnName("profile_image");
             entity.Property(e => e.QuizId).HasColumnName("quiz_id");
             entity.Property(e => e.Rated)
                 .HasDefaultValue(false)
@@ -501,6 +515,31 @@ public partial class PubQuizContext : DbContext
             entity.HasOne(d => d.Team).WithMany(p => p.QuizEditionResults)
                 .HasForeignKey(d => d.TeamId)
                 .HasConstraintName("quiz_edition_results_team_id_fkey");
+        });
+
+        modelBuilder.Entity<QuizInvitation>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("quiz_invitation_pkey");
+
+            entity.ToTable("quiz_invitation");
+
+            entity.Property(e => e.Id)
+                .UseIdentityAlwaysColumn()
+                .HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("created_at");
+            entity.Property(e => e.QuizId).HasColumnName("quiz_id");
+            entity.Property(e => e.Response).HasColumnName("response");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.Quiz).WithMany(p => p.QuizInvitations)
+                .HasForeignKey(d => d.QuizId)
+                .HasConstraintName("fk_quiz_invitation_quiz");
+
+            entity.HasOne(d => d.User).WithMany(p => p.QuizInvitations)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("fk_quiz_invitation_user");
         });
 
         modelBuilder.Entity<QuizLeague>(entity =>
@@ -703,6 +742,9 @@ public partial class PubQuizContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("name");
             entity.Property(e => e.OwnerId).HasColumnName("owner_id");
+            entity.Property(e => e.ProfileImage)
+                .HasMaxLength(255)
+                .HasColumnName("profile_image");
             entity.Property(e => e.QuizId).HasColumnName("quiz_id");
 
             entity.HasOne(d => d.Category).WithMany(p => p.Teams)
@@ -792,6 +834,9 @@ public partial class PubQuizContext : DbContext
                 .HasColumnName("lastname");
             entity.Property(e => e.PasswordHash).HasColumnName("password_hash");
             entity.Property(e => e.PasswordSalt).HasColumnName("password_salt");
+            entity.Property(e => e.ProfileImage)
+                .HasMaxLength(255)
+                .HasColumnName("profile_image");
             entity.Property(e => e.Rating)
                 .HasDefaultValue(1000)
                 .HasColumnName("rating");

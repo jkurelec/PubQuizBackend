@@ -69,5 +69,6 @@ namespace PubQuizBackend.Model.Dto.QuizEditionDto
         public int MaxTeams { get; set; }
         public int AcceptedTeams { get; set; }
         public int PendingTeams { get; set; }
+        public string? ProfileImage { get; set; }
     }
 }

@@ -56,6 +56,8 @@ namespace PubQuizBackend.Repository.Implementation
             location.City = await _dbContext.Cities.Include(x => x.Country).FirstOrDefaultAsync(x => x.Id == location.CityId)
                 ?? throw new NotFoundException("City not found!");
 
+            location.ProfileImage = "default.jpg";
+
             await _dbContext.Locations.AddAsync(location);
             await _dbContext.SaveChangesAsync();
 
@@ -185,23 +187,62 @@ namespace PubQuizBackend.Repository.Implementation
             {
                 var locationNameTokens = locationName.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 foreach (var token in locationNameTokens)
-                    query = query.Where(l => EF.Functions.Like(l.Name.ToLower(), $"%{token}%"));
+                {
+                    var tempToken = token;
+                    query = query.Where(l => EF.Functions.Like(l.Name.ToLower(), "%" + tempToken + "%"));
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(address))
             {
                 var addressTokens = address.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 foreach (var token in addressTokens)
-                    query = query.Where(l => EF.Functions.Like(l.Address.ToLower(), $"%{token}%"));
+                {
+                    var tempToken = token;
+                    query = query.Where(l => EF.Functions.Like(l.Address.ToLower(), "%" + tempToken + "%"));
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(city))
-                query = query.Where(l => EF.Functions.Like(l.PostalCode!.City!.Name.ToLower(), $"%{city.ToLower()}%"));
+            {
+                var cityLower = city.ToLower();
+                query = query.Where(l => EF.Functions.Like(l.PostalCode!.City!.Name.ToLower(), "%" + cityLower + "%"));
+            }
 
             if (!string.IsNullOrWhiteSpace(country))
-                query = query.Where(l => EF.Functions.Like(l.PostalCode!.City!.Country.Name.ToLower(), $"%{country.ToLower()}%"));
+            {
+                var countryLower = country.ToLower();
+                query = query.Where(l => EF.Functions.Like(l.PostalCode!.City!.Country.Name.ToLower(), "%" + countryLower + "%"));
+            }
 
             return await query.FirstOrDefaultAsync();
+        }
+
+
+        public async Task<List<Location>> SearchByText(string searchText, int limit = 10)
+        {
+            if (string.IsNullOrWhiteSpace(searchText))
+                return new List<Location>();
+
+            var tokens = searchText.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            var query = _dbContext.Locations
+                .Include(l => l.PostalCode)
+                .Include(l => l.City)
+                    .ThenInclude(c => c.Country)
+                .AsQueryable();
+
+            foreach (var token in tokens)
+            {
+                query = query.Where(l =>
+                    EF.Functions.Like(l.Name.ToLower(), $"%{token}%") ||
+                    EF.Functions.Like(l.Address.ToLower(), $"%{token}%") ||
+                    EF.Functions.Like(l.City.Name.ToLower(), $"%{token}%") ||
+                    EF.Functions.Like(l.City.Country.Name.ToLower(), $"%{token}%")
+                );
+            }
+
+            return await query.Take(limit).ToListAsync();
         }
     }
 }

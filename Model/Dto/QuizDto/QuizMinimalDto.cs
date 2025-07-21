@@ -10,11 +10,13 @@ namespace PubQuizBackend.Model.Dto.QuizDto
             Name = quiz.Name;
             Rating = quiz.Rating;
             EditionsHosted = quiz.EditionsHosted;
+            ProfileImage = quiz.ProfileImage;
         }
 
         public int Id { get; set; }
         public string Name { get; set; } = null!;
         public int Rating { get; set; }
         public int EditionsHosted { get; set; }
+        public string? ProfileImage { get; set; }
     }
 }

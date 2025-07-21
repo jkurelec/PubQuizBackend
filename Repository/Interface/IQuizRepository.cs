@@ -12,5 +12,8 @@ namespace PubQuizBackend.Repository.Interface
         Task<IEnumerable<Quiz>> GetAllDetailed();
         Task<Quiz> Update(NewQuizDto quizDto, int hostId);
         Task<bool> Delete(int id, int hostId);
+        Task<IEnumerable<Quiz>> GetByHostAndOrganization(int hostId, int organizationId);
+        Task<Quiz> GetOwnerQuizByIds(int ownerId, int quizId);
+        Task Save();
     }
 }

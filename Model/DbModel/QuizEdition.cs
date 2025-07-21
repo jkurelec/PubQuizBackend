@@ -49,6 +49,8 @@ public partial class QuizEdition
 
     public int PendingTeams { get; set; }
 
+    public string? ProfileImage { get; set; }
+
     public virtual QuizCategory Category { get; set; } = null!;
 
     public virtual ICollection<EditionPrize> EditionPrizes { get; set; } = new List<EditionPrize>();

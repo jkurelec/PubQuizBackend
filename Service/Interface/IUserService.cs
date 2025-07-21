@@ -1,4 +1,5 @@
-﻿using PubQuizBackend.Model.DbModel;
+﻿using PubQuizBackend.Enums;
+using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.UserDto;
 
 namespace PubQuizBackend.Service.Interface
@@ -14,5 +15,7 @@ namespace PubQuizBackend.Service.Interface
         Task<User> ChangePassword(int id, string password);
         Task<User> GetByIdentifier(string identifier);
         Task ExistsByUsernameOrEmail(string username, string email);
+        Task<IEnumerable<UserBriefDto>> Search(string? username = null, string? sortBy = null, bool descending = false, int limit = 25);
+        Task<UserDetailedDto> GetDetailedById(int id);
     }
 }

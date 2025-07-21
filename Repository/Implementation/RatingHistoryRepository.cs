@@ -32,7 +32,7 @@ namespace PubQuizBackend.Repository.Implementation
         {
             return await _context.QuizRatingHistories
                 .Where(x =>
-                    x.Id == id &&
+                    x.QuizId == id &&
                     x.Date > timePeriod.GetStartDateUtc()
                 )
                 .ToListAsync();
@@ -40,9 +40,10 @@ namespace PubQuizBackend.Repository.Implementation
 
         public async Task<List<UserRatingHistory>> GetUserRatingHistories(int id, TimePeriod timePeriod)
         {
+            var jebeniPeriod = timePeriod.GetStartDateUtc();
             return await _context.UserRatingHistories
                 .Where(x =>
-                    x.Id == id &&
+                    x.UserId == id &&
                     x.Date > timePeriod.GetStartDateUtc()
                 )
                 .ToListAsync();

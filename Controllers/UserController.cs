@@ -12,10 +12,12 @@ namespace PubQuizBackend.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _service;
+        private readonly IRatingHistoryService _ratingHistoryService;
 
-        public UserController(IUserService userService)
+        public UserController(IUserService service, IRatingHistoryService ratingHistoryService)
         {
-            _service = userService;
+            _service = service;
+            _ratingHistoryService = ratingHistoryService;
         }
 
         [HttpGet()]
@@ -59,6 +61,24 @@ namespace PubQuizBackend.Controllers
             await _service.Remove(id);
 
             return Ok();
+        }
+
+        [HttpGet("detailed/{id}")]
+        public async Task<IActionResult> GetDetailedById(int id)
+        {
+            return Ok (await _service.GetDetailedById(id));
+        }
+
+        [HttpGet("search")]
+        public async Task<IActionResult> Search(string? username = null, string? sortBy = null, bool descending = false, int limit = 50)
+        {
+            return Ok(await _service.Search(username, sortBy, descending, limit));
+        }
+
+        [HttpGet("rating-history/{id}/{timePeriod}")]
+        public async Task<IActionResult> GetRatingHistory(int id, TimePeriod timePeriod)
+        {
+            return Ok(await _ratingHistoryService.GetUserRatingHistories(id, timePeriod));
         }
     }
 }

@@ -17,6 +17,7 @@ namespace PubQuizBackend.Model.Dto.TeamDto
             Category = new(team.Category);
             Quiz = new(team.Quiz);
             TeamMembers = team.UserTeams.Select(x => new UserTeamDto(x)).ToList();
+            ProfileImage = team.ProfileImage;
         }
 
         public int Id { get; set; }
@@ -25,5 +26,6 @@ namespace PubQuizBackend.Model.Dto.TeamDto
         public QCategoryDto Category { get; set; } = null!;
         public QuizMinimalDto Quiz { get; set; } = null!;
         public IEnumerable<UserTeamDto> TeamMembers { get; set; } = new List<UserTeamDto>();
+        public string? ProfileImage { get; set; }
     }
 }

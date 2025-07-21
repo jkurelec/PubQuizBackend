@@ -23,11 +23,15 @@ public partial class User
 
     public byte[] PasswordSalt { get; set; } = null!;
 
+    public string? ProfileImage { get; set; }
+
     public virtual ICollection<HostOrganizationQuiz> HostOrganizationQuizzes { get; set; } = new List<HostOrganizationQuiz>();
 
     public virtual ICollection<Organization> Organizations { get; set; } = new List<Organization>();
 
     public virtual ICollection<QuizEdition> QuizEditions { get; set; } = new List<QuizEdition>();
+
+    public virtual ICollection<QuizInvitation> QuizInvitations { get; set; } = new List<QuizInvitation>();
 
     public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 

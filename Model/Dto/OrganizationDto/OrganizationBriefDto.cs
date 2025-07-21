@@ -15,6 +15,7 @@ namespace PubQuizBackend.Model.Dto.OrganizationDto
             EditionsHosted = organizer.EditionsHosted;
             Owner = new(organizer.Owner);
             Quizzes = organizer.Quizzes.Select(x => new QuizMinimalDto(x)).ToList();
+            ProfileImage = organizer.ProfileImage;
         }
 
         public int Id { get; set; }
@@ -22,5 +23,6 @@ namespace PubQuizBackend.Model.Dto.OrganizationDto
         public int EditionsHosted { get; set; }
         public UserBriefDto Owner { get; set; } = null!;
         public List<QuizMinimalDto> Quizzes { get; set; } = null!;
+        public string? ProfileImage { get; set; }
     }
 }

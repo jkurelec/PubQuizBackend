@@ -66,7 +66,11 @@ namespace PubQuizBackend.Repository.Implementation
             if (editionDto.Visibility < 0 || editionDto.Visibility > 2)
                 throw new BadRequestException("Invalid visibility!");
 
-            var entity = await _context.QuizEditions.AddAsync(editionDto.ToObject());
+            var edition = editionDto.ToObject();
+
+            edition.ProfileImage = "default.jpg";
+
+            var entity = await _context.QuizEditions.AddAsync(edition);
             await _context.SaveChangesAsync();
 
             foreach (var prizeDto in editionDto.Prizes)

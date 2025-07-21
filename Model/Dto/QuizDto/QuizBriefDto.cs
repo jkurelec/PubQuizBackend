@@ -12,6 +12,7 @@ namespace PubQuizBackend.Model.Dto.QuizDto
             Organization = new(quiz.Organization);
             Rating = quiz.Rating;
             EditionsHosted = quiz.EditionsHosted;
+            ProfileImage = quiz.ProfileImage;
         }
 
         public int Id { get; set; }
@@ -19,5 +20,6 @@ namespace PubQuizBackend.Model.Dto.QuizDto
         public OrganizationMinimalDto Organization { get; set; } = null!;
         public int Rating { get; set; }
         public int EditionsHosted { get; set; }
+        public string? ProfileImage { get; set; }
     }
 }
