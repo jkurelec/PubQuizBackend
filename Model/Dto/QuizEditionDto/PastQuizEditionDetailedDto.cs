@@ -9,11 +9,15 @@ namespace PubQuizBackend.Model.Dto.QuizEditionDto
 
         public PastQuizEditionDetailedDto(QuizEdition edition) : base(edition)
         {
+            DetailedQuestions = edition.DetailedQuestions;
+            Rated = edition.Rated;
             Rounds = new(edition);
             Results = edition.QuizEditionResults.Select(x => new QuizEditionResultDetailedDto(x))
                 .ToList();
         }
-
+        
+        public bool? DetailedQuestions { get; set; } = null;
+        public bool Rated { get; set; }
         public QuizEditionRoundsDto Rounds { get; set; } = new();
         public IEnumerable<QuizEditionResultDetailedDto> Results { get; set; } = new List<QuizEditionResultDetailedDto>();
     }

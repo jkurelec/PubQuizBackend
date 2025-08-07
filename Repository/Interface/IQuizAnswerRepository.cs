@@ -14,9 +14,13 @@ namespace PubQuizBackend.Repository.Interface
         Task<QuizSegmentResult> UpdateSegment(QuizSegmentResultDetailedDto segmentResultDto, int hostId);
         Task<QuizRoundResult> AddTeamRoundPoints(NewQuizRoundResultDto roundResultDto, int hostId);
         Task<QuizRoundResult> UpdateTeamRoundPoints(NewQuizRoundResultDto roundResultDto, int hostId);
+        Task<QuizRoundResult> UpdateTeamRoundPointsDetailed(QuizRoundResultDetailedDto roundResultDto, int hostId);
         Task<IEnumerable<QuizRoundResult>> GetTeamAnswers(int editionResultId, int hostId);
         Task<IEnumerable<QuizEditionResult>> GetEditionResults(int editionId);
+        Task<IEnumerable<QuizEditionResult>> GetEditionResultsDetailed(int editionId);
         Task<IEnumerable<QuizEditionResult>> RankTeamsOnEdition(int editionId);
         Task<IEnumerable<QuizEditionResult>> BreakTie(int promotedId,int editionId);
+        Task<bool> IsDetailedResult(int roundResultId);
+        Task DeleteRoundResultSegments(int roundResultId, int hostId);
     }
 }

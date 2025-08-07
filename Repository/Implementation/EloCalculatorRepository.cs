@@ -69,7 +69,9 @@ namespace PubQuizBackend.Repository.Implementation
                 .Include(x => x.QuizEditionResults)
                     .ThenInclude(e => e.Team)
                         .ThenInclude(t => t.UserTeams)
-                            .ThenInclude(u => u.User)
+                            .ThenInclude(u => u.User) // ovo je bilo krivo treba ovo usere dolje pa prvojeri jednom jel ima jos negdje
+                .Include(x => x.QuizEditionResults)
+                    .ThenInclude(x => x.Users)
                 .Include(x => x.QuizEditionResults)
                     .ThenInclude(e => e.QuizRoundResults)
                         .ThenInclude(r => r.QuizSegmentResults)
@@ -85,7 +87,7 @@ namespace PubQuizBackend.Repository.Implementation
             {
                 0 => await _context.QuizEditionResults
                                         .Where(x => x.Edition.Time < DateTime.UtcNow)
-                                        .CountAsync(x => x.Team.UserTeams.Any(x => x.UserId == id)),
+                                        .CountAsync(x => x.Users.Any(x => x.Id == id)),
                 1 => await _context.QuizEditionResults
                                         .Where(x => x.Edition.Time < DateTime.UtcNow)
                                         .CountAsync(x => x.TeamId == id),
@@ -107,6 +109,14 @@ namespace PubQuizBackend.Repository.Implementation
                 throw new NotFoundException($"No ratings found for application with id => {applicationId}!");
 
             return ratings;
+        }
+
+        public async Task<bool> IsEditionRated(int editionId)
+        {
+            var edition = await _context.QuizEditions.FindAsync(editionId)
+                ?? throw new NotFoundException("Edition not found!");
+
+            return edition.Rated;
         }
 
         public async Task SaveChanges()

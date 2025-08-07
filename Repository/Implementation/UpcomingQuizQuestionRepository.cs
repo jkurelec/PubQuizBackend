@@ -23,8 +23,9 @@ namespace PubQuizBackend.Repository.Implementation
         {
             var round = await _context.QuizSegments
                 .Where(x => x.Id == questionDto.SegmentId)
+                .Include(x => x.Round)
+                .ThenInclude(r => r.Edition)
                 .Select(x => x.Round)
-                .Include(r => r.Edition)
                 .FirstOrDefaultAsync()
                 ?? throw new BadRequestException();
 
@@ -32,8 +33,8 @@ namespace PubQuizBackend.Repository.Implementation
 
             var entityEntry = await _context.QuizQuestions.AddAsync(questionDto.ToObject());
 
-            round.Points += questionDto.Points;
-            round.Edition.TotalPoints += questionDto.Points;
+            round.Points += questionDto.Points + questionDto.BonusPoints;
+            round.Edition.TotalPoints += questionDto.Points + questionDto.BonusPoints;
 
             await _context.SaveChangesAsync();
 
@@ -50,7 +51,16 @@ namespace PubQuizBackend.Repository.Implementation
 
         public async Task<QuizSegment> AddSegment(QuizSegmentDto segmentDto)
         {
+            var round = await _context.QuizRounds
+                .Include(x => x.Edition)
+                .FirstOrDefaultAsync(x => x.Id == segmentDto.RoundId)
+                ?? throw new BadRequestException();
+
             var entity = await _context.AddAsync(segmentDto.ToObject());
+
+            round.Points += segmentDto.BonusPoints;
+            round.Edition.TotalPoints += segmentDto.BonusPoints;
+
             await _context.SaveChangesAsync();
 
             return await GetSegment(entity.Entity.Id);
@@ -130,7 +140,7 @@ namespace PubQuizBackend.Repository.Implementation
 
             if (Enum.IsDefined(questionDto.Type))
             {
-                if (question.Type != (int)questionDto.Type)
+                if (question.Type != (int)questionDto.Type) { }
                     question.Type = (int)questionDto.Type;
             }
             else
@@ -148,8 +158,11 @@ namespace PubQuizBackend.Repository.Implementation
 
         public async Task<QuizSegment> EditSegment(QuizSegmentDto segmentDto)
         {
-            var segment = await _context.QuizSegments.FindAsync(segmentDto.Id)
-                ?? throw new BadRequestException("Question not found!");
+            var segment = await _context.QuizSegments
+                .Include(x => x.Round)
+                    .ThenInclude(x => x.Edition)
+                .FirstOrDefaultAsync(x => x.Id == segmentDto.Id)
+                ?? throw new BadRequestException("Segment not found!");
 
             if (Enum.IsDefined(segmentDto.Type))
             {
@@ -160,11 +173,33 @@ namespace PubQuizBackend.Repository.Implementation
                 throw new BadRequestException("Invalid question type!");
 
             if (segment.BonusPoints != segmentDto.BonusPoints)
+            {
                 segment.BonusPoints = segmentDto.BonusPoints;
+                segment.Round.Points += segmentDto.BonusPoints - segment.BonusPoints;
+                segment.Round.Edition.TotalPoints += segmentDto.BonusPoints - segment.BonusPoints;
+            }
 
             await _context.SaveChangesAsync();
 
             return segment;
+        }
+
+        public async Task<QuizRound> EditRound(QuizRoundBriefDto roundDto)
+        {
+            var round = await _context.QuizRounds
+                .Include(x => x.Edition)
+                .FirstOrDefaultAsync(x => x.Id == roundDto.Id)
+                ?? throw new BadRequestException("Segment not found!");
+
+            if (round.Points != roundDto.Points)
+            {
+                round.Edition.TotalPoints += roundDto.Points - round.Points;
+                round.Points = roundDto.Points;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return round;
         }
 
         public async Task<QuizQuestion> GetQuestion(int questionId)
@@ -191,6 +226,22 @@ namespace PubQuizBackend.Repository.Implementation
                     .ToList();
 
             return round;
+        }
+
+        public async Task<IEnumerable<QuizRound>> GetRounds(int editionId, bool detailed = false)
+        {
+            if (!detailed)
+                return await _context.QuizRounds
+                    .OrderBy(x => x.Number)
+                    .Where(x => x.EditionId == editionId)
+                    .ToListAsync();
+
+            return await _context.QuizRounds
+                .Include(x => x.QuizSegments)
+                    .ThenInclude(x => x.QuizQuestions)
+                .OrderBy(x => x.Number)
+                .Where(x => x.EditionId == editionId)
+                .ToListAsync();
         }
 
         public async Task<QuizSegment> GetSegment(int segmentId)

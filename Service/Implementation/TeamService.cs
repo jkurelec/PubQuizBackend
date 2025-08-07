@@ -155,5 +155,10 @@ namespace PubQuizBackend.Service.Implementation
 
             return teams.Select(x => new TeamRegisterDto(x)).ToList();
         }
+
+        public async Task<bool> CanInviteUser(int inviter, int invitee)
+        {
+            return await _teamRepository.CanInviteUser(inviter, invitee);
+        }
     }
 }

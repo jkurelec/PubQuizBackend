@@ -150,6 +150,12 @@ namespace PubQuizBackend.Controllers
             return Ok (await _service.GetTeamsForRegistration(User.GetUserId(), editionId));
         }
 
+        [HttpGet("can-invite/{invitee}")]
+        public async Task<IActionResult> CanInviteUser(int invitee)
+        {
+            return Ok(await _service.CanInviteUser(User.GetUserId(), invitee));
+        }
+
         [HttpDelete("leave/{teamId}")]
         public async Task<IActionResult> LeaveTeam(int teamId)
         {

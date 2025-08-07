@@ -13,9 +13,13 @@ public partial class QuizLeague
 
     public string Points { get; set; } = null!;
 
+    public bool Finished { get; set; }
+
     public virtual ICollection<LeaguePrize> LeaguePrizes { get; set; } = new List<LeaguePrize>();
 
     public virtual Quiz Quiz { get; set; } = null!;
 
     public virtual ICollection<QuizEdition> QuizEditions { get; set; } = new List<QuizEdition>();
+
+    public virtual ICollection<QuizLeagueRound> QuizLeagueRounds { get; set; } = new List<QuizLeagueRound>();
 }

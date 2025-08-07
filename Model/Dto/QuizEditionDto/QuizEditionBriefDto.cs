@@ -21,6 +21,7 @@ namespace PubQuizBackend.Model.Dto.QuizEditionDto
             MaxTeams = edition.MaxTeams;
             AcceptedTeams = edition.AcceptedTeams;
             PendingTeams = edition.PendingTeams;
+            ProfileImage = edition.ProfileImage;
         }
 
         public int Id { get; set; }

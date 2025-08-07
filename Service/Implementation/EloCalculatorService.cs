@@ -1,5 +1,4 @@
-﻿using NuGet.Protocol;
-using PubQuizBackend.Enums;
+﻿using PubQuizBackend.Enums;
 using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.TeamDto;
@@ -81,17 +80,17 @@ namespace PubQuizBackend.Service.Implementation
         private async Task BriefEloCalculation(QuizEdition edition)
         {
             Dictionary<int, TeamRatingCalculationParams> teamRatingCalculationParams = new ();
-            var editionKFactor = await GetKFactor(edition.Rating, edition.Id, 2);
+            var editionKFactor = await GetKFactor(edition.Rating, edition.QuizId, 2);
             var scalingFactor = 400.0f;
             var editionRatingUpdate = 0;
 
             foreach (var editionResult in edition.QuizEditionResults)
             {
-                var teamPlayers = editionResult.Team.UserTeams.Select(t => t.User).ToList();
+                var teamPlayers = editionResult.Users.ToList();
                 var playerRatings = teamPlayers.Select(p => p.Rating).OrderDescending().ToList();
                 var teamRating = playerRatings.Max();
                 var teamRatingIncrease = 0;
-                var initailWinPropability = GetProbability(edition.Rating, teamRating, scalingFactor);
+                var initailWinPropability = GetProbability(edition.Rating, teamRating, scalingFactor, 1, false);
 
                 var teamKFactor = await GetKFactor(teamRating, editionResult.Team.Id, 1);
 
@@ -124,7 +123,7 @@ namespace PubQuizBackend.Service.Implementation
 
             foreach (var teamParams in teamRatingCalculationParams)
             {
-                var team = edition.QuizEditionResults.FirstOrDefault(x => x.Id == teamParams.Key)!;
+                var teamPlayers = edition.QuizEditionResults.FirstOrDefault(x => x.TeamId == teamParams.Key)!.Users;
                 var teamRating = teamParams.Value.TeamRating;
                 var teamRatingUpdate = 0;
                 var teamKFactor = await GetKFactor(teamRating, teamParams.Key, 1);
@@ -136,20 +135,23 @@ namespace PubQuizBackend.Service.Implementation
 
                 teamRatingUpdate += (int)Math.Round(
                     (
-                        teamParams.Value.Wins * GetRatingUpdate(edition.Rating, teamRating, editionKFactor, scalingFactor, Outcome.WIN) +
-                        teamParams.Value.Losses * GetRatingUpdate(edition.Rating, teamRating, editionKFactor, scalingFactor, Outcome.LOSS) +
-                        teamParams.Value.Draws * GetRatingUpdate(edition.Rating, teamRating, editionKFactor, scalingFactor, Outcome.DRAW)
+                        teamParams.Value.Wins * GetRatingUpdate(edition.Rating, teamRating, teamKFactor, scalingFactor, Outcome.WIN, false) +
+                        teamParams.Value.Losses * GetRatingUpdate(edition.Rating, teamRating, teamKFactor, scalingFactor, Outcome.LOSS, false) +
+                        teamParams.Value.Draws * GetRatingUpdate(edition.Rating, teamRating, teamKFactor, scalingFactor, Outcome.DRAW, false)
                     ) / (double)edition.TotalPoints
                 );
                 
-                edition.QuizEditionResults.FirstOrDefault(x => x.Id == teamParams.Key)!.Rating = teamRating + teamRatingUpdate;
+                edition.QuizEditionResults.FirstOrDefault(x => x.TeamId == teamParams.Key)!.Rating = teamRating + teamRatingUpdate;
 
                 //AKO NAJJACI DOBIVA I GUBI VISENAJVJEROJATNIJE GA SVI OVI DRUGI NECE DOSTICI PA JE BOLJE DA SLABIJI SLINGSHOTAJU DA NAJJACEG! K VEC POMAZE U SLINGSHOTANJU ALI MOZDA PROMJENITI KASNIJE!!!
-                var ratingUpdateValue = (float)(teamRatingUpdate / teamKFactor);
 
-                foreach (var user in team.Users)
+                foreach (var user in teamPlayers)
                 {
-                    var ratingUpdate = await GetKFactor(user.Rating, user.Id, 0) * ratingUpdateValue;
+                    float teamUpdate = teamRatingUpdate;
+                    float kFactor = await GetKFactor(user.Rating, user.Id, 0);
+                    float ratio = kFactor / teamKFactor;
+
+                    var ratingUpdate = teamUpdate * ratio;
 
                     user.Rating += (int)Math.Round(ratingUpdate);
 
@@ -194,11 +196,11 @@ namespace PubQuizBackend.Service.Implementation
 
             foreach (var editionResult in edition.QuizEditionResults)
             {
-                var teamPlayers = editionResult.Team.UserTeams.Select(t => t.User).ToList();
+                var teamPlayers = editionResult.Users.ToList();
                 var playerRatings = teamPlayers.Select(p => p.Rating).OrderDescending().ToList();
                 var teamRating = playerRatings.Max();
                 var teamRatingUpdate = 0;
-                var initailWinPropability = GetProbability(edition.Rating, teamRating, scalingFactor);
+                var initailWinPropability = GetProbability(edition.Rating, teamRating, scalingFactor, 1, false);
 
                 var teamKFactor = await GetKFactor(teamRating, editionResult.Team.Id, 1);
 
@@ -253,7 +255,7 @@ namespace PubQuizBackend.Service.Implementation
 
             foreach (var editionResult in edition.QuizEditionResults)
             {
-                var teamPlayers = editionResult.Team.UserTeams.Select(t => t.User).ToList();
+                var teamPlayers = editionResult.Users.ToList();
                 var teamRating = editionResult.Rating;
                 var teamRatingUpdate = 0;
                 var teamKFactor = await GetKFactor(teamRating, editionResult.Team.Id, 1);
@@ -272,17 +274,17 @@ namespace PubQuizBackend.Service.Implementation
                             if (answer.Result == (int)QuestionResult.Incorrect)
                             {
                                 questionRatingUpdates[questionId] += GetRatingUpdate(answer.Question.Rating, teamRating, editionKFactor, scalingFactor, Outcome.WIN);
-                                teamRatingUpdate += GetRatingUpdate(edition.Rating, teamRating, teamKFactor, scalingFactor, Outcome.LOSS);
+                                teamRatingUpdate += GetRatingUpdate(edition.Rating, teamRating, teamKFactor, scalingFactor, Outcome.LOSS, false);
                             }
                             else if (answer.Result == (int)QuestionResult.Correct)
                             {
                                 questionRatingUpdates[questionId] += GetRatingUpdate(answer.Question.Rating, teamRating, editionKFactor, scalingFactor, Outcome.LOSS);
-                                teamRatingUpdate += GetRatingUpdate(edition.Rating, teamRating, teamKFactor, scalingFactor, Outcome.WIN);
+                                teamRatingUpdate += GetRatingUpdate(edition.Rating, teamRating, teamKFactor, scalingFactor, Outcome.WIN, false);
                             }
                             else
                             {
                                 questionRatingUpdates[questionId] += GetRatingUpdate(answer.Question.Rating, teamRating, editionKFactor, scalingFactor, Outcome.DRAW); ;
-                                teamRatingUpdate += GetRatingUpdate(edition.Rating, teamRating, teamKFactor, scalingFactor, Outcome.DRAW);
+                                teamRatingUpdate += GetRatingUpdate(edition.Rating, teamRating, teamKFactor, scalingFactor, Outcome.DRAW, false);
                             }
                         }
                     }
@@ -295,11 +297,13 @@ namespace PubQuizBackend.Service.Implementation
                 if (editionResult.Rating < 100)
                     editionResult.Rating = 100;
 
-                var playerRatingUpdateValue = finalTeamRatingUpdate / (double)teamKFactor;
-
                 foreach (var user in teamPlayers)
                 {
-                    var ratingUpdate = await GetKFactor(user.Rating, user.Id, 0) * playerRatingUpdateValue;
+                    float teamUpdate = finalTeamRatingUpdate;
+                    float kFactor = await GetKFactor(user.Rating, user.Id, 0);
+                    float ratio = kFactor / teamKFactor;
+
+                    var ratingUpdate = teamUpdate * ratio;
 
                     user.Rating += (int)Math.Round(ratingUpdate);
 
@@ -408,6 +412,11 @@ namespace PubQuizBackend.Service.Implementation
             KappaProvider.SetKappas(kappas);
         }
 
+        public async Task<bool> IsEditionRated(int editionId)
+        {
+            return await _repository.IsEditionRated(editionId);
+        }
+
         private static float Sigma(float rAb, float kappa, float scalingFactor)
         {
             float powPos = MathF.Pow(10, rAb / scalingFactor);
@@ -416,17 +425,17 @@ namespace PubQuizBackend.Service.Implementation
             return powPos / (powNeg + kappa + powPos);
         }
 
-        private static float GetProbability(int targetRating, int opponentRating, float scalingFactor, int win = 1)
+        private static float GetProbability(int targetRating, int opponentRating, float scalingFactor, int win = 1, bool edition = true)
         {
-            var kappa = KappaProvider.GetKappa(targetRating / 50, opponentRating / 50);
+            var kappa = edition ? KappaProvider.GetKappa(targetRating / 50, opponentRating / 50) : KappaProvider.GetKappa(opponentRating / 50, targetRating / 50);
             float rAB = targetRating - opponentRating;
 
             return Sigma(win == 1 ? rAB : -rAB, kappa, scalingFactor);
         }
 
-        private static float GetDrawProbability(int targetRating, int opponentRating, float scalingFactor)
+        private static float GetDrawProbability(int targetRating, int opponentRating, float scalingFactor, bool edition = true)
         {
-            var kappa = KappaProvider.GetKappa(targetRating / 50, opponentRating / 50);
+            var kappa = edition ? KappaProvider.GetKappa(targetRating / 50, opponentRating / 50) : KappaProvider.GetKappa(opponentRating / 50, targetRating / 50);
             float rAB = targetRating - opponentRating;
 
             float sigmaPos = Sigma(rAB, kappa, scalingFactor);
@@ -435,17 +444,17 @@ namespace PubQuizBackend.Service.Implementation
             return kappa * MathF.Sqrt(sigmaPos * sigmaNeg);
         }
 
-        private static int GetRatingUpdate(int targetRating, int opponentRating, int kFactor, float scalingFactor, Outcome outcome)
+        private static int GetRatingUpdate(int targetRating, int opponentRating, int kFactor, float scalingFactor, Outcome outcome, bool edition = true)
         {
             if (outcome == Outcome.DRAW)
             {
-                return (int)(kFactor * (0.5 - GetDrawProbability(targetRating, opponentRating, scalingFactor)));
+                return (int)(kFactor * (0.5 - GetDrawProbability(targetRating, opponentRating, scalingFactor, edition)));
             }
             else
             {
                 var actualScore = outcome == Outcome.WIN ? 1 : 0;
 
-                return (int)(kFactor * (actualScore - GetProbability(targetRating, opponentRating, scalingFactor, actualScore)));
+                return (int)(kFactor * (actualScore - GetProbability(targetRating, opponentRating, scalingFactor, actualScore, edition)));
             }
         }
 
@@ -471,7 +480,7 @@ namespace PubQuizBackend.Service.Implementation
         {
             float rAB = targetRating - opponentRating;
 
-            return Sigma(rAB, 5f, scalingFactor);
+            return Sigma(-rAB, 5f, scalingFactor);
         }
     }
 }

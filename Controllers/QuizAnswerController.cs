@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using NuGet.Protocol.Core.Types;
 using PubQuizBackend.Model.Dto.QuizAnswerDto;
 using PubQuizBackend.Service.Interface;
 using PubQuizBackend.Util.Extension;
@@ -20,12 +19,21 @@ namespace PubQuizBackend.Controllers
         [HttpGet("teamAnswer/{editionResultId}")]
         public async Task<IActionResult> GetTeamAnswers(int editionResultId)
         {
-            return Ok (await _quizAnswerService.GetTeamAnswers(editionResultId, User.GetUserId()));
+            return Ok(await _quizAnswerService.GetTeamAnswers(editionResultId, User.GetUserId()));
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetEditionResults(int editionId)
+        [HttpGet("is-detailed/{editionResultId}")]
+        public async Task<IActionResult> IsDetailedResult(int roundResultId)
         {
+            return Ok(await _quizAnswerService.IsDetailedResult(roundResultId));
+        }
+
+        [HttpGet("{editionId}")]
+        public async Task<IActionResult> GetEditionResults(int editionId, [FromQuery] bool detailed = false)
+        {
+            if (detailed)
+                return Ok(await _quizAnswerService.GetEditionResultsDetailed(editionId, User.GetUserId()));
+
             return Ok (await _quizAnswerService.GetEditionResults(editionId, User.GetUserId()));
         }
 
@@ -47,10 +55,13 @@ namespace PubQuizBackend.Controllers
             return Ok(await _quizAnswerService.GradeTeamAnswers(roundDto, User.GetUserId()));
         }
 
-        [HttpPost("points")]
-        public async Task<IActionResult> AddTeamRoundPoints(NewQuizRoundResultDto roundDto)
+        [HttpPost("round/points")]
+        public async Task<IActionResult> AddTeamRoundPoints(NewQuizRoundResultDto roundDto, [FromQuery] bool detailed = false)
         {
-            return Ok(await _quizAnswerService.AddTeamRoundPoints(roundDto, User.GetUserId()));
+            if (!detailed)
+                return Ok(await _quizAnswerService.AddTeamRoundPoints(roundDto, User.GetUserId()));
+
+            return Ok(await _quizAnswerService.AddTeamRoundPointsDetailed(roundDto, User.GetUserId()));
         }
 
         [HttpPut("{id}")]
@@ -60,15 +71,23 @@ namespace PubQuizBackend.Controllers
         }
 
         [HttpPut("points/{id}")]
-        public async Task<IActionResult> UpdateTeamRoundPoints(QuizAnswerDetailedDto answerDto)
+        public async Task<IActionResult> UpdateTeamRoundPoints(NewQuizRoundResultDto answerDto)
         {
-            return Ok(await _quizAnswerService.UpdateAnswer(answerDto, User.GetUserId()));
+            return Ok(await _quizAnswerService.UpdateTeamRoundPoints(answerDto, User.GetUserId()));
         }
 
-        //Jel treba delete?
-        [HttpDelete("{id}")]
-        public void Delete(int id)
+        [HttpPut("points/detailed/{id}")]
+        public async Task<IActionResult> UpdateTeamRoundPointsDetailed(QuizRoundResultDetailedDto answerDto)
         {
+            return Ok(await _quizAnswerService.UpdateTeamRoundPointsDetailed(answerDto, User.GetUserId()));
+        }
+
+        [HttpDelete("segment/{roundResultId}")]
+        public async Task<IActionResult> DeleteRoundResultSegments(int roundResultId)
+        {
+            await _quizAnswerService.DeleteRoundResultSegments(roundResultId, User.GetUserId());
+
+            return Ok();
         }
     }
 }

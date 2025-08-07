@@ -12,12 +12,14 @@ namespace PubQuizBackend.Repository.Interface
         Task<QuizRound> AddRound(QuizRoundDto roundDto);
         Task<QuizQuestion> EditQuestion(QuizQuestionDto questionDto);
         Task<QuizSegment> EditSegment(QuizSegmentDto segmentDto);
+        Task<QuizRound> EditRound(QuizRoundBriefDto roundDto);
         Task DeleteQuestion(int questionId);
         Task DeleteSegment(int segmentId);
         Task DeleteRound(int roundId, QuizEdition edition);
         Task<QuizQuestion> GetQuestion(int questionId);
         Task<QuizSegment> GetSegment(int segmentId);
         Task<QuizRound> GetRound(int roundId);
+        Task<IEnumerable<QuizRound>> GetRounds(int editionId, bool detailed = false);
         Task<QuizEdition> GetEdition(int editionId);
         Task<QuizSegment> UpdateQuestionOrder(UpdateOrderDto orderDto, QuizEdition edition);
         Task<QuizRound> UpdateSegmentOrder(UpdateOrderDto orderDto, QuizEdition edition);

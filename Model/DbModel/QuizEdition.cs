@@ -51,6 +51,8 @@ public partial class QuizEdition
 
     public string? ProfileImage { get; set; }
 
+    public bool? DetailedQuestions { get; set; }
+
     public virtual QuizCategory Category { get; set; } = null!;
 
     public virtual ICollection<EditionPrize> EditionPrizes { get; set; } = new List<EditionPrize>();

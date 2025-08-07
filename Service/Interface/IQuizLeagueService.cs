@@ -1,5 +1,4 @@
-﻿using PubQuizBackend.Model.DbModel;
-using PubQuizBackend.Model.Dto.QuizLeagueDto;
+﻿using PubQuizBackend.Model.Dto.QuizLeagueDto;
 
 namespace PubQuizBackend.Service.Interface
 {
@@ -7,8 +6,10 @@ namespace PubQuizBackend.Service.Interface
     {
         Task<QuizLeagueDetailedDto> Add(NewQuizLeagueDto leagueDto, int userId);
         Task<bool> Delete(int id, int userId);
-        Task<QuizLeagueDetailedDto> GetById(int id);
+        Task<QuizLeagueBriefDto> GetBriefById(int id);
+        Task<QuizLeagueDetailedDto> GetDetailedById(int id);
         Task<IEnumerable<QuizLeagueBriefDto>> GetByQuizId(int id);
         Task<QuizLeagueDetailedDto> Update(NewQuizLeagueDto leagueDto, int userId);
+        Task<QuizLeagueDetailedDto> FinishLeague(int leagueId, int userId);
     }
 }

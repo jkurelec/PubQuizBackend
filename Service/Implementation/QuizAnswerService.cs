@@ -55,9 +55,19 @@ namespace PubQuizBackend.Service.Implementation
             return new (await _repository.AddTeamRoundPoints(roundResultDto, hostId));
         }
 
+        public async Task<QuizRoundResultDetailedDto> AddTeamRoundPointsDetailed(NewQuizRoundResultDto roundResultDto, int hostId)
+        {
+            return new (await _repository.AddTeamRoundPoints(roundResultDto, hostId));
+        }
+
         public async Task<QuizRoundResultMinimalDto> UpdateTeamRoundPoints(NewQuizRoundResultDto roundResultDto, int hostId)
         {
             return new (await _repository.UpdateTeamRoundPoints(roundResultDto, hostId));
+        }
+
+        public async Task<QuizRoundResultDetailedDto> UpdateTeamRoundPointsDetailed(QuizRoundResultDetailedDto roundResultDto, int hostId)
+        {
+            return new(await _repository.UpdateTeamRoundPointsDetailed(roundResultDto, hostId));
         }
 
         public async Task<IEnumerable<QuizRoundResultDetailedDto>> GetTeamAnswers(int editionResultId, int hostId)
@@ -78,6 +88,15 @@ namespace PubQuizBackend.Service.Implementation
             return editionResults.Select(x => new QuizEditionResultBriefDto(x)).ToList();
         }
 
+        public async Task<IEnumerable<QuizEditionResultDetailedDto>> GetEditionResultsDetailed(int editionId, int hostId)
+        {
+            await _repository.AuthorizeHostByEditionId(hostId, editionId);
+
+            var editionResults = await _repository.GetEditionResultsDetailed(editionId);
+
+            return editionResults.Select(x => new QuizEditionResultDetailedDto(x)).ToList();
+        }
+
         public async Task<IEnumerable<QuizEditionResultBriefDto>> RankTeamsOnEdition(int editionId, int hostId)
         {
             await _repository.AuthorizeHostByEditionId(hostId, editionId);
@@ -94,6 +113,16 @@ namespace PubQuizBackend.Service.Implementation
             var editionResults = await _repository.BreakTie(promotedId, editionId);
 
             return editionResults.Select(x => new QuizEditionResultBriefDto(x)).ToList();
+        }
+
+        public async Task<bool> IsDetailedResult(int roundResultId)
+        {
+            return await _repository.IsDetailedResult(roundResultId);
+        }
+
+        public async Task DeleteRoundResultSegments(int roundResultId, int hostId)
+        {
+            await _repository.DeleteRoundResultSegments(roundResultId, hostId);
         }
     }
 }

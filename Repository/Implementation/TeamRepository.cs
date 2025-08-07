@@ -354,5 +354,28 @@ namespace PubQuizBackend.Repository.Implementation
 
             return teams;
         }
+
+        public async Task<bool> CanInviteUser(int inviter, int invitee)
+        {
+            var team = await _context.Teams.FirstOrDefaultAsync(x => x.OwnerId == inviter)
+                ?? throw new ForbiddenException();
+
+            var userInvited = await _context.TeamInvitations.AnyAsync(x => x.UserId == invitee && x.TeamId == team.Id && x.Response == null);
+
+            if (userInvited)
+                return false;
+
+            var userApplied = await _context.TeamApplications.AnyAsync(x => x.UserId == invitee && x.TeamId == team.Id && x.Response == null);
+
+            if (userApplied)
+                return false;
+
+            var userInTeam = await _context.UserTeams.AnyAsync(x => x.UserId == invitee && x.TeamId == team.Id);
+
+            if (userInTeam)
+                return false;
+
+            return true;
+        }
     }
 }

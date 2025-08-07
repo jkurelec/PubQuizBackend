@@ -25,5 +25,6 @@ namespace PubQuizBackend.Service.Interface
         Task LeaveTeam(int userId, int teamId);
         Task<int?> GetIdByOwnerId(int id);
         Task<IEnumerable<TeamRegisterDto>> GetTeamsForRegistration(int userId, int editionId);
+        Task<bool> CanInviteUser(int inviter, int invitee);
     }
 }

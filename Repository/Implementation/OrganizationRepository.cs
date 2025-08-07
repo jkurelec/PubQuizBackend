@@ -233,15 +233,15 @@ namespace PubQuizBackend.Repository.Implementation
         }
 
         // ovdje tehnicki nije potreban organizationId
-        public async Task<HostDto> GetHostDto(int organizationId, int hostId, int quizId)
+        public async Task<HostDto> GetHostDto(int hostId, int quizId)
         {
             var host = await _context.HostOrganizationQuizzes
-                .Where(x => x.OrganizationId == organizationId && x.HostId == hostId && x.QuizId == quizId).FirstOrDefaultAsync()
+                .Where(x => x.HostId == hostId && x.QuizId == quizId).FirstOrDefaultAsync()
                     ?? throw new NotFoundException("Host not found!");
 
             return new()
             {
-                IsOwner = await IsOwner(organizationId, hostId),
+                IsOwner = await IsOwner(host.OrganizationId, hostId),
                 UserBrief = new()
                 {
                     Id = host.HostId,

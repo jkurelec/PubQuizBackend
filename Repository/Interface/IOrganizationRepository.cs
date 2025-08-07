@@ -18,7 +18,7 @@ namespace PubQuizBackend.Repository.Interface
         Task<HostDto> AddHost(int organizationId, int hostId, int quizId, HostPermissionsDto permissions);
         Task<HostOrganizationQuiz> GetHostByEditionId(int hostId, int editionId);
         Task<HostOrganizationQuiz> GetHost(int hostId, int quizId);
-        Task<HostDto> GetHostDto(int organizationId, int hostId, int quizId);
+        Task<HostDto> GetHostDto(int hostId, int quizId);
         Task<HostDto> UpdateHost(int organizationId, int hostId, int quizId, HostPermissionsDto permissions);
         Task<IEnumerable<HostQuizzesDto>> GetHostsFromOrganization(int organizationId);
         Task<IEnumerable<Organization>> GetAll();

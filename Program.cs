@@ -7,6 +7,7 @@ using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Service.Implementation;
 using PubQuizBackend.Service.Interface;
 using PubQuizBackend.Util;
+using System.Security.Cryptography;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -48,6 +49,7 @@ builder.Services.AddScoped<IEloCalculatorRepository, EloCalculatorRepository>();
 builder.Services.AddScoped<IRatingHistoryRepository, RatingHistoryRepository>();
 builder.Services.AddScoped<IQuizEditionApplicationRepository, QuizEditionApplicationRepository>();
 builder.Services.AddScoped<IHostRepository, HostRepository>();
+builder.Services.AddScoped<IQuestionMediaPermissionRepository, QuestionMediaPermissionRepository>();
 
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<ILocationService, LocationService>();
@@ -64,6 +66,7 @@ builder.Services.AddScoped<IUpcomingQuizQuestionService, UpcomingQuizQuestionSer
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEloCalculatorService, EloCalculatorService>();
 builder.Services.AddScoped<IRatingHistoryService, RatingHistoryService>();
+builder.Services.AddScoped<IQuestionMediaPermissionService, QuestionMediaPermissionService>();
 
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>

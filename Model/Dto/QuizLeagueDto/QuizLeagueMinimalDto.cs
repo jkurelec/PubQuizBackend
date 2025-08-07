@@ -1,23 +1,20 @@
 ﻿using PubQuizBackend.Model.DbModel;
-using PubQuizBackend.Model.Dto.QuizDto;
 
 namespace PubQuizBackend.Model.Dto.QuizLeagueDto
 {
-    public class QuizLeagueBriefDto
+    public class QuizLeagueMinimalDto
     {
-        public QuizLeagueBriefDto() { }
+        public QuizLeagueMinimalDto() { }
 
-        public QuizLeagueBriefDto(QuizLeague league)
+        public QuizLeagueMinimalDto(QuizLeague league)
         {
             Id = league.Id;
             Name = league.Name;
-            Quiz = new(league.Quiz);
             Finished = league.Finished;
         }
 
         public int Id { get; set; }
         public string Name { get; set; } = null!;
-        public QuizMinimalDto Quiz { get; set; } = null!;
         public bool Finished { get; set; }
     }
 }

@@ -5,7 +5,8 @@
         REGULAR = 0,
         MULTIPLE_CHOICE = 1,
         IMAGE = 2,
-        SOUND = 3,
-        ASSOCIATION = 4
+        AUDIO = 3,
+        VIDEO = 4,
+        ASSOCIATION = 5
     }
 }

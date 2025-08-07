@@ -20,6 +20,10 @@ namespace PubQuizBackend.Repository.Interface
         Task<IEnumerable<QuizEditionApplication>> GetApplications(int editionId, int hostId, bool unanswered);
         Task RespondToApplication(int applicationId, bool applicationResponse, int hostId);
         Task RemoveTeamFromEdition(int editionId, int teamId);
-        Task WithdrawFromEdition(int editionId, int teamId);
+        Task WithdrawFromEdition(int editionId, int userId);
+        Task<IEnumerable<QuizEdition>> GetByLocationId(int locationId);
+        Task<bool?> HasDetailedQuestions(int editionId);
+        Task SetDetailedQuestions(int editionId, int userId, bool detailed);
+        Task Save();
     }
 }

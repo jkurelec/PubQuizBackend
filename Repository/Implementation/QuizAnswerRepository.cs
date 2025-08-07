@@ -155,18 +155,33 @@ namespace PubQuizBackend.Repository.Implementation
             return segmentResult;
         }
 
+        //NAPRAVIT FUNKCIJU ZA PUNO ODJEDNOM
         public async Task<QuizRoundResult> AddTeamRoundPoints(NewQuizRoundResultDto roundResultDto, int hostId)
         {
+            await AuthorizeHostByEditionResultId(hostId, roundResultDto.EditionResultId);
+
             var editionResult = await _context.QuizEditionResults.FirstOrDefaultAsync(x => x.Id == roundResultDto.EditionResultId)
                 ?? throw new BadRequestException("EditionResult does not exist!");
 
-            var roundResultExists = await _context.QuizRoundResults.AnyAsync(x => x.RoundId == roundResultDto.RoundId);
+            var roundResultExists = await _context.QuizRoundResults.AnyAsync(x => x.RoundId == roundResultDto.RoundId && x.EditionResultId == roundResultDto.EditionResultId);
 
-            if (!roundResultExists)
+            if (roundResultExists)
                 throw new BadRequestException("Result for the round already entered!");
 
-            var entityEntry = await _context.QuizRoundResults.AddAsync(roundResultDto.ToObject());
+            var roundPoints = 0m;
+
+            foreach(var segment in roundResultDto.QuizSegmentResults)
+            {
+                roundPoints += segment.BonusPoints;
+
+                foreach (var answer in segment.QuizAnswers)
+                    roundPoints += answer.Points;
+            }
+
+            roundResultDto.Points = roundPoints;
             editionResult.TotalPoints += roundResultDto.Points;
+
+            var entityEntry = await _context.QuizRoundResults.AddAsync(roundResultDto.ToObject());
 
             await _context.SaveChangesAsync();
 
@@ -175,19 +190,98 @@ namespace PubQuizBackend.Repository.Implementation
 
         public async Task<QuizRoundResult> UpdateTeamRoundPoints(NewQuizRoundResultDto roundResultDto, int hostId)
         {
+            await AuthorizeHostByEditionResultId(hostId, roundResultDto.EditionResultId);
+
             var editionResult = await _context.QuizEditionResults.FirstOrDefaultAsync(x => x.Id == roundResultDto.EditionResultId)
                 ?? throw new BadRequestException("EditionResult does not exist!");
 
             var roundResult = await _context.QuizRoundResults
                 .Include(x => x.EditionResult)
+                .Include(x => x.QuizSegmentResults)
                 .FirstOrDefaultAsync(x =>
                     x.RoundId == roundResultDto.RoundId &&
-                    !x.QuizSegmentResults.Any()
+                    x.EditionResultId == roundResultDto.EditionResultId
                 )
                 ?? throw new BadRequestException("Result for the round not found or has answers!");
 
+            if (roundResult.QuizSegmentResults.Count > 0)
+            {
+                _context.QuizSegmentResults.RemoveRange(roundResult.QuizSegmentResults);
+                roundResult.QuizSegmentResults = new List<QuizSegmentResult>();
+            }
+
             editionResult.TotalPoints += roundResultDto.Points - roundResult.Points;
             roundResult.Points = roundResultDto.Points;
+
+            await _context.SaveChangesAsync();
+
+            return roundResult;
+        }
+
+        public async Task<QuizRoundResult> UpdateTeamRoundPointsDetailed(QuizRoundResultDetailedDto roundResultDto, int hostId)
+        {
+            await AuthorizeHostByEditionResultId(hostId, roundResultDto.EditionResultId);
+
+            var editionResult = await _context.QuizEditionResults.FirstOrDefaultAsync(x => x.Id == roundResultDto.EditionResultId)
+                ?? throw new BadRequestException("EditionResult does not exist!");
+
+            var roundResult = await _context.QuizRoundResults
+                .Include(x => x.EditionResult)
+                .Include(x => x.QuizSegmentResults)
+                    .ThenInclude(x => x.QuizAnswers)
+                .FirstOrDefaultAsync(x =>
+                    x.RoundId == roundResultDto.RoundId &&
+                    x.EditionResultId == roundResultDto.EditionResultId
+                )
+                ?? throw new BadRequestException("Result for the round not found or has answers!");
+
+            if (roundResult.QuizSegmentResults.Count == 0)
+            {
+                var roundPoints = 0m;
+
+                foreach (var segment in roundResultDto.QuizSegmentResults)
+                {
+                    roundPoints += segment.BonusPoints;
+
+                    foreach (var answer in segment.QuizAnswers)
+                        roundPoints += answer.Points;
+                }
+
+                editionResult.TotalPoints += roundPoints - roundResult.Points;
+                roundResult.Points = roundPoints;
+            }
+            else
+            {
+                var roundPointsChange = 0m;
+
+                foreach (var segmentDto in roundResultDto.QuizSegmentResults)
+                {
+                    var segment = roundResult.QuizSegmentResults.FirstOrDefault(x => x.Id == segmentDto.Id)
+                        ?? throw new NotFoundException("Segment not found");
+
+                    if (segmentDto.BonusPoints != segment.BonusPoints)
+                    {
+                        roundPointsChange += segmentDto.BonusPoints - segment.BonusPoints;
+                        segment.BonusPoints = segmentDto.BonusPoints;
+                    }
+
+                    foreach (var answerDto in segmentDto.QuizAnswers)
+                    {
+                        var answer = segment.QuizAnswers.FirstOrDefault(x => x.Id == answerDto.Id)
+                            ?? throw new NotFoundException("Segment not found");
+
+                        if (IsAnswerDifferent(answerDto, answer))
+                        {
+                            roundPointsChange += answerDto.Points - answer.Points;
+
+                            MatchAnswerDto(answerDto, answer);
+                        }
+                    }
+                }
+
+                editionResult.TotalPoints += roundPointsChange;
+                roundResult.Points += roundPointsChange;
+            }
 
             await _context.SaveChangesAsync();
 
@@ -214,6 +308,22 @@ namespace PubQuizBackend.Repository.Implementation
                 .Where(x => x.EditionId == editionId)
                 .Include(x => x.Team)
                 .Include(x => x.QuizRoundResults)
+                .ToListAsync();
+
+            if (editionResults.Count == 0)
+                throw new NotFoundException($"No EditionResults found with edition id {editionId}!");
+
+            return editionResults;
+        }
+
+        public async Task<IEnumerable<QuizEditionResult>> GetEditionResultsDetailed(int editionId)
+        {
+            var editionResults = await _context.QuizEditionResults
+                .Where(x => x.EditionId == editionId)
+                .Include(x => x.Team)
+                .Include(x => x.QuizRoundResults)
+                    .ThenInclude(r => r.QuizSegmentResults)
+                        .ThenInclude(s => s.QuizAnswers)
                 .ToListAsync();
 
             if (editionResults.Count == 0)
@@ -251,7 +361,7 @@ namespace PubQuizBackend.Repository.Implementation
                 throw new BadRequestException("No teams tied with given team!");
 
             foreach (var tiedTeam in tiedTeams)
-                tiedTeam.Rank--;
+                tiedTeam.Rank++;
 
             await _context.SaveChangesAsync();
 
@@ -404,6 +514,7 @@ namespace PubQuizBackend.Repository.Implementation
 
         private async Task RankEditionResults(List<QuizEditionResult> editionResults)
         {
+            editionResults = editionResults.OrderByDescending(x => x.TotalPoints).ToList();
             int currentRank = 1;
             int skip = 1;
             decimal? lastPoints = null;
@@ -421,6 +532,57 @@ namespace PubQuizBackend.Repository.Implementation
             }
 
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<bool> IsDetailedResult(int roundResultId)
+        {
+            return await _context.QuizRoundResults
+                .Where(x => x.Id == roundResultId)
+                .Select(x => x.QuizSegmentResults.Any())
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task DeleteRoundResultSegments(int roundResultId, int hostId)
+        {
+            var roundResult = await _context.QuizRoundResults
+                .Include(x => x.QuizSegmentResults)
+                .FirstOrDefaultAsync(x => x.Id == roundResultId)
+                ?? throw new NotFoundException("Round result not found!");
+
+            await AuthorizeHostByEditionResultId(hostId, roundResult.EditionResultId);
+
+            roundResult.Points = 0;
+
+            if (roundResult.QuizSegmentResults.Count != 0)
+                _context.QuizSegmentResults.RemoveRange(roundResult.QuizSegmentResults);
+
+            await _context.SaveChangesAsync();
+        }
+
+        private static bool IsAnswerDifferent(QuizAnswerDetailedDto answerDto, QuizAnswer answer)
+        {
+            if (answerDto.Answer != answer.Answer)
+                return true;
+
+            if (answerDto.Result != answer.Result)
+                return true;
+
+            if (answerDto.Points != answer.Points)
+                return true;
+
+            return false;
+        }
+
+        private static void MatchAnswerDto(QuizAnswerDetailedDto answerDto, QuizAnswer answer)
+        {
+            if (answerDto.Answer != answer.Answer)
+                answer.Answer = answerDto.Answer;
+
+            if (answerDto.Result != answer.Result)
+                answer.Result = answerDto.Result;
+
+            if (answerDto.Points != answer.Points)
+                answer.Points = answerDto.Points;
         }
     }
 }

@@ -46,13 +46,40 @@ namespace PubQuizBackend.Repository.Implementation
             return await GetByIdDetailed(entity.Entity.Id);
         }
 
-        public async Task<bool> Delete(int id, int userId)
+        public async Task<QuizLeague> FinishLeague(int leagueId, int userId)
         {
-            var league = await _context.QuizLeagues.Include(x => x.Quiz).ThenInclude(q => q.Organization).FirstOrDefaultAsync(x => x.Id == id)
+            var league = await _context.QuizLeagues
+                .Include(x => x.Quiz).ThenInclude(q => q.Organization)
+                .Include(x => x.QuizEditions)
+                .FirstOrDefaultAsync(x => x.Id == leagueId)
                 ?? throw new NotFoundException("League not found!");
 
             if (league.Quiz.Organization.OwnerId != userId)
                 throw new ForbiddenException();
+
+            if (league.QuizEditions.Count == 0)
+                throw new BadRequestException("League can only be closed if it has editions!");
+
+            league.Finished = true;
+
+            await _context.SaveChangesAsync();
+
+            return await GetByIdDetailed(leagueId);
+        }
+
+        public async Task<bool> Delete(int id, int userId)
+        {
+            var league = await _context.QuizLeagues
+                .Include(x => x.Quiz).ThenInclude(q => q.Organization)
+                .Include(x => x.QuizEditions)
+                .FirstOrDefaultAsync(x => x.Id == id)
+                ?? throw new NotFoundException("League not found!");
+
+            if (league.Quiz.Organization.OwnerId != userId)
+                throw new ForbiddenException();
+
+            if (league.QuizEditions.Count > 0)
+                throw new BadRequestException("League can only be deleted if it has no editions!");
 
             _context.QuizLeagues.Remove(league);
             await _context.SaveChangesAsync();
@@ -60,9 +87,11 @@ namespace PubQuizBackend.Repository.Implementation
             return true;
         }
 
-        public async Task<QuizLeague> GetById(int id)
+        public async Task<QuizLeague> GetBriefById(int id)
         {
-            return await _context.QuizLeagues.FindAsync(id)
+            return await _context.QuizLeagues
+                .Include(x => x.Quiz)
+                .FirstOrDefaultAsync(x => x.Id == id)
                     ?? throw new NotFoundException("League not found!");
         }
 
@@ -72,14 +101,20 @@ namespace PubQuizBackend.Repository.Implementation
                 .Include(x => x.LeaguePrizes)
                 .Include(x => x.Quiz)
                 .Include(x => x.QuizEditions)
-                .ThenInclude(x => x.Category)
+                    .ThenInclude(x => x.Category)
+                .Include(x => x.QuizLeagueRounds)
+                    .ThenInclude(x => x.QuizLeagueEntries)
+                        .ThenInclude(x => x.Team)
                 .FirstOrDefaultAsync(x => x.Id == id)
                     ?? throw new NotFoundException("League not found!");
         }
 
         public async Task<IEnumerable<QuizLeague>> GetByQuizId(int id)
         {
-            var leagues = await _context.QuizLeagues.Where(x => x.QuizId == id).Include(x => x.Quiz).ToListAsync();
+            var leagues = await _context.QuizLeagues
+                .Where(x => x.QuizId == id)
+                .Include(x => x.Quiz)
+                .ToListAsync();
 
             return leagues.Count == 0
                 ? throw new NotFoundException("No leagues found!")
@@ -88,7 +123,10 @@ namespace PubQuizBackend.Repository.Implementation
 
         public async Task<QuizLeague> Update(NewQuizLeagueDto leagueDto, int userId)
         {
-            var league = await _context.QuizLeagues.Include(x => x.Quiz).Include(x => x.LeaguePrizes).FirstOrDefaultAsync(x => x.Id == leagueDto.Id)
+            var league = await _context.QuizLeagues
+                .Include(x => x.Quiz).ThenInclude(q => q.Organization)
+                .Include(x => x.LeaguePrizes)
+                .FirstOrDefaultAsync(x => x.Id == leagueDto.Id)
                 ?? throw new NotFoundException("League not found!");
 
             if (league.Quiz.Organization.OwnerId != userId)

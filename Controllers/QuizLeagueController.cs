@@ -23,9 +23,11 @@ namespace PubQuizBackend.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
+        public async Task<IActionResult> GetById(int id, [FromQuery] int detailed = 0)
         {
-            return Ok(await _service.GetById(id));
+            if (detailed == 0)
+                return Ok(await _service.GetBriefById(id));
+            return Ok(await _service.GetDetailedById(id));
         }
 
         [HttpPost]
@@ -38,6 +40,12 @@ namespace PubQuizBackend.Controllers
         public async Task<IActionResult> Put(NewQuizLeagueDto leagueDto)
         {
             return Ok(await _service.Update(leagueDto, User.GetUserId()));
+        }
+
+        [HttpPatch("close/{leagueId}")]
+        public async Task<IActionResult> FinishLeague(int leagueId)
+        {
+            return Ok(await _service.FinishLeague(leagueId, User.GetUserId()));
         }
 
         [HttpDelete("{id}")]

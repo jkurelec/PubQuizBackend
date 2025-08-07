@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PubQuizBackend.Enums;
+using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.QuizEditionDto;
+using PubQuizBackend.Model.Dto.QuizQuestionsDto.Basic;
 using PubQuizBackend.Service.Interface;
 using PubQuizBackend.Util.Extension;
 
@@ -102,6 +104,38 @@ namespace PubQuizBackend.Controllers
             await _service.Delete(id, User.GetUserId());
 
             return NoContent();
+        }
+
+        [HttpGet("location/{id}")]
+        public async Task<IActionResult> GetByLocationId(int id)
+        {
+            return Ok(await _service.GetByLocationId(id));
+        }
+
+        [HttpPost("profile-image/{editionId}")]
+        public async Task<IActionResult> UpdateProfileImage(IFormFile image, int editionId)
+        {
+            var newImageName = await _service.UpdateProfileImage(image, editionId, User.GetUserId());
+
+            return Ok(newImageName);
+        }
+
+        [HttpGet("detailed-questions/{editionId}")]
+        public async Task<IActionResult> HasDetailedQuestions(int editionId)
+        {
+            var result = await _service.HasDetailedQuestions(editionId);
+
+            return Ok(new DetailedQuestionStatusDto { Value = result });
+        }
+
+        [HttpPatch("detailed-questions/{editionId}")]
+        public async Task<IActionResult> SetDetailedQuestions(int editionId, [FromBody] DetailedQuestionStatusDto dto)
+        {
+            if (dto.Value is null)
+                return BadRequest("Value cannot be null.");
+
+            await _service.SetDetailedQuestions(editionId, User.GetUserId(), dto.Value.Value);
+            return Ok();
         }
     }
 }

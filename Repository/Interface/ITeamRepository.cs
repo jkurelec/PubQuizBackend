@@ -31,5 +31,6 @@ namespace PubQuizBackend.Repository.Interface
         Task<TeamInvitation> GetInvitation(int invitationId);
         Task LeaveTeam(int userId, int teamId);
         Task<IEnumerable<Team>> GetTeamsForRegistration(int userId, int editionId);
+        Task<bool> CanInviteUser(int inviter, int invitee);
     }
 }

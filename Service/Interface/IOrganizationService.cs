@@ -16,7 +16,7 @@ namespace PubQuizBackend.Service.Interface
         Task<HostDto> UpdateHost(int organizerId, int hostId, int quizId, HostPermissionsDto permissions);
         Task<OrganizationBriefDto> GetById(int id);
         Task<IEnumerable<OrganizationBriefDto>> GetAll();
-        Task<HostDto> GetHost(int organizerId, int hostId, int quizId);
+        Task<HostDto> GetHost(int hostId, int quizId);
         Task<IEnumerable<HostQuizzesDto>> GetHostsFromOrganization(int organizerId);
         Task Delete(int id);
         Task DeleteHost(int organizerId, int hostId);

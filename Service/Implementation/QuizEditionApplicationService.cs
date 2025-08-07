@@ -101,20 +101,15 @@ namespace PubQuizBackend.Service.Implementation
             var takenSpots = await _applicationRepository.GetAcceptedCountByEditionId(application.EditionId);
             var totalSpots = await _applicationRepository.GetMaxTeamsByEditionId(application.EditionId);
 
-            if (totalSpots == takenSpots)
+            if (totalSpots == takenSpots && applicationDto.Response != false)
                 throw new BadRequestException("No more spots available for this edition!");
 
             await _editionRepository.RespondToApplication(applicationDto.ApplicationId, applicationDto.Response, hostId);
         }
 
-        public async Task WithdrawFromEdition(int editionId, int teamId, int userId)
+        public async Task WithdrawFromEdition(int editionId, int userId)
         {
-            var teamMember = await _teamRepository.GetMemeberById(userId, teamId);
-
-            if (!teamMember.RegisterTeam)
-                throw new ForbiddenException();
-
-            await _editionRepository.WithdrawFromEdition(editionId, teamId);
+            await _editionRepository.WithdrawFromEdition(editionId, userId);
         }
     }
 }

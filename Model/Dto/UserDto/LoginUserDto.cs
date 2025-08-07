@@ -20,7 +20,7 @@ namespace PubQuizBackend.Model.Dto.UserDto
             }
 
             bool isEmail = new EmailAddressAttribute().IsValid(Identifier);
-            bool isUsername = Regex.IsMatch(Identifier, @"^[a-zA-Z]{4,15}$");
+            bool isUsername = Regex.IsMatch(Identifier, @"^[a-zA-Z0-9]{4,15}$");
 
             if (!isEmail && !isUsername)
             {

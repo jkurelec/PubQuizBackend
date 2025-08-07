@@ -3,6 +3,7 @@ using PubQuizBackend.Model.Dto.QuizQuestionsDto.Basic;
 using PubQuizBackend.Model.Dto.QuizQuestionsDto.Specific;
 using PubQuizBackend.Service.Interface;
 using PubQuizBackend.Util.Extension;
+using System.Text.Json;
 
 namespace PubQuizBackend.Controllers
 {
@@ -27,6 +28,12 @@ namespace PubQuizBackend.Controllers
         public async Task<IActionResult> GetSegment(int id)
         {
             return Ok(await _service.GetSegment(id, User.GetUserId()));
+        }
+
+        [HttpGet("rounds/{editionId}")]
+        public async Task<IActionResult> GetRounds(int editionId, [FromQuery] bool detailed = false)
+        {
+            return Ok(await _service.GetRounds(editionId, User.GetUserId(), detailed));
         }
 
         [HttpGet("round/{id}")]
@@ -60,9 +67,14 @@ namespace PubQuizBackend.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddQuestion(QuizQuestionDto questionDto)
+        public async Task<IActionResult> AddQuestion([FromForm(Name = "questionDto")] string questionDto, IFormFile? file)
         {
-            var question = await _service.AddQuestion(questionDto, User.GetUserId());
+            var dto = JsonSerializer.Deserialize<QuizQuestionDto>(questionDto);
+
+            if (dto == null)
+                return BadRequest("Invalid questionDto JSON.");
+
+            var question = await _service.AddQuestion(dto, User.GetUserId(), file);
 
             return CreatedAtAction(
                 nameof(GetQuestion),
@@ -96,15 +108,28 @@ namespace PubQuizBackend.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> EditQuestion(QuizQuestionDto questionDto)
+        public async Task<IActionResult> EditQuestion([FromForm(Name = "questionDto")] string questionDto, IFormFile? file)
         {
-            return Ok(await _service.EditQuestion(questionDto, User.GetUserId()));
+            var dto = JsonSerializer.Deserialize<QuizQuestionDto>(questionDto);
+
+            if (dto == null)
+                return BadRequest("Invalid questionDto JSON.");
+
+            var question = await _service.EditQuestion(dto, User.GetUserId(), file);
+
+            return Ok (question);
         }
 
         [HttpPut("segment/{id}")]
         public async Task<IActionResult> EditSegment(QuizSegmentDto segmentDto)
         {
             return Ok(await _service.EditSegment(segmentDto, User.GetUserId()));
+        }
+
+        [HttpPut("round/{id}")]
+        public async Task<IActionResult> EditRound(QuizRoundBriefDto roundDto)
+        {
+            return Ok(await _service.EditRound(roundDto, User.GetUserId()));
         }
 
         [HttpPut("order/{id}")]

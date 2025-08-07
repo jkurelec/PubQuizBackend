@@ -1,9 +1,12 @@
-﻿using PubQuizBackend.Enums;
+﻿using NuGet.Protocol.Core.Types;
+using PubQuizBackend.Enums;
 using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.QuizEditionDto;
+using PubQuizBackend.Model.Other;
 using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Service.Interface;
+using PubQuizBackend.Util;
 
 namespace PubQuizBackend.Service.Implementation
 {
@@ -12,12 +15,14 @@ namespace PubQuizBackend.Service.Implementation
         private readonly IQuizEditionRepository _editionRepository;
         private readonly IOrganizationRepository _organizationRepository; 
         private readonly IQuizLeagueRepository _leagueRepository;
+        private readonly MediaServerClient _mediaServerClient;
 
-        public QuizEditionService(IQuizEditionRepository editionRepository, IOrganizationRepository organizationRepository, IQuizLeagueRepository leagueRepository)
+        public QuizEditionService(IQuizEditionRepository editionRepository, IOrganizationRepository organizationRepository, IQuizLeagueRepository leagueRepository, MediaServerClient mediaServerClient)
         {
             _editionRepository = editionRepository;
             _organizationRepository = organizationRepository;
             _leagueRepository = leagueRepository;
+            _mediaServerClient = mediaServerClient;
         }
 
         public async Task<QuizEditionDetailedDto> Add(NewQuizEditionDto editionDto, int userId)
@@ -29,7 +34,7 @@ namespace PubQuizBackend.Service.Implementation
 
             if (editionDto.LeagueId != null)
             {
-                var league = await _leagueRepository.GetById(editionDto.LeagueId.Value);
+                var league = await _leagueRepository.GetBriefById(editionDto.LeagueId.Value);
 
                 if (league.QuizId != editionDto.QuizId)
                     throw new ForbiddenException();
@@ -43,6 +48,14 @@ namespace PubQuizBackend.Service.Implementation
                     throw new BadRequestException("Who is the host?");
             }
 
+            var hosts = await _organizationRepository.GetHostsByQuiz(editionDto.QuizId);
+
+            await _mediaServerClient.AddEditionPermissionAsync(
+                new EditionPermissionDto
+                {
+                    EditionId = editionDto.Id,
+                    UserIds = hosts.Select(x => x.UserBrief.Id).ToList(),
+                });
 
             return new (await _editionRepository.Add(editionDto, userId));
         }
@@ -54,6 +67,9 @@ namespace PubQuizBackend.Service.Implementation
 
             if (!host.DeleteEdition)
                 throw new ForbiddenException();
+
+            if (edition.Time < DateTime.UtcNow)
+                throw new BadRequestException("You cannot delete past editions!");
 
             await _editionRepository.Delete(edition);
         }
@@ -109,6 +125,48 @@ namespace PubQuizBackend.Service.Implementation
                 throw new ForbiddenException();
 
             return new(await _editionRepository.Update(editionDto,userId));
+        }
+
+        public async Task<IEnumerable<QuizEditionBriefDto>> GetByLocationId(int locationId)
+        {
+            var editions = await _editionRepository.GetByLocationId(locationId);
+
+            return editions.Select(x => new QuizEditionBriefDto(x)).ToList();
+        }
+
+        public async Task<string> UpdateProfileImage(IFormFile image, int editionId, int hostId)
+        {
+
+            var edition = await _editionRepository.GetById(editionId);
+            var host = await _organizationRepository.GetHostDto(hostId, edition.QuizId);
+
+            if (!host.HostPermissions.EditEdition || !host.HostPermissions.CreateEdition)
+                throw new ForbiddenException();
+
+            var fileName = await _mediaServerClient.PostImage($"/private/update/edition", image, $"{edition.Id}{Path.GetExtension(image.FileName)}");
+
+            if (edition.ProfileImage != fileName)
+            {
+                edition.ProfileImage = fileName;
+                await _editionRepository.Save();
+            }
+
+            return fileName;
+        }
+
+        public async Task<bool?> HasDetailedQuestions(int editionId)
+        {
+            return await _editionRepository.HasDetailedQuestions(editionId);
+        }
+
+        public async Task SetDetailedQuestions(int editionId, int userId, bool detailed)
+        {
+            var host = await _organizationRepository.GetHostByEditionId(userId, editionId);
+
+            if (!host.CrudQuestion)
+                throw new ForbiddenException();
+
+            await _editionRepository.SetDetailedQuestions(editionId, userId, detailed);
         }
     }
 }

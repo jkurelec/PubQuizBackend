@@ -66,6 +66,7 @@ namespace PubQuizBackend.Repository.Implementation
                 .Include(x => x.Organization).ThenInclude(o => o.Owner).ThenInclude(o => o.HostOrganizationQuizzes)
                 .Include(x => x.QuizCategories)
                 .Include(x => x.Locations).ThenInclude(l => l.City).ThenInclude(c => c.Country)
+                .Include(x => x.QuizLeagues)
                 .Include(x => x.QuizEditions).ThenInclude(e => e.Category)
                 .FirstOrDefaultAsync(x => x.Name == quizDto.Name)
                 ?? throw new DivineException();
@@ -73,10 +74,16 @@ namespace PubQuizBackend.Repository.Implementation
 
         public async Task<bool> Delete(int id, int ownerId)
         {
-            await IsOwner(id, ownerId);
-
-            var quiz = await _context.Quizzes.FindAsync(id)
+            var quiz = await _context.Quizzes
+                .Include(x => x.QuizEditions)
+                .Include(x => x.QuizLeagues)
+                .FirstOrDefaultAsync(x => x.Id == id)
                 ?? throw new ForbiddenException();
+
+            await IsOwner(quiz.OrganizationId, ownerId);
+
+            if (quiz.QuizEditions.Count > 0 || quiz.QuizLeagues.Count > 0)
+                throw new BadRequestException("Quiz can only be deleted if has no editions or leagues!");
 
             _context.Quizzes.Remove(quiz);
             await _context.SaveChangesAsync();
@@ -97,12 +104,26 @@ namespace PubQuizBackend.Repository.Implementation
 
         public async Task<IEnumerable<Quiz>> GetAllDetailed()
         {
-            return await _context.Quizzes.Include(x => x.QuizCategories).Include(x => x.Locations).ThenInclude(l => l.City).ThenInclude(c => c.Country).Include(x => x.QuizEditions).ThenInclude(e => e.Category).Include(x => x.Teams).Include(x => x.Organization).ToListAsync();
+            return await _context.Quizzes
+                .Include(x => x.QuizCategories)
+                .Include(x => x.Locations).ThenInclude(l => l.City).ThenInclude(c => c.Country)
+                .Include(x => x.QuizLeagues)
+                .Include(x => x.QuizEditions).ThenInclude(e => e.Category)
+                .Include(x => x.Teams)
+                .Include(x => x.Organization)
+                .ToListAsync();
         }
 
         public async Task<Quiz> GetByIdDetailed(int id)
         {
-            return await _context.Quizzes.Include(x => x.QuizCategories).Include(x => x.Locations).ThenInclude(l => l.City).ThenInclude(c => c.Country).Include(x => x.QuizEditions).ThenInclude(e => e.Category).Include(x => x.Teams).Include(x => x.Organization).FirstOrDefaultAsync(x => x.Id == id)
+            return await _context.Quizzes
+                .Include(x => x.QuizCategories)
+                .Include(x => x.Locations).ThenInclude(l => l.City).ThenInclude(c => c.Country)
+                .Include(x => x.QuizLeagues)
+                .Include(x => x.QuizEditions).ThenInclude(e => e.Category)
+                .Include(x => x.Teams)
+                .Include(x => x.Organization)
+                .FirstOrDefaultAsync(x => x.Id == id)
                 ?? throw new NotFoundException("Quiz not found!");
         }
 
@@ -110,7 +131,14 @@ namespace PubQuizBackend.Repository.Implementation
         {
             await IsOwner(quizDto.OrganizationId, ownerId);
 
-            var quiz = await _context.Quizzes.Include(x => x.QuizCategories).Include(x => x.Locations).ThenInclude(l => l.City).ThenInclude(c => c.Country).Include(x => x.QuizEditions).ThenInclude(e => e.Category).Include(x => x.Teams).Include(x => x.Organization).FirstOrDefaultAsync(x => x.Id == quizDto.Id)
+            var quiz = await _context.Quizzes
+                .Include(x => x.QuizCategories)
+                .Include(x => x.Locations).ThenInclude(l => l.City).ThenInclude(c => c.Country)
+                .Include(x => x.QuizLeagues)
+                .Include(x => x.QuizEditions).ThenInclude(e => e.Category)
+                .Include(x => x.Teams)
+                .Include(x => x.Organization)
+                .FirstOrDefaultAsync(x => x.Id == quizDto.Id)
                 ?? throw new DivineException();
 
             if (quiz.OrganizationId != quizDto.OrganizationId)

@@ -25,10 +25,10 @@ namespace PubQuizBackend.Controllers
             return NoContent();
         }
 
-        [HttpDelete("withdraw/{teamId}/{editionId}")]
-        public async Task<IActionResult> WithdrawFromEdition(int editionId, int teamId)
+        [HttpDelete("withdraw/{editionId}")]
+        public async Task<IActionResult> WithdrawFromEdition(int editionId)
         {
-            await _service.WithdrawFromEdition(editionId, teamId, User.GetUserId());
+            await _service.WithdrawFromEdition(editionId, User.GetUserId());
 
             return NoContent();
         }

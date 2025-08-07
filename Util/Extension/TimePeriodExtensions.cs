@@ -13,9 +13,9 @@ namespace PubQuizBackend.Util.Extension
             {
                 TimePeriod.Today => now.Date,
                 TimePeriod.Week => now.Date.AddDays(-(int)now.DayOfWeek),
-                TimePeriod.Month => new DateTime(now.Year, now.Month, 1),
-                TimePeriod.Year => new DateTime(now.Year, 1, 1),
-                TimePeriod.AllTime => DateTime.MinValue,
+                TimePeriod.Month => DateTime.SpecifyKind(new DateTime(now.Year, now.Month, 1), DateTimeKind.Utc),
+                TimePeriod.Year => DateTime.SpecifyKind(new DateTime(now.Year, 1, 1), DateTimeKind.Utc),
+                TimePeriod.AllTime => DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc),
                 _ => throw new DivineException()
             };
         }

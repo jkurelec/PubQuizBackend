@@ -30,10 +30,10 @@ namespace PubQuizBackend.Controllers
             return Ok(await _service.GetAll());
         }
 
-        [HttpGet("{organizerId}/host/{hostId}/quiz/{quizId}")]
-        public async Task<IActionResult> GetHost(int organizerId, int hostId, int quizId)
+        [HttpGet("host/{hostId}/quiz/{quizId}")]
+        public async Task<IActionResult> GetHost(int hostId, int quizId)
         {
-            return Ok(await _service.GetHost(organizerId, hostId, quizId));
+            return Ok(await _service.GetHost(hostId, quizId));
         }
 
         [HttpGet("hosts/{organizerId}")]

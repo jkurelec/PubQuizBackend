@@ -48,6 +48,10 @@ public partial class PubQuizContext : DbContext
 
     public virtual DbSet<QuizLeague> QuizLeagues { get; set; }
 
+    public virtual DbSet<QuizLeagueEntry> QuizLeagueEntries { get; set; }
+
+    public virtual DbSet<QuizLeagueRound> QuizLeagueRounds { get; set; }
+
     public virtual DbSet<QuizQuestion> QuizQuestions { get; set; }
 
     public virtual DbSet<QuizRatingHistory> QuizRatingHistories { get; set; }
@@ -130,7 +134,6 @@ public partial class PubQuizContext : DbContext
 
             entity.HasOne(d => d.Edition).WithMany(p => p.EditionPrizes)
                 .HasForeignKey(d => d.EditionId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("prize_edition_id_fkey");
         });
 
@@ -243,6 +246,7 @@ public partial class PubQuizContext : DbContext
             entity.Property(e => e.OwnerId).HasColumnName("owner_id");
             entity.Property(e => e.ProfileImage)
                 .HasMaxLength(255)
+                .HasDefaultValueSql("'default.jpg'::character varying")
                 .HasColumnName("profile_image");
 
             entity.HasOne(d => d.Owner).WithMany(p => p.Organizations)
@@ -287,6 +291,7 @@ public partial class PubQuizContext : DbContext
             entity.Property(e => e.OrganizationId).HasColumnName("organization_id");
             entity.Property(e => e.ProfileImage)
                 .HasMaxLength(255)
+                .HasDefaultValueSql("'default.jpg'::character varying")
                 .HasColumnName("profile_image");
             entity.Property(e => e.Rating)
                 .HasDefaultValue(1000)
@@ -393,6 +398,7 @@ public partial class PubQuizContext : DbContext
                 .HasColumnName("accepted_teams");
             entity.Property(e => e.CategoryId).HasColumnName("category_id");
             entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.DetailedQuestions).HasColumnName("detailed_questions");
             entity.Property(e => e.Duration).HasColumnName("duration");
             entity.Property(e => e.Fee).HasColumnName("fee");
             entity.Property(e => e.FeeType).HasColumnName("fee_type");
@@ -411,6 +417,7 @@ public partial class PubQuizContext : DbContext
                 .HasColumnName("pending_teams");
             entity.Property(e => e.ProfileImage)
                 .HasMaxLength(255)
+                .HasDefaultValueSql("'default.jpg'::character varying")
                 .HasColumnName("profile_image");
             entity.Property(e => e.QuizId).HasColumnName("quiz_id");
             entity.Property(e => e.Rated)
@@ -551,6 +558,9 @@ public partial class PubQuizContext : DbContext
             entity.Property(e => e.Id)
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("id");
+            entity.Property(e => e.Finished)
+                .HasDefaultValue(false)
+                .HasColumnName("finished");
             entity.Property(e => e.Name)
                 .HasMaxLength(255)
                 .HasColumnName("name");
@@ -561,6 +571,49 @@ public partial class PubQuizContext : DbContext
                 .HasForeignKey(d => d.QuizId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("quiz_league_quiz_id_fkey");
+        });
+
+        modelBuilder.Entity<QuizLeagueEntry>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("quiz_league_entry_pkey");
+
+            entity.ToTable("quiz_league_entry");
+
+            entity.HasIndex(e => new { e.QuizLeagueRoundId, e.TeamId }, "unique_team_per_round").IsUnique();
+
+            entity.Property(e => e.Id)
+                .UseIdentityAlwaysColumn()
+                .HasColumnName("id");
+            entity.Property(e => e.Points).HasColumnName("points");
+            entity.Property(e => e.QuizLeagueRoundId).HasColumnName("quiz_league_round_id");
+            entity.Property(e => e.TeamId).HasColumnName("team_id");
+
+            entity.HasOne(d => d.QuizLeagueRound).WithMany(p => p.QuizLeagueEntries)
+                .HasForeignKey(d => d.QuizLeagueRoundId)
+                .HasConstraintName("fk_quiz_league_entry_round");
+
+            entity.HasOne(d => d.Team).WithMany(p => p.QuizLeagueEntries)
+                .HasForeignKey(d => d.TeamId)
+                .HasConstraintName("fk_quiz_league_entry_team");
+        });
+
+        modelBuilder.Entity<QuizLeagueRound>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("quiz_league_round_pkey");
+
+            entity.ToTable("quiz_league_round");
+
+            entity.HasIndex(e => new { e.QuizLeagueId, e.Round }, "unique_league_round").IsUnique();
+
+            entity.Property(e => e.Id)
+                .UseIdentityAlwaysColumn()
+                .HasColumnName("id");
+            entity.Property(e => e.QuizLeagueId).HasColumnName("quiz_league_id");
+            entity.Property(e => e.Round).HasColumnName("round");
+
+            entity.HasOne(d => d.QuizLeague).WithMany(p => p.QuizLeagueRounds)
+                .HasForeignKey(d => d.QuizLeagueId)
+                .HasConstraintName("fk_quiz_league_round_league");
         });
 
         modelBuilder.Entity<QuizQuestion>(entity =>
@@ -607,7 +660,7 @@ public partial class PubQuizContext : DbContext
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("id");
             entity.Property(e => e.Date)
-                .HasColumnType("timestamp without time zone")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("date");
             entity.Property(e => e.QuizId).HasColumnName("quiz_id");
             entity.Property(e => e.Rating).HasColumnName("rating");
@@ -744,6 +797,7 @@ public partial class PubQuizContext : DbContext
             entity.Property(e => e.OwnerId).HasColumnName("owner_id");
             entity.Property(e => e.ProfileImage)
                 .HasMaxLength(255)
+                .HasDefaultValueSql("'default.jpg'::character varying")
                 .HasColumnName("profile_image");
             entity.Property(e => e.QuizId).HasColumnName("quiz_id");
 
@@ -836,6 +890,7 @@ public partial class PubQuizContext : DbContext
             entity.Property(e => e.PasswordSalt).HasColumnName("password_salt");
             entity.Property(e => e.ProfileImage)
                 .HasMaxLength(255)
+                .HasDefaultValueSql("'default.jpg'::character varying")
                 .HasColumnName("profile_image");
             entity.Property(e => e.Rating)
                 .HasDefaultValue(1000)
@@ -873,7 +928,7 @@ public partial class PubQuizContext : DbContext
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("id");
             entity.Property(e => e.Date)
-                .HasColumnType("timestamp without time zone")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("date");
             entity.Property(e => e.Rating).HasColumnName("rating");
             entity.Property(e => e.UserId).HasColumnName("user_id");

@@ -24,9 +24,14 @@ namespace PubQuizBackend.Service.Implementation
             return await _repository.Delete(id, userId);
         }
 
-        public async Task<QuizLeagueDetailedDto> GetById(int id)
+        public async Task<QuizLeagueBriefDto> GetBriefById(int id)
         {
-            return new(await _repository.GetById(id));
+            return new(await _repository.GetBriefById(id));
+        }
+
+        public async Task<QuizLeagueDetailedDto> GetDetailedById(int id)
+        {
+            return new(await _repository.GetByIdDetailed(id));
         }
 
         public async Task<IEnumerable<QuizLeagueBriefDto>> GetByQuizId(int id)
@@ -38,7 +43,12 @@ namespace PubQuizBackend.Service.Implementation
 
         public async Task<QuizLeagueDetailedDto> Update(NewQuizLeagueDto leagueDto, int userId)
         {
-            return new(await _repository.Update(leagueDto, userId));
+            return new (await _repository.Update(leagueDto, userId));
+        }
+
+        public async Task<QuizLeagueDetailedDto> FinishLeague(int leagueId, int userId)
+        {
+            return new (await _repository.FinishLeague(leagueId, userId));
         }
     }
 }

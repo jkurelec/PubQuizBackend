@@ -1,5 +1,4 @@
 ﻿using PubQuizBackend.Enums;
-using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.QuizEditionDto;
 
 namespace PubQuizBackend.Service.Interface
@@ -15,5 +14,9 @@ namespace PubQuizBackend.Service.Interface
         Task<QuizEditionDetailedDto> Add(NewQuizEditionDto editionDto, int userId);
         Task<QuizEditionDetailedDto> Update(NewQuizEditionDto editionDto, int userId);
         Task Delete(int editionId, int userId);
+        Task<IEnumerable<QuizEditionBriefDto>> GetByLocationId(int locationId);
+        Task<string> UpdateProfileImage(IFormFile image, int editionId, int hostId);
+        Task<bool?> HasDetailedQuestions(int editionId);
+        Task SetDetailedQuestions(int editionId, int userId, bool detailed);
     }
 }

@@ -1,11 +1,12 @@
 ﻿using PubQuizBackend.Enums;
 using PubQuizBackend.Exceptions;
-using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.ApplicationDto;
 using PubQuizBackend.Model.Dto.OrganizationDto;
 using PubQuizBackend.Model.Dto.QuizDto;
+using PubQuizBackend.Model.Other;
 using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Service.Interface;
+using PubQuizBackend.Util;
 
 namespace PubQuizBackend.Service.Implementation
 {
@@ -13,13 +14,15 @@ namespace PubQuizBackend.Service.Implementation
     {
         private readonly IOrganizationRepository _organizerRepository;
         private readonly IUserRepository _userRepository;
-        private readonly IQuizRepository _quizRepository;
+        private readonly IQuizEditionRepository _editionRepository;
+        private readonly MediaServerClient _mediaServerClient;
 
-        public OrganizationService(IOrganizationRepository organizerRepository, IUserRepository userRepository, IQuizRepository quizRepository)
+        public OrganizationService(IOrganizationRepository organizerRepository, IUserRepository userRepository, IQuizEditionRepository editionRepository, MediaServerClient mediaServerClient)
         {
             _organizerRepository = organizerRepository;
             _userRepository = userRepository;
-            _quizRepository = quizRepository;
+            _editionRepository = editionRepository;
+            _mediaServerClient = mediaServerClient;
         }
 
         public async Task<OrganizationBriefDto> Add(NewOrganizationDto newOraganizer)
@@ -55,9 +58,18 @@ namespace PubQuizBackend.Service.Implementation
             if (hostInQuiz)
                 throw new BadRequestException($"Host {newHostDto.HostId} is already assigned to the quiz!");
 
-            return await FillHostInfo(
-                await _organizerRepository.AddHost(newHostDto.OrganizerId, newHostDto.HostId, newHostDto.QuizId, newHostDto.HostPermissions)
-                );
+            var host = await _organizerRepository.AddHost(newHostDto.OrganizerId, newHostDto.HostId, newHostDto.QuizId, newHostDto.HostPermissions);
+            var editions = await _editionRepository.GetByQuizId(newHostDto.QuizId);
+
+            await _mediaServerClient.AddUserPermissionAsync(
+                new UserPermissionDto
+                {
+                    UserId = host.UserBrief.Id,
+                    EditionIds = editions.Select(x => x.Id).ToList()
+                }
+            );
+
+            return await FillHostInfo(host);
         }
 
         public async Task Delete(int id)
@@ -70,11 +82,36 @@ namespace PubQuizBackend.Service.Implementation
         public async Task DeleteHost(int organizerId, int hostId)
         {
             await _organizerRepository.DeleteHost(organizerId, hostId);
+
+            var organization = await _organizerRepository.GetById(organizerId);
+
+            foreach (var quiz in organization.Quizzes)
+            {
+                var editions = await _editionRepository.GetByQuizId(quiz.Id);
+
+                await _mediaServerClient.RemoveUserPermissionAsync(
+                    new UserPermissionDto
+                    {
+                        UserId = hostId,
+                        EditionIds = editions.Select(x => x.Id).ToList()
+                    }
+                );
+            }
         }
 
         public async Task RemoveHostFromQuiz(int organizerId, int hostId, int quizId)
         {
             await _organizerRepository.RemoveHostFromQuiz(organizerId, hostId, quizId);
+
+            var editions = await _editionRepository.GetByQuizId(quizId);
+
+            await _mediaServerClient.RemoveUserPermissionAsync(
+                new UserPermissionDto
+                {
+                    UserId = hostId,
+                    EditionIds = editions.Select(x => x.Id).ToList()
+                }
+            );
         }
 
         public async Task<OrganizationBriefDto> GetById(int id)
@@ -88,10 +125,10 @@ namespace PubQuizBackend.Service.Implementation
             return organizers.Select(x => new OrganizationBriefDto(x));
         }
 
-        public async Task<HostDto> GetHost(int organizerId, int hostId, int quizId)
+        public async Task<HostDto> GetHost(int hostId, int quizId)
         {
             return await FillHostInfo(
-                await _organizerRepository.GetHostDto(organizerId, hostId, quizId)
+                await _organizerRepository.GetHostDto(hostId, quizId)
             );
         }
 
