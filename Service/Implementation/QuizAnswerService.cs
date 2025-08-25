@@ -26,6 +26,18 @@ namespace PubQuizBackend.Service.Implementation
             return new (teamAnswers);
         }
 
+        public async Task<QuizRoundResultDetailedDto> GradeExistingTeamAnswers(QuizRoundResultDetailedDto roundDto, int hostId)
+        {
+            await _repository.AuthorizeHostByRoundId(hostId, roundDto.RoundId);
+
+            if (ExistingHasAnyEmptyList(roundDto))
+                throw new BadRequestException("Not all parts of the round are entered");
+
+            var teamAnswers = await _repository.GradeExistingTeamRoundAnswers(roundDto);
+
+            return new(teamAnswers);
+        }
+
         public async Task<QuizAnswerDetailedDto> UpdateAnswer(QuizAnswerDetailedDto answerDto, int hostId)
         {
             return new (await _repository.UpdateAnswer(answerDto, hostId));
@@ -50,6 +62,20 @@ namespace PubQuizBackend.Service.Implementation
             return false;
         }
 
+        public static bool ExistingHasAnyEmptyList(QuizRoundResultDetailedDto roundDto)
+        {
+            if (roundDto.QuizSegmentResults == null || !roundDto.QuizSegmentResults.Any())
+                return true;
+
+            foreach (var segment in roundDto.QuizSegmentResults)
+            {
+                if (segment.QuizAnswers == null || !segment.QuizAnswers.Any())
+                    return true;
+            }
+
+            return false;
+        }
+
         public async Task<QuizRoundResultMinimalDto> AddTeamRoundPoints(NewQuizRoundResultDto roundResultDto, int hostId)
         {
             return new (await _repository.AddTeamRoundPoints(roundResultDto, hostId));
@@ -57,7 +83,7 @@ namespace PubQuizBackend.Service.Implementation
 
         public async Task<QuizRoundResultDetailedDto> AddTeamRoundPointsDetailed(NewQuizRoundResultDto roundResultDto, int hostId)
         {
-            return new (await _repository.AddTeamRoundPoints(roundResultDto, hostId));
+            return new (await _repository.AddTeamRoundPointsDetailed(roundResultDto, hostId));
         }
 
         public async Task<QuizRoundResultMinimalDto> UpdateTeamRoundPoints(NewQuizRoundResultDto roundResultDto, int hostId)

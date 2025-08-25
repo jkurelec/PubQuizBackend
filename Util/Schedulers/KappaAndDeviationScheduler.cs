@@ -2,11 +2,11 @@
 
 namespace PubQuizBackend.Util.Schedulers
 {
-    public class KappaScheduler : BackgroundService
+    public class KappaAndDeviationScheduler : BackgroundService
     {
         private readonly IServiceProvider _services;
 
-        public KappaScheduler(IServiceProvider services)
+        public KappaAndDeviationScheduler(IServiceProvider services)
         {
             _services = services;
         }
@@ -34,6 +34,8 @@ namespace PubQuizBackend.Util.Schedulers
                 try
                 {
                     await service.CalculateKappa(stoppingToken);
+                    await service.GetTeamKappas(stoppingToken);
+                    await service.GetDeviations(stoppingToken);
                 }
                 catch (Exception)
                 {

@@ -18,5 +18,16 @@ namespace PubQuizBackend.Model.Dto.QuizAnswerDto
 
         public int Id { get; set; }
         public int SegmentResultId { get; set; }
+
+        public new QuizAnswer ToObject()
+        {
+            return new()
+            {
+                Answer = Answer,
+                Points = Points,
+                QuestionId = QuestionId,
+                Result = Result,
+            };
+        }
     }
 }

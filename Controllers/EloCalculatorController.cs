@@ -30,5 +30,11 @@ namespace PubQuizBackend.Controllers
         {
             return Ok(await _service.IsEditionRated(editionId));
         }
+
+        [HttpGet("probability/{editionId}")]
+        public async Task<IActionResult> GetTeamProbability(int editionId)
+        {
+            return Ok(await _service.GetProbability(editionId));
+        }
     }
 }

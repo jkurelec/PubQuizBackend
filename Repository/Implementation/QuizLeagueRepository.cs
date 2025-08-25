@@ -10,8 +10,6 @@ using System.Text.RegularExpressions;
 
 namespace PubQuizBackend.Repository.Implementation
 {
-
-    // PROVJERA USERA SE RADI TU KAKO SE NEBI 2 PUTA DOHVACALO IZ BAZE
     public class QuizLeagueRepository : IQuizLeagueRepository
     {
         private readonly PubQuizContext _context;
@@ -161,6 +159,61 @@ namespace PubQuizBackend.Repository.Implementation
             await _context.SaveChangesAsync();
 
             return await GetByIdDetailed(leagueDto.Id);
+        }
+
+        public async Task AddLeagueRound(int leagueId, IEnumerable<(int, int)> entries)
+        {
+            var league = await _context.QuizLeagues
+                .Include(x => x.QuizLeagueRounds)
+                    .ThenInclude(r => r.QuizLeagueEntries)
+                .FirstOrDefaultAsync(x => x.Id == leagueId)
+                ?? throw new NotFoundException("League not found!");
+
+            var lastRound = league.QuizLeagueRounds.MaxBy(x => x.Round) ?? null;
+
+            var pointsList = LeaguePoints.GetLeaguePointsList(league.Points);
+
+            var newRound = new QuizLeagueRound
+                {
+                    QuizLeagueId = league.Id,
+                    Round = lastRound?.Round + 1 ?? 1,
+                    QuizLeagueEntries = new List<QuizLeagueEntry>()
+                };
+
+            if (lastRound != null)
+                foreach (var entry in lastRound.QuizLeagueEntries)
+                {
+                    newRound.QuizLeagueEntries.Add(
+                        new()
+                        {
+                            TeamId = entry.TeamId,
+                            Points = entry.Points
+                        }
+                    );
+                }
+
+            foreach (var entry in entries)
+            {
+                var existing = newRound.QuizLeagueEntries
+                    .FirstOrDefault(e => e.TeamId == entry.Item1);
+
+                if (existing != null)
+                {
+                    existing.Points += pointsList.FirstOrDefault(x => x.Position == entry.Item2)?.Points ?? 0d;
+                }
+                else
+                {
+                    newRound.QuizLeagueEntries.Add(
+                        new()
+                        {
+                            TeamId = entry.Item1,
+                            Points = pointsList.FirstOrDefault(x => x.Position == entry.Item2)?.Points ?? 0d
+                        }
+                    );
+                }
+            }
+
+            await _context.QuizLeagueRounds.AddAsync(newRound);
         }
     }
 }

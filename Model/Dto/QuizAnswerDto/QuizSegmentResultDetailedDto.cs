@@ -18,5 +18,15 @@ namespace PubQuizBackend.Model.Dto.QuizAnswerDto
         public int Id { get; set; }
         public int RoundResultId { get; set; }
         public new IEnumerable<QuizAnswerDetailedDto> QuizAnswers { get; set; } = new List<QuizAnswerDetailedDto>();
+
+        public new QuizSegmentResult ToObject()
+        {
+            return new()
+            {
+                SegmentId = SegmentId,
+                BonusPoints = BonusPoints,
+                QuizAnswers = QuizAnswers.Select(x => x.ToObject()).ToList()
+            };
+        }
     }
 }

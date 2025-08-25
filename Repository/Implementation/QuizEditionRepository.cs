@@ -558,7 +558,7 @@ namespace PubQuizBackend.Repository.Implementation
         {
             if (!update)
             {
-                if (editionDto.RegistrationStart < DateTime.UtcNow)
+                if (editionDto.RegistrationEnd < DateTime.UtcNow)
                     throw new BadRequestException("You should let users apply!");
 
                 if (editionDto.Time < DateTime.UtcNow)

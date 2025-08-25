@@ -23,5 +23,7 @@ public partial class QuizEditionResult
 
     public virtual Team Team { get; set; } = null!;
 
+    public virtual ICollection<TeamDeviation> TeamDeviations { get; set; } = new List<TeamDeviation>();
+
     public virtual ICollection<User> Users { get; set; } = new List<User>();
 }

@@ -69,7 +69,5 @@ public partial class QuizEdition
 
     public virtual ICollection<QuizEditionResult> QuizEditionResults { get; set; } = new List<QuizEditionResult>();
 
-    public virtual ICollection<QuizRatingHistory> QuizRatingHistories { get; set; } = new List<QuizRatingHistory>();
-
     public virtual ICollection<QuizRound> QuizRounds { get; set; } = new List<QuizRound>();
 }

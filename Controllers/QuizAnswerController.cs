@@ -49,10 +49,16 @@ namespace PubQuizBackend.Controllers
             return Ok(await _quizAnswerService.BreakTie(promotedId, editionId, User.GetUserId()));
         }
 
-        [HttpPost]
+        [HttpPost("grade")]
         public async Task<IActionResult> GradeTeamAnswers(NewQuizRoundResultDto roundDto)
         {
             return Ok(await _quizAnswerService.GradeTeamAnswers(roundDto, User.GetUserId()));
+        }
+
+        [HttpPost("grade/existing")]
+        public async Task<IActionResult> GradeExistingTeamAnswers(QuizRoundResultDetailedDto roundDto)
+        {
+            return Ok(await _quizAnswerService.GradeExistingTeamAnswers(roundDto, User.GetUserId()));
         }
 
         [HttpPost("round/points")]

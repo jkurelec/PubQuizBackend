@@ -27,6 +27,8 @@ public partial class Quiz
 
     public virtual ICollection<QuizLeague> QuizLeagues { get; set; } = new List<QuizLeague>();
 
+    public virtual ICollection<QuizRatingHistory> QuizRatingHistories { get; set; } = new List<QuizRatingHistory>();
+
     public virtual ICollection<Team> Teams { get; set; } = new List<Team>();
 
     public virtual ICollection<Location> Locations { get; set; } = new List<Location>();

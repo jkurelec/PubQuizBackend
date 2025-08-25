@@ -7,7 +7,7 @@ namespace PubQuizBackend.Model.Dto.QuizAnswerDto
         public int RoundId { get; set; }
         public int EditionResultId { get; set; }
         public decimal Points { get; set; }
-        public virtual IEnumerable<NewQuizSegmentResultDto> QuizSegmentResults { get; set; } = new List<NewQuizSegmentResultDto>();
+        public IEnumerable<NewQuizSegmentResultDto> QuizSegmentResults { get; set; } = new List<NewQuizSegmentResultDto>();
 
         public QuizRoundResult ToObject()
         {

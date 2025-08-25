@@ -13,6 +13,10 @@ namespace PubQuizBackend.Repository.Interface
         Task<int> GetNumberOfParticipations(int id, int entity);
         Task<IEnumerable<int>> GetRatingsFromApplication(int applicationId);
         Task<Dictionary<int, Dictionary<int, List<QuestionResult>>>> GetAnswersForKappa();
+        Task<Dictionary<int, Dictionary<int, float>>> GetTeamKappas();
+        Task<List<double>> GetDeviations();
+        Task AddTeamKappa(TeamKappa teamKappa);
+        Task AddTeamDeviation(TeamDeviation teamDeviation);
         Task<bool> IsEditionRated(int editionId);
     }
 }

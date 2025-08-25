@@ -12,5 +12,6 @@ namespace PubQuizBackend.Repository.Interface
         Task<IEnumerable<QuizLeague>> GetByQuizId(int id);
         Task<QuizLeague> Update(NewQuizLeagueDto leagueDto, int userId);
         Task<QuizLeague> FinishLeague(int leagueId, int userId);
+        Task AddLeagueRound(int leagueId, IEnumerable<(int, int)> entries);
     }
 }

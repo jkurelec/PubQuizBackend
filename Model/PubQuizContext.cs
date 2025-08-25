@@ -70,7 +70,11 @@ public partial class PubQuizContext : DbContext
 
     public virtual DbSet<TeamApplication> TeamApplications { get; set; }
 
+    public virtual DbSet<TeamDeviation> TeamDeviations { get; set; }
+
     public virtual DbSet<TeamInvitation> TeamInvitations { get; set; }
+
+    public virtual DbSet<TeamKappa> TeamKappas { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
 
@@ -569,7 +573,6 @@ public partial class PubQuizContext : DbContext
 
             entity.HasOne(d => d.Quiz).WithMany(p => p.QuizLeagues)
                 .HasForeignKey(d => d.QuizId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("quiz_league_quiz_id_fkey");
         });
 
@@ -667,6 +670,7 @@ public partial class PubQuizContext : DbContext
 
             entity.HasOne(d => d.Quiz).WithMany(p => p.QuizRatingHistories)
                 .HasForeignKey(d => d.QuizId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("quiz_rating_history_quiz_id_fkey");
         });
 
@@ -707,12 +711,10 @@ public partial class PubQuizContext : DbContext
 
             entity.HasOne(d => d.EditionResult).WithMany(p => p.QuizRoundResults)
                 .HasForeignKey(d => d.EditionResultId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("quiz_round_result_edition_result_id_fkey");
 
             entity.HasOne(d => d.Round).WithMany(p => p.QuizRoundResults)
                 .HasForeignKey(d => d.RoundId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("quiz_round_result_round_id_fkey");
         });
 
@@ -752,7 +754,6 @@ public partial class PubQuizContext : DbContext
 
             entity.HasOne(d => d.RoundResult).WithMany(p => p.QuizSegmentResults)
                 .HasForeignKey(d => d.RoundResultId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("quiz_segment_results_round_result_id_fkey");
 
             entity.HasOne(d => d.Segment).WithMany(p => p.QuizSegmentResults)
@@ -841,6 +842,23 @@ public partial class PubQuizContext : DbContext
                 .HasConstraintName("fk_team_application_user");
         });
 
+        modelBuilder.Entity<TeamDeviation>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("team_deviation_pkey");
+
+            entity.ToTable("team_deviation");
+
+            entity.Property(e => e.Id)
+                .UseIdentityAlwaysColumn()
+                .HasColumnName("id");
+            entity.Property(e => e.Deviation).HasColumnName("deviation");
+            entity.Property(e => e.EditionResultId).HasColumnName("edition_result_id");
+
+            entity.HasOne(d => d.EditionResult).WithMany(p => p.TeamDeviations)
+                .HasForeignKey(d => d.EditionResultId)
+                .HasConstraintName("fk_team_stats_edition_result");
+        });
+
         modelBuilder.Entity<TeamInvitation>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("team_invitation_pkey");
@@ -866,6 +884,23 @@ public partial class PubQuizContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.TeamInvitations)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("fk_team_invitation_user");
+        });
+
+        modelBuilder.Entity<TeamKappa>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("team_kappa_pkey");
+
+            entity.ToTable("team_kappa");
+
+            entity.Property(e => e.Id)
+                .UseIdentityAlwaysColumn()
+                .HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(CURRENT_TIMESTAMP AT TIME ZONE 'UTC'::text)")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Kappa).HasColumnName("kappa");
+            entity.Property(e => e.LeaderElo).HasColumnName("leader_elo");
+            entity.Property(e => e.TeammateElo).HasColumnName("teammate_elo");
         });
 
         modelBuilder.Entity<User>(entity =>

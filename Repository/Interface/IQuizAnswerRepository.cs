@@ -9,10 +9,12 @@ namespace PubQuizBackend.Repository.Interface
         Task AuthorizeHostByEditionResultId(int hostId, int roundId);
         Task AuthorizeHostByEditionId(int hostId, int roundId);
         Task<QuizRoundResult> GradeTeamRoundAnswers(NewQuizRoundResultDto roundDto);
+        Task<QuizRoundResult> GradeExistingTeamRoundAnswers(QuizRoundResultDetailedDto roundDto);
         Task<int> ValidateEditionResultId(int editionId, int teamId);
         Task<QuizAnswer> UpdateAnswer(QuizAnswerDetailedDto answerDto, int hostId);
         Task<QuizSegmentResult> UpdateSegment(QuizSegmentResultDetailedDto segmentResultDto, int hostId);
         Task<QuizRoundResult> AddTeamRoundPoints(NewQuizRoundResultDto roundResultDto, int hostId);
+        Task<QuizRoundResult> AddTeamRoundPointsDetailed(NewQuizRoundResultDto roundResultDto, int hostId);
         Task<QuizRoundResult> UpdateTeamRoundPoints(NewQuizRoundResultDto roundResultDto, int hostId);
         Task<QuizRoundResult> UpdateTeamRoundPointsDetailed(QuizRoundResultDetailedDto roundResultDto, int hostId);
         Task<IEnumerable<QuizRoundResult>> GetTeamAnswers(int editionResultId, int hostId);

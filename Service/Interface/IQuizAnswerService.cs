@@ -5,6 +5,7 @@ namespace PubQuizBackend.Service.Interface
     public interface IQuizAnswerService
     {
         Task<QuizRoundResultDetailedDto> GradeTeamAnswers(NewQuizRoundResultDto roundDto, int hostId);
+        Task<QuizRoundResultDetailedDto> GradeExistingTeamAnswers(QuizRoundResultDetailedDto roundDto, int hostId);
         Task<QuizAnswerDetailedDto> UpdateAnswer(QuizAnswerDetailedDto answerDto, int hostId);
         Task<QuizSegmentResultDetailedDto> UpdateSegment(QuizSegmentResultDetailedDto segmentResultDto, int hostId);
         Task<QuizRoundResultMinimalDto> AddTeamRoundPoints(NewQuizRoundResultDto roundResultDto, int hostId);

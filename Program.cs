@@ -26,7 +26,11 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddMemoryCache();
 
 builder.Services.AddDbContext<PubQuizContext>(options =>
-    options.UseNpgsql(builder.Configuration["ConnectionStrings:DBConnection"]));
+    options.UseNpgsql(builder.Configuration["ConnectionStrings:DBConnection"])
+    .LogTo(Console.WriteLine, LogLevel.Warning)
+);
+
+builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
 
 builder.Services.AddHttpClient<MediaServerClient>();
 
@@ -147,6 +151,8 @@ using (var scope = app.Services.CreateScope())
     var eloCalculatorService = scope.ServiceProvider.GetRequiredService<IEloCalculatorService>();
 
     await eloCalculatorService.CalculateKappa();
+    await eloCalculatorService.GetTeamKappas();
+    await eloCalculatorService.GetDeviations();
 }
 
 app.UseGlobalExceptionHandler();

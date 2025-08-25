@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using PubQuizBackend.Enums;
 using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model;
@@ -18,10 +17,15 @@ namespace PubQuizBackend.Repository.Implementation
             _context = context;
         }
 
+        public async Task AddTeamKappa(TeamKappa teamKappa)
+        {
+            await _context.TeamKappas.AddAsync(teamKappa);
+        }
+
         public async Task AuthorizeHostByEditionId(int editionId, int hostId)
         {
             var hostOfEdition = await _context.QuizEditions
-                .AnyAsync(x => x.Id == editionId && x.HostId == hostId);
+                .AnyAsync(x => x.Id == editionId && x.Quiz.HostOrganizationQuizzes.Any(h => h.HostId == hostId));
 
             if (!hostOfEdition)
                 throw new ForbiddenException();
@@ -57,6 +61,35 @@ namespace PubQuizBackend.Repository.Implementation
             return dictionary;
         }
 
+        public async Task<Dictionary<int, Dictionary<int, float>>> GetTeamKappas()
+        {
+            var grouped = await _context.TeamKappas
+                .Where(x => x.CreatedAt >= DateTime.UtcNow.AddYears(-1))
+                .GroupBy(tk => new { tk.LeaderElo, tk.TeammateElo })
+                .Select(g => new
+                {
+                    g.Key.LeaderElo,
+                    g.Key.TeammateElo,
+                    AvgKappa = g.Average(x => x.Kappa)
+                })
+                .ToListAsync();
+
+            var result = new Dictionary<int, Dictionary<int, float>>();
+
+            foreach (var item in grouped)
+            {
+                if (!result.TryGetValue(item.LeaderElo, out var teammateDict))
+                {
+                    teammateDict = new Dictionary<int, float>();
+                    result[item.LeaderElo] = teammateDict;
+                }
+
+                teammateDict[item.TeammateElo] = item.AvgKappa;
+            }
+
+            return result;
+        }
+
         public PubQuizContext GetContext()
         {
             return _context;
@@ -66,16 +99,19 @@ namespace PubQuizBackend.Repository.Implementation
         {
             return await _context.QuizEditions
                 .Include(x => x.QuizRounds)
+                    .ThenInclude(r => r.QuizSegments)
+                        .ThenInclude(s => s.QuizQuestions)
                 .Include(x => x.QuizEditionResults)
                     .ThenInclude(e => e.Team)
-                        .ThenInclude(t => t.UserTeams)
-                            .ThenInclude(u => u.User) // ovo je bilo krivo treba ovo usere dolje pa prvojeri jednom jel ima jos negdje
+                        //.ThenInclude(t => t.UserTeams)
+                        //    .ThenInclude(u => u.User) // ovo je bilo krivo treba ovo usere dolje pa prvojeri jednom jel ima jos negdje
                 .Include(x => x.QuizEditionResults)
                     .ThenInclude(x => x.Users)
                 .Include(x => x.QuizEditionResults)
                     .ThenInclude(e => e.QuizRoundResults)
                         .ThenInclude(r => r.QuizSegmentResults)
                             .ThenInclude(s => s.QuizAnswers)
+                                .ThenInclude(a => a.Question)
                 .Include(x => x.Quiz)
                 .FirstOrDefaultAsync(x => x.Id == editionId)
                 ?? throw new NotFoundException($"Edition with id => {editionId} not found!");
@@ -117,6 +153,18 @@ namespace PubQuizBackend.Repository.Implementation
                 ?? throw new NotFoundException("Edition not found!");
 
             return edition.Rated;
+        }
+
+        public async Task AddTeamDeviation(TeamDeviation teamDeviation)
+        {
+            await _context.TeamDeviations.AddAsync(teamDeviation);
+        }
+
+        public Task<List<double>> GetDeviations()
+        {
+            return _context.TeamDeviations
+                .Select(x => x.Deviation)
+                .ToListAsync();
         }
 
         public async Task SaveChanges()

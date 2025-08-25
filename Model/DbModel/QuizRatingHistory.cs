@@ -14,5 +14,5 @@ public partial class QuizRatingHistory : IRatingHistory
 
     public int Rating { get; set; }
 
-    public virtual QuizEdition Quiz { get; set; } = null!;
+    public virtual Quiz Quiz { get; set; } = null!;
 }
