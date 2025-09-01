@@ -1,5 +1,4 @@
-﻿using PubQuizBackend.Model.DbModel;
-using PubQuizBackend.Model.Dto.QuizQuestionsDto.Basic;
+﻿using PubQuizBackend.Model.Dto.QuizQuestionsDto.Basic;
 using PubQuizBackend.Model.Dto.QuizQuestionsDto.Specific;
 
 namespace PubQuizBackend.Service.Interface
@@ -22,5 +21,6 @@ namespace PubQuizBackend.Service.Interface
         Task<QuizSegmentDto> UpdateQuestionOrder(UpdateOrderDto orderDto, int userId);
         Task<QuizRoundDto> UpdateSegmentOrder(UpdateOrderDto orderDto, int userId);
         Task<List<QuizRoundDto>> UpdateRoundOrder(UpdateOrderDto orderDto, int userId);
+        Task<bool> DoesEditionHaveQuestions(int editionId, int userId);
     }
 }

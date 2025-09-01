@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.ApplicationDto;
 using PubQuizBackend.Service.Interface;
 using PubQuizBackend.Util.Extension;

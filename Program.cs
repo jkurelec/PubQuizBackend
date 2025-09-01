@@ -148,6 +148,10 @@ using (var scope = app.Services.CreateScope())
 
     QuizCategoryProvider.Initialize(categories);
 
+    var questionMediaPermissionService = scope.ServiceProvider.GetRequiredService<IQuestionMediaPermissionService>();
+
+    _ = questionMediaPermissionService.SetPermissions(scope.ServiceProvider);
+
     var eloCalculatorService = scope.ServiceProvider.GetRequiredService<IEloCalculatorService>();
 
     await eloCalculatorService.CalculateKappa();

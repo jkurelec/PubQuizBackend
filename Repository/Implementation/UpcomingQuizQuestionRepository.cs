@@ -461,5 +461,16 @@ namespace PubQuizBackend.Repository.Implementation
             if (count < number || number < 1)
                 throw new BadRequestException("Invalid number");
         }
+
+        public async Task<QuizEdition> GetEditionWithQuestions(int editionId)
+        {
+            return await _context.QuizEditions
+                .Where(x => x.Id == editionId)
+                .Include(x => x.QuizRounds)
+                    .ThenInclude(r => r.QuizSegments)
+                        .ThenInclude(s => s.QuizQuestions)
+                .FirstOrDefaultAsync()
+                ?? throw new NotFoundException($"Edition with id => {editionId} not found!");
+        }
     }
 }

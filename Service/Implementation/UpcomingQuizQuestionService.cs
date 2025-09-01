@@ -148,6 +148,26 @@ namespace PubQuizBackend.Service.Implementation
             await _repository.DeleteSegment(segmentId);
         }
 
+        public async Task<bool> DoesEditionHaveQuestions(int editionId, int userId)
+        {
+            var edition = await _repository.GetEditionWithQuestions(editionId);
+            var host = await _repository.GetHost(edition.QuizId, userId);
+
+            UnauthorizedHostOrEditionHappened(host, edition);
+
+            foreach (var round in edition.QuizRounds)
+            {
+                if (round.QuizSegments.Count == 0)
+                    return false;
+
+                foreach (var segment in round.QuizSegments)
+                    if (segment.QuizQuestions.Count == 0)
+                        return false;
+            }
+
+            return true;
+        }
+
         public async Task<QuizQuestionDto> EditQuestion(QuizQuestionDto questionDto, int userId, IFormFile? file)
         {
             var edition = await _repository.EditionFromSegment(questionDto.SegmentId);

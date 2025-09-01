@@ -13,9 +13,14 @@ namespace PubQuizBackend.Service.Implementation
             _repository = repository;
         }
 
-        public async Task<QuestionMediaPermissions> GetPermissions()
+        public QuestionMediaPermissions GetPermissions()
         {
-            return await _repository.GetPermissions();
+            return _repository.GetPermissions();
+        }
+
+        public async Task SetPermissions(IServiceProvider serviceProvider)
+        {
+            await _repository.SetPermissions(serviceProvider);
         }
     }
 }

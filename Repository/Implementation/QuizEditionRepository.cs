@@ -130,17 +130,25 @@ namespace PubQuizBackend.Repository.Implementation
 
                     if (teamResults != null)
                     {
+                        if (edition.Time.Date < DateTime.UtcNow.Date)
+                            edition.QuizRounds = await GetRoundsWithAnswers(id);
+                        //else
+                        //    teamResults.QuizRoundResults
+                        //        .SelectMany(r => r.QuizSegmentResults)
+                        //        .SelectMany(s => s.QuizAnswers)
+                        //        .ToList()
+                        //        .ForEach(a => a.Answer = "");
+
                         var existing = edition.QuizEditionResults.FirstOrDefault(r => r.Id == teamResults.Id);
 
                         if (existing != null)
                             edition.QuizEditionResults.Remove(existing);
 
                         edition.QuizEditionResults.Add(teamResults);
-                        edition.QuizRounds = await GetRoundsWithAnswers(id);
                     }
                 }
 
-                if ((Visibility)edition.Visibility == Visibility.VISIBLE)
+                if ((Visibility)edition.Visibility == Visibility.VISIBLE && edition.Time.Date < DateTime.UtcNow.Date)
                     edition.QuizRounds = await GetRoundsWithAnswers(id);
             }
 
@@ -671,6 +679,14 @@ namespace PubQuizBackend.Repository.Implementation
             edition.DetailedQuestions = detailed;
 
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<IEnumerable<QuizEdition>> GetByTeamId(int teamId)
+        {
+            return await _context.QuizEditions
+                .Include(x => x.Category)
+                .Where(x => x.QuizEditionResults.Any(r => r.TeamId == teamId))
+                .ToListAsync();
         }
     }
 }

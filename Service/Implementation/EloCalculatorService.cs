@@ -5,6 +5,7 @@ using PubQuizBackend.Model.Dto.TeamDto;
 using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Service.Interface;
 using PubQuizBackend.Util;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace PubQuizBackend.Service.Implementation
 {
@@ -209,6 +210,14 @@ namespace PubQuizBackend.Service.Implementation
                 var actualScore = (teamParams.Value.Wins + 0.5f * teamParams.Value.Draws) / (float)edition.TotalPoints;
                 var deviation = actualScore - estimatedWinPropability;
 
+                await _repository.AddTeamDeviation(
+                        new()
+                        {
+                            Deviation = deviation,
+                            EditionResultId = teamParams.Value.EditionResultId,
+                        }
+                    );
+
                 //ako deviation veci od 0 i outlier onda je vjerojatno preveliki kappa, ako manji onda je vjerojatno premali kappa
                 if (TeamDeviationProvider.IsOutlier(deviation) || true)
                 {
@@ -221,13 +230,13 @@ namespace PubQuizBackend.Service.Implementation
                         var captain = teamPlayers.First();
 
                         //dodajem devijaciju samo pod premisom da je rating tocan
-                        await _repository.AddTeamDeviation(
-                            new()
-                            {
-                                Deviation = deviation,
-                                EditionResultId = teamParams.Value.EditionResultId,
-                            }
-                        );
+                        //await _repository.AddTeamDeviation(
+                        //    new()
+                        //    {
+                        //        Deviation = deviation,
+                        //        EditionResultId = teamParams.Value.EditionResultId,
+                        //    }
+                        //);
 
                         var teamKappas = TeamKappaSA.CalculateTeamKappas(
                             actualScore,
@@ -494,6 +503,14 @@ namespace PubQuizBackend.Service.Implementation
 
                 var deviation = actualScore - estimatedWinPropability;
 
+                await _repository.AddTeamDeviation(
+                    new()
+                    {
+                        Deviation = deviation,
+                        EditionResultId = editionResult.Id,
+                    }
+                );
+
                 //ako deviation veci od 0 i outlier onda je vjerojatno preveliki kappa, ako manji onda je vjerojatno premali kappa
                 if (TeamDeviationProvider.IsOutlier(deviation) || true)
                 {
@@ -506,13 +523,13 @@ namespace PubQuizBackend.Service.Implementation
                         var captain = teamPlayers.First();
 
                         //dodajem devijaciju samo pod premisom da je rating tocan
-                        await _repository.AddTeamDeviation(
-                            new()
-                            {
-                                Deviation = deviation,
-                                EditionResultId = editionResult.Id,
-                            }
-                        );
+                        //await _repository.AddTeamDeviation(
+                        //    new()
+                        //    {
+                        //        Deviation = deviation,
+                        //        EditionResultId = editionResult.Id,
+                        //    }
+                        //);
 
                         var teamKappas = TeamKappaSA.CalculateTeamKappas(
                             actualScore,
@@ -654,11 +671,22 @@ namespace PubQuizBackend.Service.Implementation
                     var draws = answerRating.Value.Count(x => x == QuestionResult.Parital);
                     var losses = answerRating.Value.Count(x => x == QuestionResult.Incorrect);
                     var total = wins + draws + losses;
+
+                    int divisor = 1;
+                    while (draws / (divisor * 10) >= 10)
+                    {
+                        divisor *= 10;
+                    }
+
+                    wins /= divisor;
+                    draws /= divisor;
+                    losses /= divisor;
+
                     var sqrt = MathF.Sqrt(wins * losses);
                     kappas[questionRating.Key].Add(
                         answerRating.Key,
-                        total > 1000
-                            ? draws / sqrt == 0 ? 1 : sqrt
+                        total > 10000
+                            ? draws / (sqrt == 0 ? 1 : sqrt)
                             : 0.05f
                     );
                 }
@@ -894,13 +922,16 @@ namespace PubQuizBackend.Service.Implementation
                 drawProbability /= totalProbability;
 
                 var initailPropability = winProbability + (0.5f * drawProbability);
-                Console.WriteLine($"team {editionResult.Team.Name} initial probability {initailPropability}");
+                //Console.WriteLine($"Kappa :{kappa}");
+                //Console.WriteLine($"team {editionResult.Team.Name} initial probability {initailPropability}");
+                //Console.WriteLine($"Win probability: {winProbability}, Draw probability: {drawProbability}, Lose probability: {loseProbability}, Sum probability: {totalProbability}");
                 var teamKFactor = await GetKFactor(teamRating, editionResult.Team.Id, 1);
                 var probabilityIncrease = 0f;
 
                 for (int i = 1; i < playerRatings.Count; i++)
                 {
                     probabilityIncrease += GetProbabilityForTeam(playerRatings[i], teamRating, scalingFactor);
+                    //Console.WriteLine($"Probability Increase: {probabilityIncrease} after player with rating: {playerRatings[i]}");
                 }
 
                 totalProbability += probabilityIncrease;
@@ -910,7 +941,8 @@ namespace PubQuizBackend.Service.Implementation
                 drawProbability /= totalProbability;
 
                 var newEstimatedProbability = winProbability + (0.5f * drawProbability);
-                Console.WriteLine($"team {editionResult.Team.Name} new estimated probability {newEstimatedProbability}");
+                //Console.WriteLine($"team {editionResult.Team.Name} new estimated probability {newEstimatedProbability}");
+                //Console.WriteLine($"Win probability: {winProbability}, Draw probability: {drawProbability}, Lose probability: {loseProbability}, Sum probability: {totalProbability}");
                 probabilities.Add(editionResult.Team.Name, newEstimatedProbability);
             }
 

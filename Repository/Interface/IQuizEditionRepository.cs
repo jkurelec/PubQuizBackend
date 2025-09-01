@@ -13,6 +13,7 @@ namespace PubQuizBackend.Repository.Interface
         Task<IEnumerable<QuizEdition>> GetUpcomingCompletedPage(int page, int pageSize, EditionFilter editionFilter, bool upcoming = true);
         Task<int> GetTotalCount(EditionTimeFilter filter);
         Task<QuizEdition> GetByIdDetailed(int id, int? userId = null);
+        Task<IEnumerable<QuizEdition>> GetByTeamId(int teamId);
         Task<QuizEdition> Add(NewQuizEditionDto editionDto, int userId);
         Task<QuizEdition> Update(NewQuizEditionDto editionDto, int userId);
         Task Delete(QuizEdition edition);

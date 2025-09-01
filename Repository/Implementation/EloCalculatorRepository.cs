@@ -98,15 +98,14 @@ namespace PubQuizBackend.Repository.Implementation
         public async Task<QuizEdition> GetEdition(int editionId)
         {
             return await _context.QuizEditions
+                .AsSplitQuery()
                 .Include(x => x.QuizRounds)
                     .ThenInclude(r => r.QuizSegments)
                         .ThenInclude(s => s.QuizQuestions)
                 .Include(x => x.QuizEditionResults)
                     .ThenInclude(e => e.Team)
-                        //.ThenInclude(t => t.UserTeams)
-                        //    .ThenInclude(u => u.User) // ovo je bilo krivo treba ovo usere dolje pa prvojeri jednom jel ima jos negdje
                 .Include(x => x.QuizEditionResults)
-                    .ThenInclude(x => x.Users)
+                    .ThenInclude(e => e.Users)
                 .Include(x => x.QuizEditionResults)
                     .ThenInclude(e => e.QuizRoundResults)
                         .ThenInclude(r => r.QuizSegmentResults)

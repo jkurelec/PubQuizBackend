@@ -42,6 +42,12 @@ namespace PubQuizBackend.Controllers
             return Ok(await _service.GetRound(id, User.GetUserId()));
         }
 
+        [HttpGet("has-questions/{editionId}")]
+        public async Task<IActionResult> DoesEditionHaveQuestions(int editionId)
+        {
+            return Ok(await _service.DoesEditionHaveQuestions(editionId, User.GetUserId()));
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteQuestion(int id)
         {

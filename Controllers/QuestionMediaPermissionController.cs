@@ -19,7 +19,7 @@ namespace PubQuizBackend.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetPermissions()
+        public IActionResult GetPermissions()
         {
             if (!Request.Headers.TryGetValue("X-API-KEY", out var extractedApiKey))
             {
@@ -33,7 +33,7 @@ namespace PubQuizBackend.Controllers
                 return Forbid("Invalid API key.");
             }
 
-            return Ok (await _service.GetPermissions());
+            return Ok (_service.GetPermissions());
         }
     }
 }

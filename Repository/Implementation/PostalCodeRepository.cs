@@ -32,20 +32,6 @@ namespace PubQuizBackend.Repository.Implementation
             return postalCode;
         }
 
-  //        {
-  //  "id": null,
-  //  "name": "Caffe bar Gala",
-  //  "address": "Ulica Viktora Cara Emina ",
-  //  "postalCodeId": null,
-  //  "postalCode": "51104",
-  //  "cityId": null,
-  //  "city": "Grad Rijeka",
-  //  "country": "Hrvatska",
-  //  "countryCode": "hr",
-  //  "lat": 45.331433,
-  //  "lon": 14.4328043
-  //}
-
         public Task<bool> DeletePostalCode(PostalCode postalCode)
         {
             throw new NotImplementedException();

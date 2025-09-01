@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PubQuizBackend.Enums;
-using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.QuizEditionDto;
 using PubQuizBackend.Model.Dto.QuizQuestionsDto.Basic;
 using PubQuizBackend.Service.Interface;
@@ -136,6 +135,12 @@ namespace PubQuizBackend.Controllers
 
             await _service.SetDetailedQuestions(editionId, User.GetUserId(), dto.Value.Value);
             return Ok();
+        }
+
+        [HttpGet("team/{teamId}")]
+        public async Task<IActionResult> GetByTeamId(int teamId)
+        {
+            return Ok(await _service.GetByTeamId(teamId));
         }
     }
 }

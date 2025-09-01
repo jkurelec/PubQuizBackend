@@ -4,7 +4,6 @@
     {
         public static async Task<string> SaveProfileImageAsync(IFormFile image, string folderPath, string previousFileName)
         {
-            // Validate image
             if (image == null || image.Length == 0)
                 throw new ArgumentException("Invalid image file.");
 
@@ -25,7 +24,6 @@
             var newFileName = Guid.NewGuid() + extension;
             var newFilePath = Path.Combine(folderPath, newFileName);
 
-            // Save image to disk
             using var stream = new FileStream(newFilePath, FileMode.Create);
             await image.CopyToAsync(stream);
 

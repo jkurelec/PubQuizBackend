@@ -4,6 +4,7 @@ namespace PubQuizBackend.Repository.Interface
 {
     public interface IQuestionMediaPermissionRepository
     {
-        Task<QuestionMediaPermissions> GetPermissions();
+        QuestionMediaPermissions GetPermissions();
+        Task SetPermissions(IServiceProvider serviceProvider);
     }
 }

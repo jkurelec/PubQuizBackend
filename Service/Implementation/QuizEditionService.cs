@@ -168,5 +168,12 @@ namespace PubQuizBackend.Service.Implementation
 
             await _editionRepository.SetDetailedQuestions(editionId, userId, detailed);
         }
+
+        public async Task<IEnumerable<QuizEditionMinimalDto>> GetByTeamId(int teamId)
+        {
+            var editions = await _editionRepository.GetByTeamId(teamId);
+
+            return editions.Select(x => new QuizEditionMinimalDto(x)).ToList();
+        }
     }
 }

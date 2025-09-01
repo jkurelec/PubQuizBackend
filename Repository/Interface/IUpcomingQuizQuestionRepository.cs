@@ -21,6 +21,7 @@ namespace PubQuizBackend.Repository.Interface
         Task<QuizRound> GetRound(int roundId);
         Task<IEnumerable<QuizRound>> GetRounds(int editionId, bool detailed = false);
         Task<QuizEdition> GetEdition(int editionId);
+        Task<QuizEdition> GetEditionWithQuestions(int editionId);
         Task<QuizSegment> UpdateQuestionOrder(UpdateOrderDto orderDto, QuizEdition edition);
         Task<QuizRound> UpdateSegmentOrder(UpdateOrderDto orderDto, QuizEdition edition);
         Task<IEnumerable<QuizRound>> UpdateRoundOrder(UpdateOrderDto orderDto);

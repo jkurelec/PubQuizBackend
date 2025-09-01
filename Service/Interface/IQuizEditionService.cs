@@ -17,6 +17,7 @@ namespace PubQuizBackend.Service.Interface
         Task<IEnumerable<QuizEditionBriefDto>> GetByLocationId(int locationId);
         Task<string> UpdateProfileImage(IFormFile image, int editionId, int hostId);
         Task<bool?> HasDetailedQuestions(int editionId);
+        Task<IEnumerable<QuizEditionMinimalDto>> GetByTeamId(int teamId);
         Task SetDetailedQuestions(int editionId, int userId, bool detailed);
     }
 }

@@ -7,45 +7,53 @@ namespace PubQuizBackend.Repository.Implementation
 {
     public class QuestionMediaPermissionRepository : IQuestionMediaPermissionRepository
     {
-        private readonly PubQuizContext _context;
+        private static QuestionMediaPermissions _permissions = new();
+        private static bool _permissionsSet = false;
 
-        public QuestionMediaPermissionRepository(PubQuizContext context)
+        public QuestionMediaPermissions GetPermissions()
         {
-            _context = context;
+            return _permissionsSet
+                ? _permissions
+                : new QuestionMediaPermissions();
         }
 
-        public async Task<QuestionMediaPermissions> GetPermissions()
+        public async Task SetPermissions(IServiceProvider serviceProvider)
         {
-            var editionData = await _context.QuizEditionResults
-                .Include(er => er.Users)
-                .Include(er => er.Edition)
-                    .ThenInclude(e => e.Quiz)
-                        .ThenInclude(q => q.HostOrganizationQuizzes)
-                .Select(er => new
-                {
-                    er.EditionId,
-                    UserIds = er.Users.Select(u => u.Id).Distinct(),
-                    HostIds = er.Edition.Quiz.HostOrganizationQuizzes.Select(h => h.HostId).Distinct()
-                })
+            using var scope = serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<PubQuizContext>();
+
+            var editionUsers = await context.QuizEditionResults
+                .SelectMany(x => x.Users.Select(u => new { x.EditionId, u.Id }))
                 .ToListAsync();
 
-            var dict = editionData
-                .GroupBy(x => x.EditionId)
-                .ToDictionary(
-                    g => g.Key,
-                    g =>
-                    {
-                        var users = g.SelectMany(x => x.UserIds).Distinct().ToList();
-                        var hosts = g.SelectMany(x => x.HostIds).Distinct();
-                        foreach (var hostId in hosts)
-                        {
-                            if (!users.Contains(hostId))
-                                users.Add(hostId);
-                        }
-                        return users;
-                    });
+            var editionHosts = await context.QuizEditions
+                .Include(x => x.Quiz)
+                .SelectMany(x => x.Quiz.HostOrganizationQuizzes.Select(h => new { x.Id, h.HostId }))
+                .ToListAsync();
 
-            return new QuestionMediaPermissions { Permissions = dict };
+            foreach (var editionUser in editionUsers)
+            {
+                if (!_permissions.Permissions.TryGetValue(editionUser.EditionId, out var set))
+                {
+                    set = new HashSet<int>();
+                    _permissions.Permissions[editionUser.EditionId] = set;
+                }
+
+                set.Add(editionUser.Id);
+            }
+
+            foreach (var editionHost in editionHosts)
+            {
+                if (!_permissions.Permissions.TryGetValue(editionHost.Id, out var set))
+                {
+                    set = new HashSet<int>();
+                    _permissions.Permissions[editionHost.Id] = set;
+                }
+
+                set.Add(editionHost.HostId);
+            }
+
+            _permissionsSet = true;
         }
     }
 }
