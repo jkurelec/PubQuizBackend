@@ -280,6 +280,7 @@ namespace PubQuizBackend.Service.Implementation
                     float kFactor = await GetKFactor(user.Rating, user.Id, 0);
                     float ratio = kFactor / teamKFactor;
 
+                    var oldRating = user.Rating;
                     var ratingUpdate = teamUpdate * ratio;
                     Console.WriteLine($"User {user.Username} (ID: {user.Id}) - Initial Rating: {user.Rating}, K-Factor: {kFactor}, Ratio: {ratio}, Rating Update: {ratingUpdate}");
 
@@ -293,13 +294,17 @@ namespace PubQuizBackend.Service.Implementation
                         new()
                         {
                             UserId = user.Id,
-                            Rating = user.Rating,
-                            Date = DateTime.UtcNow
+                            Date = DateTime.UtcNow,
+                            EditionId = edition.Id,
+                            RatingChange = (int)Math.Round(ratingUpdate),
+                            OldRating = oldRating,
+                            NewRating = user.Rating
                         }
                     );
                 }
             }
 
+            var oldQuizRating = edition.Quiz.Rating;
             var finalEditionRatingUpdate = (int)Math.Round(editionRatingUpdate / ((double)edition.TotalPoints * edition.QuizEditionResults.Count));
             edition.Rating += finalEditionRatingUpdate;
             Console.WriteLine($"Final Edition Rating Update: {finalEditionRatingUpdate}");
@@ -311,8 +316,11 @@ namespace PubQuizBackend.Service.Implementation
                 new()
                 {
                     QuizId = edition.QuizId,
-                    Rating = edition.Quiz.Rating,
-                    Date = DateTime.UtcNow
+                    Date = DateTime.UtcNow,
+                    EditionId = edition.Id,
+                    RatingChange = finalEditionRatingUpdate,
+                    OldRating = oldQuizRating,
+                    NewRating = edition.Quiz.Rating
                 }
             );
 
@@ -571,7 +579,7 @@ namespace PubQuizBackend.Service.Implementation
                     float kFactor = await GetKFactor(user.Rating, user.Id, 0);
                     float ratio = kFactor / teamKFactor;
                     Console.WriteLine($"User {user.Username} (ID: {user.Id}) - Initial Rating: {user.Rating}, K-Factor: {kFactor}, Ratio: {ratio}");
-
+                    var oldRating = user.Rating;
                     var ratingUpdate = teamUpdate * ratio;
 
                     user.Rating += (int)Math.Round(ratingUpdate);
@@ -585,8 +593,11 @@ namespace PubQuizBackend.Service.Implementation
                         new()
                         {
                             UserId = user.Id,
-                            Rating = user.Rating,
-                            Date = DateTime.UtcNow
+                            Date = DateTime.UtcNow,
+                            EditionId = edition.Id,
+                            RatingChange = (int)Math.Round(ratingUpdate),
+                            OldRating = oldRating,
+                            NewRating = user.Rating
                         }
                     );
                 }
@@ -614,7 +625,7 @@ namespace PubQuizBackend.Service.Implementation
                 }
             }
             Console.WriteLine($"Edition Rating Update: {(int)Math.Round(editionRating / (double)totalQuestions) - edition.Rating}");
-
+            var oldQuizRating = edition.Quiz.Rating;
             var finalQuizRatingUpdate = (int)Math.Round(editionRating / (double)totalQuestions) - edition.Rating;/* (int)Math.Round(quizRatingUpdate / (double)totalEntries);*/
             edition.Quiz.Rating += finalQuizRatingUpdate;
             edition.Rating = (int)Math.Round(editionRating / (double)totalQuestions);
@@ -623,8 +634,11 @@ namespace PubQuizBackend.Service.Implementation
                 new()
                 {
                     QuizId = edition.QuizId,
-                    Rating = edition.Quiz.Rating,
-                    Date = DateTime.UtcNow
+                    Date = DateTime.UtcNow,
+                    EditionId = edition.Id,
+                    RatingChange = finalQuizRatingUpdate,
+                    OldRating = oldQuizRating,
+                    NewRating = edition.Quiz.Rating
                 }
             );
 

@@ -1,6 +1,7 @@
 ﻿using PubQuizBackend.Enums;
 using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.QuizEditionDto;
+using PubQuizBackend.Model.Dto.RecommendationDto;
 
 namespace PubQuizBackend.Repository.Interface
 {
@@ -25,6 +26,7 @@ namespace PubQuizBackend.Repository.Interface
         Task<IEnumerable<QuizEdition>> GetByLocationId(int locationId);
         Task<bool?> HasDetailedQuestions(int editionId);
         Task SetDetailedQuestions(int editionId, int userId, bool detailed);
+        Task<QuizEditionRecommendationParamsDto> GetRecommendationInfoById(int id);
         Task Save();
     }
 }

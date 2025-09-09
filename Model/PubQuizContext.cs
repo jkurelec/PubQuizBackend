@@ -22,6 +22,8 @@ public partial class PubQuizContext : DbContext
 
     public virtual DbSet<EditionPrize> EditionPrizes { get; set; }
 
+    public virtual DbSet<EditionRecommendationParameter> EditionRecommendationParameters { get; set; }
+
     public virtual DbSet<HostOrganizationQuiz> HostOrganizationQuizzes { get; set; }
 
     public virtual DbSet<LeaguePrize> LeaguePrizes { get; set; }
@@ -77,6 +79,8 @@ public partial class PubQuizContext : DbContext
     public virtual DbSet<TeamKappa> TeamKappas { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
+
+    public virtual DbSet<UserFeedback> UserFeedbacks { get; set; }
 
     public virtual DbSet<UserRatingHistory> UserRatingHistories { get; set; }
 
@@ -139,6 +143,34 @@ public partial class PubQuizContext : DbContext
             entity.HasOne(d => d.Edition).WithMany(p => p.EditionPrizes)
                 .HasForeignKey(d => d.EditionId)
                 .HasConstraintName("prize_edition_id_fkey");
+        });
+
+        modelBuilder.Entity<EditionRecommendationParameter>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("edition_recommendation_rating_pkey");
+
+            entity.ToTable("edition_recommendation_parameters");
+
+            entity.HasIndex(e => new { e.EditionId, e.UserId }, "uq_user_edition").IsUnique();
+
+            entity.Property(e => e.Id)
+                .UseIdentityAlwaysColumn()
+                .HasColumnName("id");
+            entity.Property(e => e.EditionId).HasColumnName("edition_id");
+            entity.Property(e => e.Ratings)
+                .HasColumnType("jsonb")
+                .HasColumnName("ratings");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.Edition).WithMany(p => p.EditionRecommendationParameters)
+                .HasForeignKey(d => d.EditionId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("edition_recommendation_rating_edition_id_fkey");
+
+            entity.HasOne(d => d.User).WithMany(p => p.EditionRecommendationParameters)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("edition_recommendation_rating_user_id_fkey");
         });
 
         modelBuilder.Entity<HostOrganizationQuiz>(entity =>
@@ -665,8 +697,15 @@ public partial class PubQuizContext : DbContext
             entity.Property(e => e.Date)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("date");
+            entity.Property(e => e.EditionId).HasColumnName("edition_id");
+            entity.Property(e => e.NewRating).HasColumnName("new_rating");
+            entity.Property(e => e.OldRating).HasColumnName("old_rating");
             entity.Property(e => e.QuizId).HasColumnName("quiz_id");
-            entity.Property(e => e.Rating).HasColumnName("rating");
+            entity.Property(e => e.RatingChange).HasColumnName("rating_change");
+
+            entity.HasOne(d => d.Edition).WithMany(p => p.QuizRatingHistories)
+                .HasForeignKey(d => d.EditionId)
+                .HasConstraintName("fk_quiz_rating_change_edition");
 
             entity.HasOne(d => d.Quiz).WithMany(p => p.QuizRatingHistories)
                 .HasForeignKey(d => d.QuizId)
@@ -953,6 +992,21 @@ public partial class PubQuizContext : DbContext
                     });
         });
 
+        modelBuilder.Entity<UserFeedback>(entity =>
+        {
+            entity.HasKey(e => new { e.UserId, e.EditionId }).HasName("user_feedback_pkey");
+
+            entity.ToTable("user_feedback");
+
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.EditionId).HasColumnName("edition_id");
+            entity.Property(e => e.DifficultyRating).HasColumnName("difficulty_rating");
+            entity.Property(e => e.DurationRating).HasColumnName("duration_rating");
+            entity.Property(e => e.GeneralRating).HasColumnName("general_rating");
+            entity.Property(e => e.HostRating).HasColumnName("host_rating");
+            entity.Property(e => e.NumberOfPeopleRating).HasColumnName("number_of_people_rating");
+        });
+
         modelBuilder.Entity<UserRatingHistory>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("user_rating_history_pkey");
@@ -965,8 +1019,15 @@ public partial class PubQuizContext : DbContext
             entity.Property(e => e.Date)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("date");
-            entity.Property(e => e.Rating).HasColumnName("rating");
+            entity.Property(e => e.EditionId).HasColumnName("edition_id");
+            entity.Property(e => e.NewRating).HasColumnName("new_rating");
+            entity.Property(e => e.OldRating).HasColumnName("old_rating");
+            entity.Property(e => e.RatingChange).HasColumnName("rating_change");
             entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.Edition).WithMany(p => p.UserRatingHistories)
+                .HasForeignKey(d => d.EditionId)
+                .HasConstraintName("fk_quiz_rating_change_edition");
 
             entity.HasOne(d => d.User).WithMany(p => p.UserRatingHistories)
                 .HasForeignKey(d => d.UserId)

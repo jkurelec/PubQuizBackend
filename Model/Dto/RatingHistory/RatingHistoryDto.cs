@@ -6,7 +6,7 @@ namespace PubQuizBackend.Model.Dto.RatingHistory
     {
         public RatingHistoryDto(IRatingHistory ratingHistory)
         {
-            Rating = ratingHistory.Rating;
+            Rating = ratingHistory.NewRating!.Value;
             Date = ratingHistory.Date;
         }
 

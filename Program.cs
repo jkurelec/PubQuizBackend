@@ -54,6 +54,7 @@ builder.Services.AddScoped<IRatingHistoryRepository, RatingHistoryRepository>();
 builder.Services.AddScoped<IQuizEditionApplicationRepository, QuizEditionApplicationRepository>();
 builder.Services.AddScoped<IHostRepository, HostRepository>();
 builder.Services.AddScoped<IQuestionMediaPermissionRepository, QuestionMediaPermissionRepository>();
+builder.Services.AddScoped<IRecommendationRepository, RecommendationRepository>();
 
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<ILocationService, LocationService>();
@@ -71,6 +72,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEloCalculatorService, EloCalculatorService>();
 builder.Services.AddScoped<IRatingHistoryService, RatingHistoryService>();
 builder.Services.AddScoped<IQuestionMediaPermissionService, QuestionMediaPermissionService>();
+builder.Services.AddScoped<IRecommendationService, RecommendationService>();
 
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>

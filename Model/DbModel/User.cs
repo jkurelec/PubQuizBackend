@@ -25,6 +25,8 @@ public partial class User
 
     public string? ProfileImage { get; set; }
 
+    public virtual ICollection<EditionRecommendationParameter> EditionRecommendationParameters { get; set; } = new List<EditionRecommendationParameter>();
+
     public virtual ICollection<HostOrganizationQuiz> HostOrganizationQuizzes { get; set; } = new List<HostOrganizationQuiz>();
 
     public virtual ICollection<Organization> Organizations { get; set; } = new List<Organization>();

@@ -57,6 +57,8 @@ public partial class QuizEdition
 
     public virtual ICollection<EditionPrize> EditionPrizes { get; set; } = new List<EditionPrize>();
 
+    public virtual ICollection<EditionRecommendationParameter> EditionRecommendationParameters { get; set; } = new List<EditionRecommendationParameter>();
+
     public virtual User Host { get; set; } = null!;
 
     public virtual QuizLeague? League { get; set; }
@@ -69,5 +71,9 @@ public partial class QuizEdition
 
     public virtual ICollection<QuizEditionResult> QuizEditionResults { get; set; } = new List<QuizEditionResult>();
 
+    public virtual ICollection<QuizRatingHistory> QuizRatingHistories { get; set; } = new List<QuizRatingHistory>();
+
     public virtual ICollection<QuizRound> QuizRounds { get; set; } = new List<QuizRound>();
+
+    public virtual ICollection<UserRatingHistory> UserRatingHistories { get; set; } = new List<UserRatingHistory>();
 }

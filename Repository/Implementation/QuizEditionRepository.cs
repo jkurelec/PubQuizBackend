@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using PubQuizBackend.Enums;
 using PubQuizBackend.Exceptions;
@@ -6,6 +7,7 @@ using PubQuizBackend.Model;
 using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.PrizesDto;
 using PubQuizBackend.Model.Dto.QuizEditionDto;
+using PubQuizBackend.Model.Dto.RecommendationDto;
 using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Service.Interface;
 using PubQuizBackend.Util;
@@ -19,14 +21,12 @@ namespace PubQuizBackend.Repository.Implementation
         private readonly IMemoryCache _cache;
         private readonly PubQuizContext _context;
         private readonly IPrizeRepository _prizeRepository;
-        private readonly IEloCalculatorService _eloCalculatorService;
 
-        public QuizEditionRepository(IMemoryCache cache, PubQuizContext context, IPrizeRepository prizeRepository, IEloCalculatorService eloCalculatorService)
+        public QuizEditionRepository(IMemoryCache cache, PubQuizContext context, IPrizeRepository prizeRepository)
         {
             _cache = cache;
             _context = context;
             _prizeRepository = prizeRepository;
-            _eloCalculatorService = eloCalculatorService;
         }
 
         public async Task<QuizEdition> Add(NewQuizEditionDto editionDto, int userId)
@@ -687,6 +687,27 @@ namespace PubQuizBackend.Repository.Implementation
                 .Include(x => x.Category)
                 .Where(x => x.QuizEditionResults.Any(r => r.TeamId == teamId))
                 .ToListAsync();
+        }
+
+        public async Task<QuizEditionRecommendationParamsDto> GetRecommendationInfoById(int id)
+        {
+            return await _context.QuizEditions
+                .Where(x => x.Id == id)
+                .Select(x => new QuizEditionRecommendationParamsDto
+                {
+                    EditionId = x.Id,
+                    Rating = x.Rating,
+                    RatingDifference = Math.Abs(x.Rating - (int)x.QuizEditionResults.SelectMany(r => r.Users).Average(u => u.Rating)),
+                    Duration = x.Duration ?? 0,
+                    CategoryId = x.CategoryId,
+                    HostId = x.HostId,
+                    NumberOfTeams = x.QuizEditionResults.Count,
+                    TeamSize = (int)x.QuizEditionResults.Average(x => x.Users.Count),
+                    TimeOfEdition = TimeOnly.FromDateTime(x.Time),
+                    DayOfTheWeek = x.Time.DayOfWeek
+                })
+                .FirstOrDefaultAsync()
+                ?? throw new NotFoundException("Edition not found!");
         }
     }
 }

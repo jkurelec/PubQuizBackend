@@ -96,6 +96,15 @@ namespace PubQuizBackend.Repository.Implementation
                 ?? throw new NotFoundException("User not found!");
         }
 
+        public async Task<string> GetUsernameById(int id)
+        {
+            return await _context.Users
+                .Where(u => u.Id == id)
+                .Select(u => u.Username)
+                .FirstOrDefaultAsync()
+                ?? throw new NotFoundException("User not found!");
+        }
+
         public async Task<IEnumerable<User>> Search(string? username = null, string? sortBy = null, bool descending = false, int limit = 25)
         {
             var query = _context.Users.AsQueryable();
