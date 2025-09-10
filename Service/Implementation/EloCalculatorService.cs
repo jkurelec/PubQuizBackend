@@ -5,7 +5,6 @@ using PubQuizBackend.Model.Dto.TeamDto;
 using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Service.Interface;
 using PubQuizBackend.Util;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace PubQuizBackend.Service.Implementation
 {
@@ -14,12 +13,16 @@ namespace PubQuizBackend.Service.Implementation
         private readonly IEloCalculatorRepository _repository;
         private readonly IRatingHistoryService _ratingHistoryService;
         private readonly IQuizLeagueRepository _leagueRepository;
+        private readonly IRecommendationRepository _recommendationRepository;
+        private readonly IQuizCategoryRepository _categoryRepository;
 
-        public EloCalculatorService(IEloCalculatorRepository repository, IRatingHistoryService ratingHistoryService, IQuizLeagueRepository leagueRepository)
+        public EloCalculatorService(IEloCalculatorRepository repository, IRatingHistoryService ratingHistoryService, IQuizLeagueRepository leagueRepository, IRecommendationRepository recommendationRepository, IQuizCategoryRepository categoryRepository)
         {
             _repository = repository;
             _ratingHistoryService = ratingHistoryService;
             _leagueRepository = leagueRepository;
+            _recommendationRepository = recommendationRepository;
+            _categoryRepository = categoryRepository;
         }
 
         public async Task CalculateEditionElo(int editionId, int hostId)
@@ -53,6 +56,38 @@ namespace PubQuizBackend.Service.Implementation
 
                 await _leagueRepository.AddLeagueRound((int)edition.LeagueId, leagueEntries);
             }
+
+            var editionRecommendationParams = await _recommendationRepository.GetEditionRecommendationParams(edition.Id);
+
+            editionRecommendationParams.Rating = edition.Rating;
+            editionRecommendationParams.NumberOfTeams = QuizEditionRecommendationParam.NormalizeNumberOfTeams(edition.QuizEditionResults.Count);
+            editionRecommendationParams.TeamSize = QuizEditionRecommendationParam.NormalizeTeamSize(edition.QuizEditionResults.Average(x => x.Users.Count));
+
+            var categoryIds = new List<int> { edition.CategoryId };
+
+            var category = await _categoryRepository.GetById(edition.CategoryId);
+
+            while (category.SuperCategoryId != null)
+            {
+                categoryIds.Add(category.SuperCategoryId.Value);
+                category = await _categoryRepository.GetById(category.SuperCategoryId.Value);
+            }
+
+            foreach (var user in edition.QuizEditionResults.SelectMany(x => x.Users))
+            {
+                var userRecommendationParams = await _recommendationRepository.GetUserRecommendationParams(user.Id);
+
+                userRecommendationParams.EditionCount++;
+                userRecommendationParams.Duration = AverageDeltaCalculator.GetDelta(userRecommendationParams.Duration, editionRecommendationParams.Duration, userRecommendationParams.EditionCount);
+                userRecommendationParams.NumberOfTeams = AverageDeltaCalculator.GetDelta(userRecommendationParams.NumberOfTeams, editionRecommendationParams.NumberOfTeams, userRecommendationParams.EditionCount);
+                userRecommendationParams.TeamSize = AverageDeltaCalculator.GetDelta(userRecommendationParams.TeamSize, editionRecommendationParams.TeamSize, userRecommendationParams.EditionCount);
+                userRecommendationParams.TimeOfEdition = AverageDeltaCalculator.GetDelta(userRecommendationParams.TimeOfEdition, editionRecommendationParams.TimeOfEdition, userRecommendationParams.EditionCount);
+                userRecommendationParams.AddHost(edition.HostId);
+                userRecommendationParams.AddCategories(categoryIds);
+                userRecommendationParams.AddDayOfWeek(editionRecommendationParams.DayOfTheWeek);
+            }
+
+            await _recommendationRepository.Save();
 
             await _repository.SaveChanges();
         }

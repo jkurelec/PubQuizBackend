@@ -22,8 +22,6 @@ public partial class PubQuizContext : DbContext
 
     public virtual DbSet<EditionPrize> EditionPrizes { get; set; }
 
-    public virtual DbSet<EditionRecommendationParameter> EditionRecommendationParameters { get; set; }
-
     public virtual DbSet<HostOrganizationQuiz> HostOrganizationQuizzes { get; set; }
 
     public virtual DbSet<LeaguePrize> LeaguePrizes { get; set; }
@@ -43,6 +41,8 @@ public partial class PubQuizContext : DbContext
     public virtual DbSet<QuizEdition> QuizEditions { get; set; }
 
     public virtual DbSet<QuizEditionApplication> QuizEditionApplications { get; set; }
+
+    public virtual DbSet<QuizEditionRecommendationParam> QuizEditionRecommendationParams { get; set; }
 
     public virtual DbSet<QuizEditionResult> QuizEditionResults { get; set; }
 
@@ -84,7 +84,11 @@ public partial class PubQuizContext : DbContext
 
     public virtual DbSet<UserRatingHistory> UserRatingHistories { get; set; }
 
+    public virtual DbSet<UserRecommendationParam> UserRecommendationParams { get; set; }
+
     public virtual DbSet<UserTeam> UserTeams { get; set; }
+
+    public virtual DbSet<UserTopRecommendation> UserTopRecommendations { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -143,34 +147,6 @@ public partial class PubQuizContext : DbContext
             entity.HasOne(d => d.Edition).WithMany(p => p.EditionPrizes)
                 .HasForeignKey(d => d.EditionId)
                 .HasConstraintName("prize_edition_id_fkey");
-        });
-
-        modelBuilder.Entity<EditionRecommendationParameter>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("edition_recommendation_rating_pkey");
-
-            entity.ToTable("edition_recommendation_parameters");
-
-            entity.HasIndex(e => new { e.EditionId, e.UserId }, "uq_user_edition").IsUnique();
-
-            entity.Property(e => e.Id)
-                .UseIdentityAlwaysColumn()
-                .HasColumnName("id");
-            entity.Property(e => e.EditionId).HasColumnName("edition_id");
-            entity.Property(e => e.Ratings)
-                .HasColumnType("jsonb")
-                .HasColumnName("ratings");
-            entity.Property(e => e.UserId).HasColumnName("user_id");
-
-            entity.HasOne(d => d.Edition).WithMany(p => p.EditionRecommendationParameters)
-                .HasForeignKey(d => d.EditionId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("edition_recommendation_rating_edition_id_fkey");
-
-            entity.HasOne(d => d.User).WithMany(p => p.EditionRecommendationParameters)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("edition_recommendation_rating_user_id_fkey");
         });
 
         modelBuilder.Entity<HostOrganizationQuiz>(entity =>
@@ -528,6 +504,35 @@ public partial class PubQuizContext : DbContext
                         j.IndexerProperty<int>("ApplicationId").HasColumnName("application_id");
                         j.IndexerProperty<int>("UserId").HasColumnName("user_id");
                     });
+        });
+
+        modelBuilder.Entity<QuizEditionRecommendationParam>(entity =>
+        {
+            entity.HasKey(e => e.EditionId).HasName("quiz_edition_recommendation_params_pkey");
+
+            entity.ToTable("quiz_edition_recommendation_params");
+
+            entity.Property(e => e.EditionId)
+                .ValueGeneratedNever()
+                .HasColumnName("edition_id");
+            entity.Property(e => e.CategoryIds).HasColumnName("category_ids");
+            entity.Property(e => e.DayOfTheWeek).HasColumnName("day_of_the_week");
+            entity.Property(e => e.Duration).HasColumnName("duration");
+            entity.Property(e => e.HostId).HasColumnName("host_id");
+            entity.Property(e => e.NumberOfTeams).HasColumnName("number_of_teams");
+            entity.Property(e => e.Rating).HasColumnName("rating");
+            entity.Property(e => e.TeamSize).HasColumnName("team_size");
+            entity.Property(e => e.TimeOfEdition).HasColumnName("time_of_edition");
+
+            entity.HasOne(d => d.Edition).WithOne(p => p.QuizEditionRecommendationParam)
+                .HasForeignKey<QuizEditionRecommendationParam>(d => d.EditionId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_edition");
+
+            entity.HasOne(d => d.Host).WithMany(p => p.QuizEditionRecommendationParams)
+                .HasForeignKey(d => d.HostId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_host");
         });
 
         modelBuilder.Entity<QuizEditionResult>(entity =>
@@ -1005,6 +1010,7 @@ public partial class PubQuizContext : DbContext
             entity.Property(e => e.GeneralRating).HasColumnName("general_rating");
             entity.Property(e => e.HostRating).HasColumnName("host_rating");
             entity.Property(e => e.NumberOfPeopleRating).HasColumnName("number_of_people_rating");
+            entity.Property(e => e.Timestamp).HasColumnName("timestamp");
         });
 
         modelBuilder.Entity<UserRatingHistory>(entity =>
@@ -1034,6 +1040,34 @@ public partial class PubQuizContext : DbContext
                 .HasConstraintName("user_rating_history_user_id_fkey");
         });
 
+        modelBuilder.Entity<UserRecommendationParam>(entity =>
+        {
+            entity.HasKey(e => e.UserId).HasName("user_recommendation_params_pkey");
+
+            entity.ToTable("user_recommendation_params");
+
+            entity.Property(e => e.UserId)
+                .ValueGeneratedNever()
+                .HasColumnName("user_id");
+            entity.Property(e => e.Categories)
+                .HasColumnType("jsonb")
+                .HasColumnName("categories");
+            entity.Property(e => e.DayOfWeek).HasColumnName("day_of_week");
+            entity.Property(e => e.Duration).HasColumnName("duration");
+            entity.Property(e => e.EditionCount).HasColumnName("edition_count");
+            entity.Property(e => e.Hosts)
+                .HasColumnType("jsonb")
+                .HasColumnName("hosts");
+            entity.Property(e => e.NumberOfTeams).HasColumnName("number_of_teams");
+            entity.Property(e => e.TeamSize).HasColumnName("team_size");
+            entity.Property(e => e.TimeOfEdition).HasColumnName("time_of_edition");
+
+            entity.HasOne(d => d.User).WithOne(p => p.UserRecommendationParam)
+                .HasForeignKey<UserRecommendationParam>(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_user");
+        });
+
         modelBuilder.Entity<UserTeam>(entity =>
         {
             entity.HasKey(e => new { e.UserId, e.TeamId }).HasName("user_team_pkey");
@@ -1053,6 +1087,21 @@ public partial class PubQuizContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.UserTeams)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("user_team_user_id_fkey");
+        });
+
+        modelBuilder.Entity<UserTopRecommendation>(entity =>
+        {
+            entity.HasKey(e => new { e.UserId, e.EditionId }).HasName("user_top_recommendations_pkey");
+
+            entity.ToTable("user_top_recommendations");
+
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.EditionId).HasColumnName("edition_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.EditionTimestamp).HasColumnName("edition_timestamp");
+            entity.Property(e => e.Match).HasColumnName("match");
         });
 
         OnModelCreatingPartial(modelBuilder);

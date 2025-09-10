@@ -15,6 +15,7 @@ namespace PubQuizBackend.Repository.Interface
         Task<int> GetTotalCount(EditionTimeFilter filter);
         Task<QuizEdition> GetByIdDetailed(int id, int? userId = null);
         Task<IEnumerable<QuizEdition>> GetByTeamId(int teamId);
+        Task<QuizEdition> GetForMinimalDtoById(int id);
         Task<QuizEdition> Add(NewQuizEditionDto editionDto, int userId);
         Task<QuizEdition> Update(NewQuizEditionDto editionDto, int userId);
         Task Delete(QuizEdition edition);

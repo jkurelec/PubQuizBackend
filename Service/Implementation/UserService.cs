@@ -10,15 +10,34 @@ namespace PubQuizBackend.Service.Implementation
     public class UserService : IUserService
     {
         private readonly IUserRepository _repository;
+        private readonly IRecommendationService _recommendationService;
 
-        public UserService(IUserRepository repository)
+        public UserService(IUserRepository repository, IRecommendationService recommendationService)
         {
             _repository = repository;
+            _recommendationService = recommendationService;
         }
 
         public async Task<User> Add(User user)
         {
-            return await _repository.Add(user);
+            var userEntity = await _repository.Add(user);
+
+            await _recommendationService.SetUserRecommendationParams(
+                new()
+                {
+                    UserId = userEntity.Id,
+                    Duration = 0,
+                    NumberOfTeams = 0,
+                    TeamSize = 0,
+                    EditionCount = 0,
+                    TimeOfEdition = 0,
+                    DayOfWeek = new List<int> { 0, 0, 0, 0, 0, 0, 0 },
+                    Hosts = "{}",
+                    Categories = "{}"
+                }    
+            );
+
+            return userEntity;
         }
 
         public async Task<User> ChangePassword(int id, string password)

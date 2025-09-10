@@ -9,13 +9,15 @@ public partial class UserFeedback
 
     public int EditionId { get; set; }
 
-    public double? GeneralRating { get; set; }
+    public float GeneralRating { get; set; }
 
-    public double? HostRating { get; set; }
+    public float HostRating { get; set; }
 
-    public int? DifficultyRating { get; set; }
+    public int DifficultyRating { get; set; }
 
-    public int? DurationRating { get; set; }
+    public int DurationRating { get; set; }
 
-    public int? NumberOfPeopleRating { get; set; }
+    public int NumberOfPeopleRating { get; set; }
+
+    public DateTime Timestamp { get; set; }
 }

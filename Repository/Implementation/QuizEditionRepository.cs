@@ -709,5 +709,14 @@ namespace PubQuizBackend.Repository.Implementation
                 .FirstOrDefaultAsync()
                 ?? throw new NotFoundException("Edition not found!");
         }
+
+        public async Task<QuizEdition> GetForMinimalDtoById(int id)
+        {
+            return await _context.QuizEditions
+                .Include(x => x.Category)
+                .Where(x => x.Id == id)
+                .FirstOrDefaultAsync()
+                ?? throw new NotFoundException("Edition not found!");
+        }
     }
 }

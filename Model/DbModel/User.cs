@@ -25,11 +25,11 @@ public partial class User
 
     public string? ProfileImage { get; set; }
 
-    public virtual ICollection<EditionRecommendationParameter> EditionRecommendationParameters { get; set; } = new List<EditionRecommendationParameter>();
-
     public virtual ICollection<HostOrganizationQuiz> HostOrganizationQuizzes { get; set; } = new List<HostOrganizationQuiz>();
 
     public virtual ICollection<Organization> Organizations { get; set; } = new List<Organization>();
+
+    public virtual ICollection<QuizEditionRecommendationParam> QuizEditionRecommendationParams { get; set; } = new List<QuizEditionRecommendationParam>();
 
     public virtual ICollection<QuizEdition> QuizEditions { get; set; } = new List<QuizEdition>();
 
@@ -44,6 +44,8 @@ public partial class User
     public virtual ICollection<Team> Teams { get; set; } = new List<Team>();
 
     public virtual ICollection<UserRatingHistory> UserRatingHistories { get; set; } = new List<UserRatingHistory>();
+
+    public virtual UserRecommendationParam? UserRecommendationParam { get; set; }
 
     public virtual ICollection<UserTeam> UserTeams { get; set; } = new List<UserTeam>();
 

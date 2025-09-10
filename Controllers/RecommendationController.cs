@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using PubQuizBackend.Model.Dto.RecommendationDto;
 using PubQuizBackend.Service.Interface;
 using PubQuizBackend.Util.Extension;
 
@@ -21,29 +22,12 @@ namespace PubQuizBackend.Controllers
             return Ok (await _service.GetEditionInfoForFeedback(User.GetUserId()));
         }
 
-        // GET api/<RecommendationController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        [HttpPost("feedback")]
+        public async Task<IActionResult> SetFeedback(UserFeedbackDto feedback)
         {
-            return "value";
-        }
+            await _service.SetUserFeedback(feedback, User.GetUserId());
 
-        // POST api/<RecommendationController>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
-
-        // PUT api/<RecommendationController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<RecommendationController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
+            return Ok();
         }
     }
 }

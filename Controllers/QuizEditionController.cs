@@ -57,6 +57,12 @@ namespace PubQuizBackend.Controllers
             return Ok(items);
         }
 
+        [HttpGet("recommended")]
+        public async Task<IActionResult> GetRecommended()
+        {
+            return Ok(await _service.GetRecommendations(User.GetUserId()));
+        }
+
         [HttpGet("paged/completed")]
         public async Task<IActionResult> GetCompletedPaged(int page = 1, int pageSize = 10, EditionFilter filter = EditionFilter.NEWEST)
         {

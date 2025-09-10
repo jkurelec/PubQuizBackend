@@ -1,4 +1,5 @@
-﻿using NuGet.Protocol.Core.Types;
+﻿using Microsoft.AspNetCore.Components.Forms;
+using NuGet.Protocol.Core.Types;
 using PubQuizBackend.Enums;
 using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model.DbModel;
@@ -15,13 +16,19 @@ namespace PubQuizBackend.Service.Implementation
         private readonly IQuizEditionRepository _editionRepository;
         private readonly IOrganizationRepository _organizationRepository; 
         private readonly IQuizLeagueRepository _leagueRepository;
+        private readonly IRecommendationRepository _recommendationRepository;
+        private readonly IQuizCategoryRepository _categoryRepository;
+        private readonly IRecommendationService _recommendationService;
         private readonly MediaServerClient _mediaServerClient;
 
-        public QuizEditionService(IQuizEditionRepository editionRepository, IOrganizationRepository organizationRepository, IQuizLeagueRepository leagueRepository, MediaServerClient mediaServerClient)
+        public QuizEditionService(IQuizEditionRepository editionRepository, IOrganizationRepository organizationRepository, IQuizLeagueRepository leagueRepository, IRecommendationRepository recommendationRepository, IQuizCategoryRepository categoryRepository, IRecommendationService recommendationService, MediaServerClient mediaServerClient)
         {
             _editionRepository = editionRepository;
             _organizationRepository = organizationRepository;
             _leagueRepository = leagueRepository;
+            _recommendationRepository = recommendationRepository;
+            _categoryRepository = categoryRepository;
+            _recommendationService = recommendationService;
             _mediaServerClient = mediaServerClient;
         }
 
@@ -57,7 +64,34 @@ namespace PubQuizBackend.Service.Implementation
                     UserIds = hosts.Select(x => x.UserBrief.Id).ToList(),
                 });
 
-            return new (await _editionRepository.Add(editionDto, userId));
+            var edition = await _editionRepository.Add(editionDto, userId);
+
+            var categoryIds = new List<int> { edition.CategoryId };
+
+            var category = await _categoryRepository.GetById(edition.CategoryId);
+
+            while (category.SuperCategoryId != null)
+            {
+                categoryIds.Add(category.SuperCategoryId.Value);
+                category = await _categoryRepository.GetById(category.SuperCategoryId.Value);
+            }
+
+
+            await _recommendationService.SetEditionRecommendationParams(new QuizEditionRecommendationParam
+                {
+                    EditionId = edition.Id,
+                    Rating = edition.Rating,
+                    Duration = QuizEditionRecommendationParam.NormalizeDuration(edition.Duration ?? 0),
+                    CategoryIds = categoryIds,
+                    HostId = edition.HostId,
+                    NumberOfTeams = QuizEditionRecommendationParam.NormalizeNumberOfTeams(edition.MaxTeams),
+                    TeamSize = QuizEditionRecommendationParam.NormalizeTeamSize(edition.MaxTeamSize ?? 0),
+                    DayOfTheWeek = (int)edition.Time.DayOfWeek,
+                    TimeOfEdition = QuizEditionRecommendationParam.NormalizeTimeOfEdition(edition.Time.Hour)
+                }
+            );
+
+            return new (edition);
         }
 
         public async Task Delete(int editionId, int userId)
@@ -124,7 +158,33 @@ namespace PubQuizBackend.Service.Implementation
             if (!host.EditEdition)
                 throw new ForbiddenException();
 
-            return new(await _editionRepository.Update(editionDto,userId));
+            var edition = await _editionRepository.Update(editionDto, userId);
+
+            var categoryIds = new List<int> { edition.CategoryId };
+
+            var category = await _categoryRepository.GetById(edition.CategoryId);
+
+            while (category.SuperCategoryId != null)
+            {
+                categoryIds.Add(category.SuperCategoryId.Value);
+                category = await _categoryRepository.GetById(category.SuperCategoryId.Value);
+            }
+
+            var editionRecommendationParams = await _recommendationRepository.GetEditionRecommendationParams(edition.Id);
+
+            editionRecommendationParams.EditionId = edition.Id;
+            editionRecommendationParams.Rating = edition.Rating;
+            editionRecommendationParams.Duration = QuizEditionRecommendationParam.NormalizeDuration(edition.Duration ?? 0);
+            editionRecommendationParams.CategoryIds = categoryIds;
+            editionRecommendationParams.HostId = edition.HostId;
+            editionRecommendationParams.NumberOfTeams = QuizEditionRecommendationParam.NormalizeNumberOfTeams(edition.MaxTeams);
+            editionRecommendationParams.TeamSize = QuizEditionRecommendationParam.NormalizeTeamSize(edition.MaxTeamSize ?? 0);
+            editionRecommendationParams.DayOfTheWeek = (int)edition.Time.DayOfWeek;
+            editionRecommendationParams.TimeOfEdition = QuizEditionRecommendationParam.NormalizeTeamSize(edition.Time.Hour);
+
+            await _recommendationRepository.Save();
+
+            return new(edition);
         }
 
         public async Task<IEnumerable<QuizEditionBriefDto>> GetByLocationId(int locationId)
@@ -174,6 +234,27 @@ namespace PubQuizBackend.Service.Implementation
             var editions = await _editionRepository.GetByTeamId(teamId);
 
             return editions.Select(x => new QuizEditionMinimalDto(x)).ToList();
+        }
+
+        public async Task<IEnumerable<QuizEditionMinimalDto>> GetRecommendations(int userId)
+        {
+            var recommendations = await _recommendationRepository.GetRecommendations(userId);
+            var editions = new List<QuizEditionMinimalDto>();
+
+            foreach (var recommendation in recommendations)
+            {
+                var edition = await _editionRepository.GetForMinimalDtoById(recommendation.EditionId);
+
+                if (edition != null)
+                    editions.Add(
+                        new(edition)
+                        {
+                            Match = recommendation.Match
+                        }
+                    );
+            }
+
+            return editions;
         }
     }
 }

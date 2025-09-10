@@ -1,12 +1,17 @@
 ﻿using PubQuizAttendeeFrontend.Models.Dto.RecommendationDto;
+using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.RecommendationDto;
 
 namespace PubQuizBackend.Repository.Interface
 {
-    public interface IRecommendationRepository
+    public interface IRecommendationRepository: IBaseRepository
     {
-        Task<EditionFeedbackRequestDto?> GetEditionInfoForFeedback(int editionId);
-        Task<QuizEditionRecommendationParamsDto> GetEditionRecommendationParams(int editionId);
-        Task SetEditionRecommendationParams(UserFeedbackDto feedback);
+        Task<EditionFeedbackRequestDto?> GetEditionInfoForFeedback(int userId);
+        Task SetUserFeedback(UserFeedbackDto feedback);
+        Task<QuizEditionRecommendationParam> GetEditionRecommendationParams(int editionId);
+        Task SetEditionRecommendationParams(QuizEditionRecommendationParam recommendationParam);
+        Task<UserRecommendationParam> GetUserRecommendationParams(int userId);
+        Task SetUserRecommendationParams(UserRecommendationParam recommendationParam);
+        Task<IEnumerable<UserTopRecommendation>> GetRecommendations(int userId);
     }
 }

@@ -19,5 +19,6 @@ namespace PubQuizBackend.Service.Interface
         Task<bool?> HasDetailedQuestions(int editionId);
         Task<IEnumerable<QuizEditionMinimalDto>> GetByTeamId(int teamId);
         Task SetDetailedQuestions(int editionId, int userId, bool detailed);
+        Task<IEnumerable<QuizEditionMinimalDto>> GetRecommendations(int userId);
     }
 }
