@@ -25,9 +25,33 @@ namespace PubQuizBackend.Repository.Implementation
             DateTime weekEndUtc = weekStartUtc.AddDays(7);
 
             var editionIdsWithFeedback = await _context.UserFeedbacks
-                .Where(x => x.Timestamp >= weekStartUtc && x.Timestamp < weekEndUtc)
+                .Where(x => x.Timestamp >= weekStartUtc && x.Timestamp < weekEndUtc && x.UserId == userId)
                 .Select(x => x.EditionId)
                 .ToListAsync();
+
+            var allEditions = await _context.QuizEditionResults
+                .Where(x => x.Edition.Time >= weekStartUtc && x.Edition.Time < weekEndUtc)
+                .Where(x => x.Users.Any(u => u.Id == userId))
+                .Select(x => new EditionFeedbackRequestDto
+                {
+                    EditionId = x.Edition.Id,
+                    EditionName = x.Edition.Name,
+                    HostUsername = x.Edition.Host.Username,
+                }
+                )
+                .ToListAsync() ?? null;
+
+            var allEditionsWithout = await _context.QuizEditionResults
+                .Where(x => x.Edition.Time >= weekStartUtc && x.Edition.Time < weekEndUtc)
+                .Where(x => x.Users.Any(u => u.Id == userId) && !editionIdsWithFeedback.Contains(x.EditionId))
+                .Select(x => new EditionFeedbackRequestDto
+                {
+                    EditionId = x.Edition.Id,
+                    EditionName = x.Edition.Name,
+                    HostUsername = x.Edition.Host.Username,
+                }
+                )
+                .ToListAsync() ?? null;
 
             return await _context.QuizEditionResults
                 .Where(x => x.Edition.Time >= weekStartUtc && x.Edition.Time < weekEndUtc)

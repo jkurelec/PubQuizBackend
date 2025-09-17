@@ -29,5 +29,11 @@ namespace PubQuizBackend.Controllers
 
             return Ok();
         }
+
+        [HttpGet("user-param")]
+        public async Task<IActionResult> UserParam()
+        {
+            return Ok(await _service.GetUserRecommendationParams(User.GetUserId()));
+        }
     }
 }

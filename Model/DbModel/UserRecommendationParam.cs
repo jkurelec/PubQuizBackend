@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NpgsqlTypes;
+using System;
 using System.Collections.Generic;
 using System.Text.Json;
 
@@ -20,9 +21,13 @@ public partial class UserRecommendationParam
 
     public string Categories { get; set; } = null!;
 
-    public float TimeOfEdition { get; set; }
+    public int TimeOfEdition { get; set; }
 
     public List<int> DayOfWeek { get; set; } = null!;
+
+    public NpgsqlPoint? LastKnownLocation { get; set; }
+
+    public int Rating { get; set; }
 
     public virtual User User { get; set; } = null!;
 

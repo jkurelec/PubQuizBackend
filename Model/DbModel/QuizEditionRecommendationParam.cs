@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NpgsqlTypes;
+using System;
 using System.Collections.Generic;
 
 namespace PubQuizBackend.Model.DbModel;
@@ -21,7 +22,9 @@ public partial class QuizEditionRecommendationParam
 
     public int DayOfTheWeek { get; set; }
 
-    public float TimeOfEdition { get; set; }
+    public int TimeOfEdition { get; set; }
+
+    public NpgsqlPoint Location { get; set; }
 
     public virtual QuizEdition Edition { get; set; } = null!;
 

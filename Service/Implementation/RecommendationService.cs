@@ -39,6 +39,7 @@ namespace PubQuizBackend.Service.Implementation
         {
             await _repository.SetEditionRecommendationParams(recommendationParam);
             await _repository.Save();
+            var saved = await _repository.GetEditionRecommendationParams(recommendationParam.EditionId);
         }
 
         public async Task<UserRecommendationParam> GetUserRecommendationParams(int userId)

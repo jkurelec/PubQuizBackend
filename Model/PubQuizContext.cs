@@ -519,6 +519,7 @@ public partial class PubQuizContext : DbContext
             entity.Property(e => e.DayOfTheWeek).HasColumnName("day_of_the_week");
             entity.Property(e => e.Duration).HasColumnName("duration");
             entity.Property(e => e.HostId).HasColumnName("host_id");
+            entity.Property(e => e.Location).HasColumnName("location");
             entity.Property(e => e.NumberOfTeams).HasColumnName("number_of_teams");
             entity.Property(e => e.Rating).HasColumnName("rating");
             entity.Property(e => e.TeamSize).HasColumnName("team_size");
@@ -1058,9 +1059,11 @@ public partial class PubQuizContext : DbContext
             entity.Property(e => e.Hosts)
                 .HasColumnType("jsonb")
                 .HasColumnName("hosts");
+            entity.Property(e => e.LastKnownLocation).HasColumnName("last_known_location");
             entity.Property(e => e.NumberOfTeams).HasColumnName("number_of_teams");
             entity.Property(e => e.TeamSize).HasColumnName("team_size");
             entity.Property(e => e.TimeOfEdition).HasColumnName("time_of_edition");
+            entity.Property(e => e.Rating).HasColumnName("rating");
 
             entity.HasOne(d => d.User).WithOne(p => p.UserRecommendationParam)
                 .HasForeignKey<UserRecommendationParam>(d => d.UserId)

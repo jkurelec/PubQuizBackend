@@ -1,4 +1,5 @@
-﻿using PubQuizBackend.Enums;
+﻿using NpgsqlTypes;
+using PubQuizBackend.Enums;
 using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.TeamDto;
@@ -81,10 +82,12 @@ namespace PubQuizBackend.Service.Implementation
                 userRecommendationParams.Duration = AverageDeltaCalculator.GetDelta(userRecommendationParams.Duration, editionRecommendationParams.Duration, userRecommendationParams.EditionCount);
                 userRecommendationParams.NumberOfTeams = AverageDeltaCalculator.GetDelta(userRecommendationParams.NumberOfTeams, editionRecommendationParams.NumberOfTeams, userRecommendationParams.EditionCount);
                 userRecommendationParams.TeamSize = AverageDeltaCalculator.GetDelta(userRecommendationParams.TeamSize, editionRecommendationParams.TeamSize, userRecommendationParams.EditionCount);
-                userRecommendationParams.TimeOfEdition = AverageDeltaCalculator.GetDelta(userRecommendationParams.TimeOfEdition, editionRecommendationParams.TimeOfEdition, userRecommendationParams.EditionCount);
+                userRecommendationParams.TimeOfEdition = editionRecommendationParams.TimeOfEdition;
                 userRecommendationParams.AddHost(edition.HostId);
                 userRecommendationParams.AddCategories(categoryIds);
                 userRecommendationParams.AddDayOfWeek(editionRecommendationParams.DayOfTheWeek);
+                userRecommendationParams.LastKnownLocation = editionRecommendationParams.Location;
+                userRecommendationParams.Rating = user.Rating;
             }
 
             await _recommendationRepository.Save();

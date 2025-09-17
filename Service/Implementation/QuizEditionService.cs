@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components.Forms;
+using NpgsqlTypes;
 using NuGet.Protocol.Core.Types;
 using PubQuizBackend.Enums;
 using PubQuizBackend.Exceptions;
@@ -87,7 +88,11 @@ namespace PubQuizBackend.Service.Implementation
                     NumberOfTeams = QuizEditionRecommendationParam.NormalizeNumberOfTeams(edition.MaxTeams),
                     TeamSize = QuizEditionRecommendationParam.NormalizeTeamSize(edition.MaxTeamSize ?? 0),
                     DayOfTheWeek = (int)edition.Time.DayOfWeek,
-                    TimeOfEdition = QuizEditionRecommendationParam.NormalizeTimeOfEdition(edition.Time.Hour)
+                    TimeOfEdition = edition.Time.Hour,
+                    Location = new NpgsqlPoint(
+                        Math.Round(edition.Location.Lon, 3),
+                        Math.Round(edition.Location.Lat, 3)
+                    )
                 }
             );
 
@@ -180,7 +185,11 @@ namespace PubQuizBackend.Service.Implementation
             editionRecommendationParams.NumberOfTeams = QuizEditionRecommendationParam.NormalizeNumberOfTeams(edition.MaxTeams);
             editionRecommendationParams.TeamSize = QuizEditionRecommendationParam.NormalizeTeamSize(edition.MaxTeamSize ?? 0);
             editionRecommendationParams.DayOfTheWeek = (int)edition.Time.DayOfWeek;
-            editionRecommendationParams.TimeOfEdition = QuizEditionRecommendationParam.NormalizeTeamSize(edition.Time.Hour);
+            editionRecommendationParams.TimeOfEdition = edition.Time.Hour;
+            editionRecommendationParams.Location = new NpgsqlPoint(
+                Math.Round(edition.Location.Lon, 3),
+                Math.Round(edition.Location.Lat, 3)
+            );
 
             await _recommendationRepository.Save();
 
@@ -249,7 +258,7 @@ namespace PubQuizBackend.Service.Implementation
                     editions.Add(
                         new(edition)
                         {
-                            Match = recommendation.Match
+                            Match = recommendation.Match ?? 0
                         }
                     );
             }

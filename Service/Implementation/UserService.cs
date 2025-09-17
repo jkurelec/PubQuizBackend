@@ -33,7 +33,8 @@ namespace PubQuizBackend.Service.Implementation
                     TimeOfEdition = 0,
                     DayOfWeek = new List<int> { 0, 0, 0, 0, 0, 0, 0 },
                     Hosts = "{}",
-                    Categories = "{}"
+                    Categories = "{}",
+                    Rating = 1000
                 }    
             );
 

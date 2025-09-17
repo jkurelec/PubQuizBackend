@@ -11,7 +11,7 @@ public partial class UserTopRecommendation
 
     public DateTime EditionTimestamp { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+    public DateTime? CreatedAt { get; set; }
 
-    public float Match { get; set; }
+    public float? Match { get; set; }
 }
