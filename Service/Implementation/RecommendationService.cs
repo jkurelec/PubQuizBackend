@@ -1,7 +1,4 @@
-﻿using PubQuizAttendeeFrontend.Models.Dto.RecommendationDto;
-using PubQuizBackend.Exceptions;
-using PubQuizBackend.Model.DbModel;
-using PubQuizBackend.Model.Dto.RecommendationDto;
+﻿using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Service.Interface;
 
@@ -14,20 +11,6 @@ namespace PubQuizBackend.Service.Implementation
         public RecommendationService(IRecommendationRepository repository)
         {
             _repository = repository;
-        }
-
-        public async Task<EditionFeedbackRequestDto?> GetEditionInfoForFeedback(int userId)
-        {
-            return await _repository.GetEditionInfoForFeedback(userId);
-        }
-
-        public async Task SetUserFeedback(UserFeedbackDto feedback, int userId)
-        {
-            if (feedback.UserId != userId)
-                throw new ForbiddenException();
-
-            await _repository.SetUserFeedback(feedback);
-            await _repository.Save();
         }
 
         public async Task<QuizEditionRecommendationParam> GetEditionRecommendationParams(int editionId)

@@ -84,7 +84,7 @@ namespace PubQuizBackend.Service.Implementation
                     Rating = edition.Rating,
                     Duration = QuizEditionRecommendationParam.NormalizeDuration(edition.Duration ?? 0),
                     CategoryIds = categoryIds,
-                    HostId = edition.HostId,
+                    HostId = edition.Quiz.OrganizationId,
                     NumberOfTeams = QuizEditionRecommendationParam.NormalizeNumberOfTeams(edition.MaxTeams),
                     TeamSize = QuizEditionRecommendationParam.NormalizeTeamSize(edition.MaxTeamSize ?? 0),
                     DayOfTheWeek = (int)edition.Time.DayOfWeek,
@@ -181,7 +181,7 @@ namespace PubQuizBackend.Service.Implementation
             editionRecommendationParams.Rating = edition.Rating;
             editionRecommendationParams.Duration = QuizEditionRecommendationParam.NormalizeDuration(edition.Duration ?? 0);
             editionRecommendationParams.CategoryIds = categoryIds;
-            editionRecommendationParams.HostId = edition.HostId;
+            editionRecommendationParams.HostId = edition.Quiz.OrganizationId;
             editionRecommendationParams.NumberOfTeams = QuizEditionRecommendationParam.NormalizeNumberOfTeams(edition.MaxTeams);
             editionRecommendationParams.TeamSize = QuizEditionRecommendationParam.NormalizeTeamSize(edition.MaxTeamSize ?? 0);
             editionRecommendationParams.DayOfTheWeek = (int)edition.Time.DayOfWeek;

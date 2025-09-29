@@ -21,13 +21,15 @@ public partial class UserRecommendationParam
 
     public string Categories { get; set; } = null!;
 
-    public int TimeOfEdition { get; set; }
+    public float TimeOfEdition { get; set; }
 
     public List<int> DayOfWeek { get; set; } = null!;
 
     public NpgsqlPoint? LastKnownLocation { get; set; }
 
     public int Rating { get; set; }
+
+    public DateTime LastLogin { get; set; }
 
     public virtual User User { get; set; } = null!;
 
@@ -63,6 +65,8 @@ public partial class UserRecommendationParam
                 categories[category] = 1;
             }
         }
+
+        Categories = JsonSerializer.Serialize(categories);
     }
 
     public void AddDayOfWeek(int dayOfWeek)

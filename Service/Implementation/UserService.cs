@@ -34,7 +34,7 @@ namespace PubQuizBackend.Service.Implementation
                     DayOfWeek = new List<int> { 0, 0, 0, 0, 0, 0, 0 },
                     Hosts = "{}",
                     Categories = "{}",
-                    Rating = 1000
+                    Rating = 0
                 }    
             );
 

@@ -6,8 +6,6 @@ namespace PubQuizBackend.Repository.Interface
 {
     public interface IRecommendationRepository: IBaseRepository
     {
-        Task<EditionFeedbackRequestDto?> GetEditionInfoForFeedback(int userId);
-        Task SetUserFeedback(UserFeedbackDto feedback);
         Task<QuizEditionRecommendationParam> GetEditionRecommendationParams(int editionId);
         Task SetEditionRecommendationParams(QuizEditionRecommendationParam recommendationParam);
         Task<UserRecommendationParam> GetUserRecommendationParams(int userId);

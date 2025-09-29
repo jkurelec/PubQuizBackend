@@ -1,6 +1,9 @@
-﻿using PubQuizBackend.Model.DbModel;
+﻿using Microsoft.AspNetCore.Components.Forms;
+using PubQuizBackend.Model.DbModel;
+using PubQuizBackend.Repository.Implementation;
 using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Service.Interface;
+using PubQuizBackend.Util;
 using System.Security.Cryptography;
 
 namespace PubQuizBackend.Service.Implementation
@@ -8,10 +11,12 @@ namespace PubQuizBackend.Service.Implementation
     public class RefreshTokenService : IRefreshTokenService
     {
         private readonly IRefreshTokenRepository _repository;
+        private readonly IRecommendationRepository _recommendationRepository;
 
-        public RefreshTokenService(IRefreshTokenRepository refreshTokenRepository)
+        public RefreshTokenService(IRefreshTokenRepository repository, IRecommendationRepository recommendationRepository)
         {
-            _repository = refreshTokenRepository;
+            _repository = repository;
+            _recommendationRepository = recommendationRepository;
         }
 
         public async Task<string> Create(int userId, int role, int app)
@@ -37,6 +42,10 @@ namespace PubQuizBackend.Service.Implementation
             }
 
             await _repository.Update(token);
+
+            var userRecommendationParams = await _recommendationRepository.GetUserRecommendationParams(userId);
+            userRecommendationParams.LastLogin = DateTime.UtcNow;
+            await _recommendationRepository.Save();
 
             return tokenValue;
         }

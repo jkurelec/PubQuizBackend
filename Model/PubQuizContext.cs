@@ -80,8 +80,6 @@ public partial class PubQuizContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
-    public virtual DbSet<UserFeedback> UserFeedbacks { get; set; }
-
     public virtual DbSet<UserRatingHistory> UserRatingHistories { get; set; }
 
     public virtual DbSet<UserRecommendationParam> UserRecommendationParams { get; set; }
@@ -998,22 +996,6 @@ public partial class PubQuizContext : DbContext
                     });
         });
 
-        modelBuilder.Entity<UserFeedback>(entity =>
-        {
-            entity.HasKey(e => new { e.UserId, e.EditionId }).HasName("user_feedback_pkey");
-
-            entity.ToTable("user_feedback");
-
-            entity.Property(e => e.UserId).HasColumnName("user_id");
-            entity.Property(e => e.EditionId).HasColumnName("edition_id");
-            entity.Property(e => e.DifficultyRating).HasColumnName("difficulty_rating");
-            entity.Property(e => e.DurationRating).HasColumnName("duration_rating");
-            entity.Property(e => e.GeneralRating).HasColumnName("general_rating");
-            entity.Property(e => e.HostRating).HasColumnName("host_rating");
-            entity.Property(e => e.NumberOfPeopleRating).HasColumnName("number_of_people_rating");
-            entity.Property(e => e.Timestamp).HasColumnName("timestamp");
-        });
-
         modelBuilder.Entity<UserRatingHistory>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("user_rating_history_pkey");
@@ -1061,9 +1043,12 @@ public partial class PubQuizContext : DbContext
                 .HasColumnName("hosts");
             entity.Property(e => e.LastKnownLocation).HasColumnName("last_known_location");
             entity.Property(e => e.NumberOfTeams).HasColumnName("number_of_teams");
+            entity.Property(e => e.Rating).HasColumnName("rating");
             entity.Property(e => e.TeamSize).HasColumnName("team_size");
             entity.Property(e => e.TimeOfEdition).HasColumnName("time_of_edition");
-            entity.Property(e => e.Rating).HasColumnName("rating");
+            entity.Property(e => e.LastLogin)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("last_login");
 
             entity.HasOne(d => d.User).WithOne(p => p.UserRecommendationParam)
                 .HasForeignKey<UserRecommendationParam>(d => d.UserId)

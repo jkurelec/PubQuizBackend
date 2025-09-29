@@ -16,20 +16,6 @@ namespace PubQuizBackend.Controllers
             _service = service;
         }
 
-        [HttpGet("feedback-request")]
-        public async Task<IActionResult> GetEditionInfoForFeedback()
-        {
-            return Ok (await _service.GetEditionInfoForFeedback(User.GetUserId()));
-        }
-
-        [HttpPost("feedback")]
-        public async Task<IActionResult> SetFeedback(UserFeedbackDto feedback)
-        {
-            await _service.SetUserFeedback(feedback, User.GetUserId());
-
-            return Ok();
-        }
-
         [HttpGet("user-param")]
         public async Task<IActionResult> UserParam()
         {

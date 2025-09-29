@@ -82,12 +82,13 @@ namespace PubQuizBackend.Service.Implementation
                 userRecommendationParams.Duration = AverageDeltaCalculator.GetDelta(userRecommendationParams.Duration, editionRecommendationParams.Duration, userRecommendationParams.EditionCount);
                 userRecommendationParams.NumberOfTeams = AverageDeltaCalculator.GetDelta(userRecommendationParams.NumberOfTeams, editionRecommendationParams.NumberOfTeams, userRecommendationParams.EditionCount);
                 userRecommendationParams.TeamSize = AverageDeltaCalculator.GetDelta(userRecommendationParams.TeamSize, editionRecommendationParams.TeamSize, userRecommendationParams.EditionCount);
-                userRecommendationParams.TimeOfEdition = editionRecommendationParams.TimeOfEdition;
-                userRecommendationParams.AddHost(edition.HostId);
+                userRecommendationParams.TimeOfEdition = AverageDeltaCalculator.GetDelta(userRecommendationParams.TimeOfEdition, editionRecommendationParams.TimeOfEdition, userRecommendationParams.EditionCount);
+                userRecommendationParams.AddHost(edition.Quiz.OrganizationId);
                 userRecommendationParams.AddCategories(categoryIds);
                 userRecommendationParams.AddDayOfWeek(editionRecommendationParams.DayOfTheWeek);
                 userRecommendationParams.LastKnownLocation = editionRecommendationParams.Location;
-                userRecommendationParams.Rating = user.Rating;
+                userRecommendationParams.Rating = (int)Math.Round(AverageDeltaCalculator.GetDelta((float)userRecommendationParams.Rating, editionRecommendationParams.Rating, userRecommendationParams.EditionCount), 0);
+                userRecommendationParams.LastLogin = DateTime.UtcNow;
             }
 
             await _recommendationRepository.Save();
