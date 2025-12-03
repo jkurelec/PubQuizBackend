@@ -2,11 +2,11 @@
 
 namespace PubQuizBackend.Util.Schedulers
 {
-    public class RecommendationDeletionScheduler : BackgroundService
+    public class KappaAndDeviationScheduler : BackgroundService
     {
         private readonly IServiceProvider _services;
 
-        public RecommendationDeletionScheduler(IServiceProvider services)
+        public KappaAndDeviationScheduler(IServiceProvider services)
         {
             _services = services;
         }
@@ -16,7 +16,11 @@ namespace PubQuizBackend.Util.Schedulers
             while (!stoppingToken.IsCancellationRequested)
             {
                 var now = DateTime.Now;
-                var nextRun = GetNextMidnightMonday(now);
+                var nextRun = now.Date.AddDays(1).AddHours(3);
+
+                if (now.Hour < 3)
+                    nextRun = now.Date.AddHours(3);
+
                 var delay = nextRun - now;
 
                 try
@@ -29,29 +33,16 @@ namespace PubQuizBackend.Util.Schedulers
                 }
 
                 using var scope = _services.CreateScope();
-                var service = scope.ServiceProvider.GetRequiredService<IEloCalculatorService>();
+                var service = scope.ServiceProvider.GetRequiredService<IRecommendationService>();
 
                 try
                 {
-                    await service.CalculateKappa(stoppingToken);
-                    await service.GetTeamKappas(stoppingToken);
-                    await service.GetDeviations(stoppingToken);
+                    await service.DeleteRecommendationsForPrevoiusEditions(stoppingToken);
                 }
                 catch (Exception)
                 {
                 }
             }
-        }
-
-        private static DateTime GetNextMidnightMonday(DateTime from)
-        {
-            var daysUntilMonday = ((int)DayOfWeek.Monday - (int)from.DayOfWeek + 7) % 7;
-            var nextMonday = from.Date.AddDays(daysUntilMonday);
-
-            if (daysUntilMonday == 0 && from.TimeOfDay < TimeSpan.FromHours(24))
-                return from.Date.AddDays(1);
-
-            return nextMonday;
         }
     }
 }

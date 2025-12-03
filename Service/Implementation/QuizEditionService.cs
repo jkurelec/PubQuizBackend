@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Components.Forms;
-using NpgsqlTypes;
-using NuGet.Protocol.Core.Types;
+﻿using NpgsqlTypes;
 using PubQuizBackend.Enums;
 using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model.DbModel;
@@ -21,8 +19,9 @@ namespace PubQuizBackend.Service.Implementation
         private readonly IQuizCategoryRepository _categoryRepository;
         private readonly IRecommendationService _recommendationService;
         private readonly MediaServerClient _mediaServerClient;
+        private readonly PythonServerClient _pythonServerClient;
 
-        public QuizEditionService(IQuizEditionRepository editionRepository, IOrganizationRepository organizationRepository, IQuizLeagueRepository leagueRepository, IRecommendationRepository recommendationRepository, IQuizCategoryRepository categoryRepository, IRecommendationService recommendationService, MediaServerClient mediaServerClient)
+        public QuizEditionService(IQuizEditionRepository editionRepository, IOrganizationRepository organizationRepository, IQuizLeagueRepository leagueRepository, IRecommendationRepository recommendationRepository, IQuizCategoryRepository categoryRepository, IRecommendationService recommendationService, MediaServerClient mediaServerClient, PythonServerClient pythonServerClient)
         {
             _editionRepository = editionRepository;
             _organizationRepository = organizationRepository;
@@ -31,6 +30,7 @@ namespace PubQuizBackend.Service.Implementation
             _categoryRepository = categoryRepository;
             _recommendationService = recommendationService;
             _mediaServerClient = mediaServerClient;
+            _pythonServerClient = pythonServerClient;
         }
 
         public async Task<QuizEditionDetailedDto> Add(NewQuizEditionDto editionDto, int userId)
@@ -96,6 +96,14 @@ namespace PubQuizBackend.Service.Implementation
                 }
             );
 
+            try
+            {
+                await _pythonServerClient.CreateRecommendations(edition.Id);
+            }
+            catch
+            {
+                Console.WriteLine("Could not create recommendations!");
+            }
             return new (edition);
         }
 

@@ -35,5 +35,10 @@ namespace PubQuizBackend.Service.Implementation
             await _repository.SetUserRecommendationParams(recommendationParam);
             await _repository.Save();
         }
+
+        public async Task DeleteRecommendationsForPrevoiusEditions(CancellationToken cancellationToken = default)
+        {
+            await _repository.DeleteRecommendationsForPrevoiusEditions(cancellationToken);
+        }
     }
 }

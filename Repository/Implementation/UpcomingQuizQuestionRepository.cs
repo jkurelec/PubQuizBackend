@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.EntityFrameworkCore;
 using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model;
 using PubQuizBackend.Model.DbModel;
@@ -283,7 +284,9 @@ namespace PubQuizBackend.Repository.Implementation
                 Reorder(newQuestions);
 
                 await _context.SaveChangesAsync();
-                
+
+                await NewGlobalOrder(edition.Id);
+
                 return newSegment;
             }
             else if (question.Number != orderDto.Number)
@@ -298,6 +301,8 @@ namespace PubQuizBackend.Repository.Implementation
                 Reorder(questions);
 
                 await _context.SaveChangesAsync();
+
+                await NewGlobalOrder(edition.Id);
 
                 return question.Segment;
             }
@@ -320,8 +325,9 @@ namespace PubQuizBackend.Repository.Implementation
                 rounds.Insert(orderDto.Number - 1, round);
 
                 Reorder(rounds);
-
                 await _context.SaveChangesAsync();
+
+                await NewGlobalOrder(round.EditionId);
 
                 return round.Edition.QuizRounds;
             }
@@ -355,6 +361,8 @@ namespace PubQuizBackend.Repository.Implementation
 
                 await _context.SaveChangesAsync();
 
+                await NewGlobalOrder(edition.Id);
+
                 return newRound;
             }
             else if (segment.Number != orderDto.Number)
@@ -369,6 +377,8 @@ namespace PubQuizBackend.Repository.Implementation
                 Reorder(segments);
 
                 await _context.SaveChangesAsync();
+
+                await NewGlobalOrder(edition.Id);
 
                 return segment.Round;
             }
@@ -471,6 +481,42 @@ namespace PubQuizBackend.Repository.Implementation
                         .ThenInclude(s => s.QuizQuestions)
                 .FirstOrDefaultAsync()
                 ?? throw new NotFoundException($"Edition with id => {editionId} not found!");
+        }
+
+        public async Task NewGlobalOrder(int editionId)
+        {
+            var edition = await _context.QuizEditions
+                .Include(x => x.QuizRounds)
+                    .ThenInclude(r => r.QuizSegments)
+                        .ThenInclude(s => s.QuizQuestions)
+                .FirstOrDefaultAsync(x => x.Id == editionId);
+
+            if (edition == null)
+                throw new ArgumentNullException(nameof(edition));
+
+            int roundNumber = 1;
+            int segmentNumber = 1;
+            int questionNumber = 1;
+
+            var rounds = edition.QuizRounds.OrderBy(r => r.Number).ToList();
+            foreach (var round in rounds)
+            {
+                round.Number = roundNumber++;
+
+                var segments = round.QuizSegments.OrderBy(s => s.Number).ToList();
+                foreach (var segment in segments)
+                {
+                    segment.Number = segmentNumber++;
+
+                    var questions = segment.QuizQuestions.OrderBy(q => q.Number).ToList();
+                    foreach (var question in questions)
+                    {
+                        question.Number = questionNumber++;
+                    }
+                }
+            }
+
+            await _context.SaveChangesAsync();
         }
     }
 }

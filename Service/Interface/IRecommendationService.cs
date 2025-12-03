@@ -8,5 +8,6 @@ namespace PubQuizBackend.Service.Interface
         Task SetEditionRecommendationParams(QuizEditionRecommendationParam recommendationParam);
         Task<UserRecommendationParam> GetUserRecommendationParams(int userId);
         Task SetUserRecommendationParams(UserRecommendationParam recommendationParam);
+        Task DeleteRecommendationsForPrevoiusEditions(CancellationToken cancellationToken = default);
     }
 }

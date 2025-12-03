@@ -1,7 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using PubQuizBackend.Enums;
+using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model.Dto.QuizAnswerDto;
 using PubQuizBackend.Service.Interface;
+using PubQuizBackend.Util;
 using PubQuizBackend.Util.Extension;
+using System.Collections.Generic;
+using System.Text.Json;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace PubQuizBackend.Controllers
 {
@@ -10,10 +16,12 @@ namespace PubQuizBackend.Controllers
     public class QuizAnswerController : ControllerBase
     {
         private readonly IQuizAnswerService _quizAnswerService;
+        private readonly PythonServerClient _pythonServerClient;
 
-        public QuizAnswerController(IQuizAnswerService quizAnswerService)
+        public QuizAnswerController(IQuizAnswerService quizAnswerService, PythonServerClient pythonServerClient)
         {
             _quizAnswerService = quizAnswerService;
+            _pythonServerClient = pythonServerClient;
         }
 
         [HttpGet("teamAnswer/{editionResultId}")]
@@ -22,7 +30,7 @@ namespace PubQuizBackend.Controllers
             return Ok(await _quizAnswerService.GetTeamAnswers(editionResultId, User.GetUserId()));
         }
 
-        [HttpGet("is-detailed/{editionResultId}")]
+        [HttpGet("is-detailed/{roundResultId}")]
         public async Task<IActionResult> IsDetailedResult(int roundResultId)
         {
             return Ok(await _quizAnswerService.IsDetailedResult(roundResultId));
@@ -53,6 +61,26 @@ namespace PubQuizBackend.Controllers
         public async Task<IActionResult> GradeTeamAnswers(NewQuizRoundResultDto roundDto)
         {
             return Ok(await _quizAnswerService.GradeTeamAnswers(roundDto, User.GetUserId()));
+        }
+
+        [HttpPost("auto-grade")]
+        public async Task<IActionResult> AutoGradeTeamAnswers([FromForm] IFormFile image, [FromForm] string roundResult)
+        {
+            if (image == null || image.Length == 0)
+                throw new BadRequestException("No image uploaded.");
+
+            if (User.GetUserRole() == Role.ATTENDEE)
+                throw new UnauthorizedException();
+
+            var result = await _pythonServerClient.ExtractSentencesFromImage(image);
+
+            var data = JsonSerializer.Deserialize<List<PredictedAnswers>>(result);
+
+            var dto = JsonSerializer.Deserialize<QuizRoundResultDetailedDto>(roundResult);
+
+            var round = await _quizAnswerService.AutogradeAnswers(dto, data);
+
+            return Ok(round);
         }
 
         [HttpPost("grade/existing")]
@@ -94,6 +122,12 @@ namespace PubQuizBackend.Controllers
             await _quizAnswerService.DeleteRoundResultSegments(roundResultId, User.GetUserId());
 
             return Ok();
+        }
+
+        public class PredictedAnswers
+        {
+            public string number { get; set; }
+            public string answer { get; set; }
         }
     }
 }

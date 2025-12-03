@@ -1,5 +1,6 @@
 ﻿using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.QuizAnswerDto;
+using static PubQuizBackend.Controllers.QuizAnswerController;
 
 namespace PubQuizBackend.Repository.Interface
 {
@@ -24,5 +25,6 @@ namespace PubQuizBackend.Repository.Interface
         Task<IEnumerable<QuizEditionResult>> BreakTie(int promotedId,int editionId);
         Task<bool> IsDetailedResult(int roundResultId);
         Task DeleteRoundResultSegments(int roundResultId, int hostId);
+        Task<QuizRoundResultDetailedDto> AutofillRound(QuizRoundResultDetailedDto roundResult, List<PredictedAnswers> answers);
     }
 }

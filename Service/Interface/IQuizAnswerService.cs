@@ -1,4 +1,5 @@
 ﻿using PubQuizBackend.Model.Dto.QuizAnswerDto;
+using static PubQuizBackend.Controllers.QuizAnswerController;
 
 namespace PubQuizBackend.Service.Interface
 {
@@ -17,6 +18,7 @@ namespace PubQuizBackend.Service.Interface
         Task<IEnumerable<QuizEditionResultDetailedDto>> GetEditionResultsDetailed(int editionId, int hostId);
         Task<IEnumerable<QuizEditionResultBriefDto>> RankTeamsOnEdition(int editionId, int hostId);
         Task<IEnumerable<QuizEditionResultBriefDto>> BreakTie(int promotedId, int editionId, int hostId);
+        Task<QuizRoundResultDetailedDto> AutogradeAnswers(QuizRoundResultDetailedDto roundResult, List<PredictedAnswers> answers);
         Task<bool> IsDetailedResult(int roundResultId);
         Task DeleteRoundResultSegments(int roundResultId, int hostId);
     }

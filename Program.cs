@@ -33,6 +33,7 @@ builder.Services.AddDbContext<PubQuizContext>(options =>
 builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
 
 builder.Services.AddHttpClient<MediaServerClient>();
+builder.Services.AddHttpClient<PythonServerClient>();
 
 builder.Services.AddScoped<ICityRepository, CityRepository>();
 builder.Services.AddScoped<ICountryRepository, CountryRepository>();

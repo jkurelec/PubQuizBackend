@@ -1,6 +1,5 @@
 ﻿using PubQuizAttendeeFrontend.Models.Dto.RecommendationDto;
 using PubQuizBackend.Model.DbModel;
-using PubQuizBackend.Model.Dto.RecommendationDto;
 
 namespace PubQuizBackend.Repository.Interface
 {
@@ -11,5 +10,6 @@ namespace PubQuizBackend.Repository.Interface
         Task<UserRecommendationParam> GetUserRecommendationParams(int userId);
         Task SetUserRecommendationParams(UserRecommendationParam recommendationParam);
         Task<IEnumerable<UserTopRecommendation>> GetRecommendations(int userId);
+        Task DeleteRecommendationsForPrevoiusEditions(CancellationToken cancellationToken = default);
     }
 }

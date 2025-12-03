@@ -33,6 +33,6 @@ namespace PubQuizBackend.Model.Dto.QuizEditionDto
 
     public partial class QuizEditionMinimalDto
     {
-        public float Match { get; set; }
+        public float? Match { get; set; }
     }
 }

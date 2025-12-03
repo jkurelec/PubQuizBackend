@@ -1,9 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using PubQuizAttendeeFrontend.Models.Dto.RecommendationDto;
 using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model;
 using PubQuizBackend.Model.DbModel;
-using PubQuizBackend.Model.Dto.RecommendationDto;
 using PubQuizBackend.Repository.Interface;
 
 namespace PubQuizBackend.Repository.Implementation
@@ -46,6 +44,25 @@ namespace PubQuizBackend.Repository.Implementation
                 .OrderByDescending(x => x.Match)
                 .Take(10)
                 .ToListAsync();
+        }
+
+        public async Task DeleteRecommendationsForPrevoiusEditions(CancellationToken cancellationToken = default)
+        {
+            var expiredEditionIds = await _context.UserTopRecommendations
+                .Where(x => x.EditionTimestamp < DateTime.UtcNow)
+                .GroupBy(x => x.EditionId)
+                .Select(x => x.Key)
+                .ToListAsync();
+
+            if (expiredEditionIds.Count != 0)
+            {
+                var expiredRecs = await _context.UserTopRecommendations
+                    .Where(r => expiredEditionIds.Contains(r.EditionId))
+                    .ToListAsync();
+
+                _context.UserTopRecommendations.RemoveRange(expiredRecs);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
         }
     }
 }

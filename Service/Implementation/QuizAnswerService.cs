@@ -1,4 +1,5 @@
-﻿using PubQuizBackend.Exceptions;
+﻿using PubQuizBackend.Controllers;
+using PubQuizBackend.Exceptions;
 using PubQuizBackend.Model.Dto.QuizAnswerDto;
 using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Service.Interface;
@@ -149,6 +150,15 @@ namespace PubQuizBackend.Service.Implementation
         public async Task DeleteRoundResultSegments(int roundResultId, int hostId)
         {
             await _repository.DeleteRoundResultSegments(roundResultId, hostId);
+        }
+
+        public async Task<QuizRoundResultDetailedDto> AutogradeAnswers(QuizRoundResultDetailedDto roundResult, List<QuizAnswerController.PredictedAnswers> answers)
+        {
+            var round = await _repository.AutofillRound(roundResult, answers);
+
+            var teamAnswers = await _repository.GradeExistingTeamRoundAnswers(round);
+
+            return new(teamAnswers);
         }
     }
 }

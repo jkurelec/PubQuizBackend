@@ -6,6 +6,7 @@ using PubQuizBackend.Model.DbModel;
 using PubQuizBackend.Model.Dto.QuizAnswerDto;
 using PubQuizBackend.Repository.Interface;
 using PubQuizBackend.Util;
+using static PubQuizBackend.Controllers.QuizAnswerController;
 
 namespace PubQuizBackend.Repository.Implementation
 {
@@ -774,6 +775,45 @@ namespace PubQuizBackend.Repository.Implementation
 
             if (answerDto.Points != answer.Points)
                 answer.Points = answerDto.Points;
+        }
+
+        public async Task<QuizRoundResultDetailedDto> AutofillRound(QuizRoundResultDetailedDto roundResult, List<PredictedAnswers> answers)
+        {
+            var round = await _context.QuizRounds
+                .Include(r => r.QuizSegments)
+                    .ThenInclude(s => s.QuizQuestions)
+                .FirstOrDefaultAsync(r => r.Id == roundResult.RoundId);
+
+            if (round == null)
+                return roundResult;
+
+            foreach (var answer in answers)
+            {
+                if (!int.TryParse(answer.number, out int questionNumber))
+                    continue;
+
+                var question = round.QuizSegments
+                    .SelectMany(s => s.QuizQuestions)
+                    .FirstOrDefault(q => q.Number == questionNumber);
+
+                if (question == null)
+                    continue;
+
+                foreach (var segmentResult in roundResult.QuizSegmentResults)
+                {
+                    var quizAnswer = segmentResult.QuizAnswers
+                        .FirstOrDefault(a => a.QuestionId == question.Id);
+
+                    if (quizAnswer != null)
+                    {
+                        quizAnswer.Answer = answer.answer;
+                    }
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            return roundResult;
         }
     }
 }
